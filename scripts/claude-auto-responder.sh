@@ -129,7 +129,7 @@ Format your response with:
 Keep response concise and actionable."
 
     # Send to Claude and get response
-    local response=$(echo "$prompt" | claude --no-color 2>/dev/null || echo "Error processing request with Claude")
+    local response=$(echo "$prompt" | claude 2>/dev/null || echo "Error processing request with Claude")
     
     # Log the response
     log_activity "Generated response: $response"
