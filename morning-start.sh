@@ -215,6 +215,7 @@ show_dashboard() {
 show_tips() {
     echo
     echo -e "${PURPLE}💡 Quick Commands:${NC}"
+    echo "  • ${CYAN}claude-now${NC} - Start Claude environment"
     echo "  • ${CYAN}claude-init${NC} - Initialize new project"
     echo "  • ${CYAN}claude-plan${NC} - Enter plan mode"
     echo "  • ${CYAN}claude-checkpoint${NC} - Save git checkpoint"
