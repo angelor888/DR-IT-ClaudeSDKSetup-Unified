@@ -147,7 +147,7 @@ check_messages() {
         local text=$(echo "$msg" | jq -r '.text // empty')
         
         # Skip if we've seen this message
-        if (( $(echo "$ts > $LAST_TS" | bc -l) )); then
+        if awk -v ts="$ts" -v last="$LAST_TS" 'BEGIN { exit !(ts > last) }'; then
             # Extract sender from context block
             local sender_info=$(echo "$msg" | jq -r '.blocks[]? | select(.type == "context") | .elements[0].text' 2>/dev/null)
             
