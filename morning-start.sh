@@ -87,20 +87,22 @@ show_greeting() {
     echo
 }
 
-# Check for messages from other machine
-check_messages() {
-    local other_machine="morgan"
-    [ "$MACHINE_NAME" == "morgan" ] && other_machine="megan"
+# Check for Slack connection
+check_slack() {
+    echo -e "${BLUE}🔗 Checking Slack connection...${NC}"
     
-    local message_file="$UNIFIED_DIR/.messages/${other_machine}-to-${MACHINE_NAME}.txt"
+    # Test Slack API
+    local response=$(curl -s -X POST https://slack.com/api/auth.test \
+        -H "Authorization: Bearer ${SLACK_TOKEN:-}")
     
-    if [ -f "$message_file" ] && [ -s "$message_file" ]; then
-        echo -e "${YELLOW}📬 You have a message from ${other_machine}:${NC}"
-        echo -e "${CYAN}$(cat "$message_file")${NC}"
-        echo
+    if echo "$response" | grep -q '"ok":true'; then
+        echo -e "${GREEN}  ✓ Slack connected${NC}"
         
-        # Mark as read
-        > "$message_file"
+        # Show who we are
+        local team=$(echo "$response" | jq -r '.team // "Unknown"')
+        echo -e "${CYAN}  Team: $team | Machine: ${MACHINE_NAME^}${NC}"
+    else
+        echo -e "${YELLOW}  ⚠ Slack not connected${NC}"
     fi
 }
 
@@ -219,7 +221,16 @@ show_tips() {
     echo "  • ${CYAN}claude-init${NC} - Initialize new project"
     echo "  • ${CYAN}claude-plan${NC} - Enter plan mode"
     echo "  • ${CYAN}claude-checkpoint${NC} - Save git checkpoint"
-    echo "  • ${CYAN}${MACHINE_NAME}-note${NC} - Leave message for other machine"
+    
+    # Show appropriate messaging command
+    if [ "$MACHINE_NAME" == "megan" ]; then
+        echo "  • ${CYAN}morgan-msg${NC} - Send message to Morgan via Slack"
+    else
+        echo "  • ${CYAN}megan-msg${NC} - Send message to Megan via Slack"
+    fi
+    
+    echo "  • ${CYAN}messages-on${NC} - Start Slack listener"
+    echo "  • ${CYAN}slack-report${NC} - Send report to Slack"
     echo "  • ${CYAN}claude-help${NC} - Show all commands"
 }
 
@@ -228,7 +239,7 @@ main() {
     show_banner
     detect_machine
     show_greeting
-    check_messages
+    check_slack
     sync_github
     load_machine_config
     start_services
