@@ -7,6 +7,15 @@ set -euo pipefail
 # Configuration
 SLACK_TOKEN="${SLACK_TOKEN:-}"
 
+# Colors
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+NC='\033[0m'
+
 # Check if token is set
 if [ -z "$SLACK_TOKEN" ]; then
     echo -e "${RED}❌ SLACK_TOKEN not set. Please set it in your environment.${NC}"
@@ -17,15 +26,6 @@ SYNC_CHANNEL="megan-morgan-sync"
 MACHINE_NAME=$(cat "$HOME/.claude-machine-id" 2>/dev/null || hostname -s)
 CHECK_INTERVAL=3  # Check every 3 seconds
 LAST_TS_FILE="$HOME/.slack-last-message-ts"
-
-# Colors
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-RED='\033[0;31m'
-NC='\033[0m'
 
 # Initialize last timestamp
 touch "$LAST_TS_FILE"
