@@ -1,0 +1,87 @@
+{
+  "auto_response_config": {
+    "enabled": true,
+    "machine_name": "auto-detect",
+    "response_delay_seconds": 2,
+    "max_response_length": 2000
+  },
+  
+  "safe_operations": {
+    "allowed_commands": [
+      "docker ps",
+      "docker stats --no-stream",
+      "docker images",
+      "git status",
+      "git log",
+      "git branch",
+      "ls",
+      "pwd",
+      "date",
+      "uptime",
+      "df -h",
+      "free -h",
+      "cat",
+      "echo",
+      "which",
+      "claude --version"
+    ],
+    
+    "allowed_directories": [
+      "~/Projects/DR-IT-ClaudeSDKSetup-Unified",
+      "~/easy-mcp",
+      "~/.config/claude"
+    ],
+    
+    "forbidden_patterns": [
+      "rm -rf",
+      "sudo rm",
+      "delete",
+      "kill -9",
+      "shutdown",
+      "reboot",
+      ">",
+      ">>",
+      "|",
+      "&&",
+      ";",
+      "eval",
+      "exec"
+    ]
+  },
+  
+  "task_templates": {
+    "docker_check": {
+      "triggers": ["docker", "container", "status"],
+      "actions": ["check_docker_daemon", "list_containers", "show_stats"]
+    },
+    
+    "git_sync": {
+      "triggers": ["git", "sync", "pull", "status"],
+      "actions": ["git_status", "git_fetch", "show_branches"]
+    },
+    
+    "system_health": {
+      "triggers": ["system", "health", "check", "status"],
+      "actions": ["uptime", "disk_space", "memory_usage"]
+    },
+    
+    "claude_verify": {
+      "triggers": ["claude", "verify", "version"],
+      "actions": ["claude_version", "check_config", "list_aliases"]
+    }
+  },
+  
+  "response_formats": {
+    "success": "✅ {task} completed successfully:\\n{details}",
+    "error": "❌ Error executing {task}:\\n{error_message}",
+    "not_allowed": "⚠️ Cannot execute {command} - not in allowed operations",
+    "acknowledgment": "📋 Received task: {task}\\nProcessing..."
+  },
+  
+  "logging": {
+    "enabled": true,
+    "log_file": "~/.claude-auto-responder.log",
+    "log_level": "info",
+    "max_log_size_mb": 10
+  }
+}
