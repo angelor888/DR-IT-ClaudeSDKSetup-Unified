@@ -73,7 +73,7 @@ check_messages() {
         local current_modified=$(stat -f "%m" "$MESSAGE_FILE" 2>/dev/null || echo "0")
         
         # If file is newer than last read
-        if [ "$current_modified" -gt "$last_read" ]; then
+        if [ "$current_modified" -gt "$last_read" ] 2>/dev/null || [ "$last_read" = "0" ]; then
             # Extract message details
             local from=$(grep "From:" "$MESSAGE_FILE" | cut -d: -f2- | xargs)
             local time=$(grep "Time:" "$MESSAGE_FILE" | cut -d: -f2- | xargs)
