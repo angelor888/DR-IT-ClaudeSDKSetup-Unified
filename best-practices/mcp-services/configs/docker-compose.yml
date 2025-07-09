@@ -1,0 +1,224 @@
+# Easy-MCP Docker Compose Configuration
+# Version: v2.4.0 – Streamlined Professional Architecture
+# Updated: 2025-06-29T22:16:41+08:00
+
+volumes:
+  mcp-filesystem-data:
+    driver: local
+  mcp-memory-data:
+    driver: local
+  mcp-logs:
+    driver: local
+
+secrets:
+  mcp_secret_key:
+    file: ./secrets/mcp_secret.txt
+  filesystem_access_key:
+    file: ./secrets/filesystem_key.txt
+
+services:
+  # ======= MCP Filesystem Service =======
+  mcp-filesystem:
+    build:
+      context: ./mcp-services
+      dockerfile: filesystem.Dockerfile
+    container_name: mcp-filesystem-enhanced
+    restart: unless-stopped
+    volumes:
+      - ./view:/app/projects:rw
+    environment:
+      - NODE_ENV=production
+      - MCP_SERVICE_NAME=filesystem
+      - MCP_LOG_LEVEL=info
+      - MCP_ENABLE_WRITE=true
+      - MCP_ENABLE_DELETE=true
+      - MCP_ENABLE_CREATE=true
+    stdin_open: true
+    tty: true
+    ports:
+      - "8082:8082"
+    labels:
+      - "mcp.service=filesystem"
+      - "mcp.type=core"
+      - "mcp.version=2.4.0"
+      - "mcp.permissions=read,write,create,delete"
+
+  # ======= MCP Puppeteer Service =======
+  mcp-puppeteer:
+    build:
+      context: ./mcp-services
+      dockerfile: puppeteer.Dockerfile
+    container_name: mcp-puppeteer-enhanced
+    restart: unless-stopped
+    privileged: true
+    shm_size: "2gb"
+    environment:
+      - NODE_ENV=production
+      - MCP_SERVICE_NAME=puppeteer
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false
+    stdin_open: true
+    tty: true
+    ports:
+      - "8084:8084"
+    labels:
+      - "mcp.service=puppeteer"
+      - "mcp.type=utility"
+      - "mcp.version=2.4.0"
+
+  # ======= MCP Memory Service =======
+  mcp-memory:
+    build:
+      context: ./mcp-services
+      dockerfile: memory.Dockerfile
+    container_name: mcp-memory-enhanced
+    restart: unless-stopped
+    volumes:
+      - mcp-memory-data:/app/data:rw
+    environment:
+      - NODE_ENV=production
+      - MCP_SERVICE_NAME=memory
+      - MEMORY_FILE_PATH=/app/data/memory.json
+      - MCP_LOG_LEVEL=info
+    stdin_open: true
+    tty: true
+    ports:
+      - "8085:8085"
+    labels:
+      - "mcp.service=memory"
+      - "mcp.type=storage"
+      - "mcp.version=2.4.0"
+      - "mcp.features=knowledge-graph,persistence"
+
+  # ======= MCP Everything Service =======
+  mcp-everything:
+    build:
+      context: ./mcp-services
+      dockerfile: everything.Dockerfile
+    container_name: mcp-everything-enhanced
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - MCP_SERVICE_NAME=everything
+      - MCP_FEATURE_FLAGS=echo,add,longRunning,sampling
+      - MCP_LOG_LEVEL=warn
+      - MCP_ENABLE_METRICS=false
+      - MCP_DEMO_MODE=false
+      - MCP_NOTIFICATION_INTERVAL=300000
+    stdin_open: true
+    tty: true
+    ports:
+      - "8086:8086"
+    labels:
+      - "mcp.service=everything"
+      - "mcp.type=utility"
+      - "mcp.version=2.4.0"
+
+  # ======= Watchtower - Automatic Updates =======
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: mcp-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=86400  # Check daily (24 hours)
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      - WATCHTOWER_NOTIFICATIONS_LEVEL=info
+      - WATCHTOWER_LOG_LEVEL=info
+      - WATCHTOWER_ROLLING_RESTART=true
+    command: --label-enable --cleanup
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "mcp.service=watchtower"
+      - "mcp.type=maintenance"
+      - "mcp.version=latest"
+
+  # ======= MCP GitHub Service =======
+  mcp-github:
+    build:
+      context: ./mcp-services
+      dockerfile: src/github/Dockerfile
+    container_name: mcp-github-enhanced
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - MCP_SERVICE_NAME=github
+      - MCP_LOG_LEVEL=info
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+    stdin_open: true
+    tty: true
+    ports:
+      - "8087:8087"
+    labels:
+      - "mcp.service=github"
+      - "mcp.type=integration"
+      - "mcp.version=2.5.0"
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # ======= MCP PostgreSQL Service =======
+  mcp-postgres:
+    build:
+      context: ./mcp-services
+      dockerfile: src/postgres/Dockerfile
+    container_name: mcp-postgres-enhanced
+    restart: unless-stopped
+    command: ["${POSTGRES_CONNECTION_STRING:-postgresql://postgres:postgres@host.docker.internal:5432/postgres}"]
+    environment:
+      - NODE_ENV=production
+      - MCP_SERVICE_NAME=postgres
+      - MCP_LOG_LEVEL=info
+    stdin_open: true
+    tty: true
+    ports:
+      - "8088:8088"
+    labels:
+      - "mcp.service=postgres"
+      - "mcp.type=database"
+      - "mcp.version=2.5.0"
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # ======= MCP Redis Service =======
+  mcp-redis:
+    build:
+      context: ./mcp-services
+      dockerfile: src/redis/Dockerfile
+    container_name: mcp-redis-enhanced
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - MCP_SERVICE_NAME=redis
+      - MCP_LOG_LEVEL=info
+      - REDIS_CONNECTION_STRING=${REDIS_CONNECTION_STRING:-redis://localhost:6379}
+    stdin_open: true
+    tty: true
+    ports:
+      - "8089:8089"
+    labels:
+      - "mcp.service=redis"
+      - "mcp.type=cache"
+      - "mcp.version=2.5.0"
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # ======= MCP Slack Service =======
+  mcp-slack:
+    build:
+      context: ./mcp-services
+      dockerfile: src/slack/Dockerfile
+    container_name: mcp-slack-enhanced
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - MCP_SERVICE_NAME=slack
+      - MCP_LOG_LEVEL=info
+      - SLACK_TOKEN=${SLACK_TOKEN:-}
+    stdin_open: true
+    tty: true
+    ports:
+      - "8090:8090"
+    labels:
+      - "mcp.service=slack"
+      - "mcp.type=communication"
+      - "mcp.version=2.5.0"
+      - "com.centurylinklabs.watchtower.enable=true"

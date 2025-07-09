@@ -1,0 +1,136 @@
+{
+  "_comment": "Easy-MCP Claude Desktop Configuration v2.5.0 - Extended",
+  "_version": "2.5.0",
+  "_updated": "2025-07-08T13:30:00+08:00",
+  "_description": "Professional MCP services configuration for Claude Desktop with expanded capabilities",
+  "mcpServers": {
+    "filesystem": {
+      "command": "docker",
+      "args": ["exec", "-i", "mcp-filesystem-enhanced", "mcp-server-filesystem", "/app/projects"],
+      "env": {
+        "MCP_SERVICE_NAME": "filesystem",
+        "MCP_LOG_LEVEL": "info",
+        "MCP_ENABLE_WRITE": "true",
+        "MCP_ENABLE_DELETE": "true",
+        "MCP_ENABLE_CREATE": "true",
+        "NODE_ENV": "production"
+      }
+    },
+    "memory": {
+      "command": "docker",
+      "args": ["exec", "-i", "mcp-memory-enhanced", "mcp-server-memory"],
+      "env": {
+        "MCP_SERVICE_NAME": "memory",
+        "MCP_LOG_LEVEL": "info",
+        "MEMORY_FILE_PATH": "/app/data/memory.json",
+        "NODE_ENV": "production"
+      },
+      "autoapprove": [
+        "create_entities",
+        "create_relations",
+        "add_observations",
+        "delete_entities",
+        "delete_observations",
+        "delete_relations",
+        "read_graph",
+        "search_nodes",
+        "open_nodes"
+      ]
+    },
+    "puppeteer": {
+      "command": "docker",
+      "args": ["exec", "-i", "mcp-puppeteer-enhanced", "mcp-server-puppeteer"],
+      "env": {
+        "MCP_SERVICE_NAME": "puppeteer",
+        "MCP_LOG_LEVEL": "info",
+        "PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium-browser",
+        "MCP_HEADLESS": "true",
+        "MCP_TIMEOUT": "30000",
+        "PUPPETEER_ARGS": "--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage",
+        "NODE_ENV": "production"
+      }
+    },
+    "everything": {
+      "command": "docker",
+      "args": ["exec", "-i", "mcp-everything-enhanced", "mcp-server-everything"],
+      "env": {
+        "MCP_SERVICE_NAME": "everything",
+        "MCP_LOG_LEVEL": "warn",
+        "MCP_DEMO_MODE": "false",
+        "MCP_ENABLE_METRICS": "false",
+        "MCP_FEATURE_FLAGS": "echo,add,longRunning,sampling",
+        "MCP_NOTIFICATION_INTERVAL": "300000",
+        "NODE_ENV": "production"
+      }
+    },
+    "mcp-time": {
+      "command": "uvx",
+      "args": ["mcp-server-time", "--local-timezone=Asia/Taipei"]
+    },
+    "mcp-fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"]
+    },
+    "mcp-sqlite": {
+      "command": "uvx",
+      "args": ["mcp-server-sqlite", "--db-path", "/Users/angelone/.config/claude/databases/local.db"]
+    },
+    "mcp-git": {
+      "command": "uvx",
+      "args": ["mcp-server-git", "--repository", "/Users/angelone/easy-mcp"]
+    },
+    "github": {
+      "command": "docker",
+      "args": ["exec", "-i", "mcp-github-enhanced", "mcp-server-github"],
+      "env": {
+        "MCP_SERVICE_NAME": "github",
+        "MCP_LOG_LEVEL": "info",
+        "NODE_ENV": "production"
+      }
+    },
+    "postgres": {
+      "command": "docker",
+      "args": ["exec", "-i", "mcp-postgres-enhanced", "mcp-server-postgres"],
+      "env": {
+        "MCP_SERVICE_NAME": "postgres",
+        "MCP_LOG_LEVEL": "info",
+        "NODE_ENV": "production"
+      }
+    },
+    "redis": {
+      "command": "docker",
+      "args": ["exec", "-i", "mcp-redis-enhanced", "mcp-server-redis"],
+      "env": {
+        "MCP_SERVICE_NAME": "redis",
+        "MCP_LOG_LEVEL": "info",
+        "NODE_ENV": "production"
+      }
+    },
+    "slack": {
+      "command": "docker",
+      "args": ["exec", "-i", "mcp-slack-enhanced", "mcp-server-slack"],
+      "env": {
+        "MCP_SERVICE_NAME": "slack",
+        "MCP_LOG_LEVEL": "info",
+        "NODE_ENV": "production"
+      }
+    },
+    "MCP_DOCKER": {
+      "command": "docker",
+      "args": ["mcp", "gateway", "run"]
+    }
+  },
+  "globalShortcut": "Ctrl+Shift+.",
+  "allowedOrigins": [
+    "localhost:8080",
+    "127.0.0.1:8080",
+    "localhost:3000",
+    "127.0.0.1:3000"
+  ],
+  "mcpSettings": {
+    "timeout": 30000,
+    "maxRetries": 3,
+    "retryDelay": 1000,
+    "logLevel": "info"
+  }
+}
