@@ -9,9 +9,11 @@ SLACK_TOKEN="${SLACK_TOKEN:-}"
 SYNC_CHANNEL="megan-morgan-sync"
 MACHINE_NAME=$(cat "$HOME/.claude-machine-id" 2>/dev/null || hostname -s)
 MACHINE_UPPER=$(echo "$MACHINE_NAME" | tr '[:lower:]' '[:upper:]' | cut -c1)$(echo "$MACHINE_NAME" | cut -c2-)
-CHECK_INTERVAL=5
+CHECK_INTERVAL=15  # Increased to avoid rate limits
 LAST_TS_FILE="$HOME/.claude-auto-last-ts"
 LOG_FILE="$HOME/.claude-auto-responder.log"
+RATE_LIMIT_BACKOFF=60  # Wait time after rate limit
+LAST_RATE_LIMIT=0
 
 # Colors
 GREEN='\033[0;32m'
@@ -44,9 +46,16 @@ log_activity() {
 
 # Get channel ID
 get_channel_id() {
-    curl -s -X GET "https://slack.com/api/conversations.list?types=public_channel,private_channel" \
-        -H "Authorization: Bearer $SLACK_TOKEN" | \
-        jq -r ".channels[] | select(.name == \"$SYNC_CHANNEL\") | .id" 2>/dev/null
+    local response=$(curl -s -X GET "https://slack.com/api/conversations.list?types=public_channel,private_channel" \
+        -H "Authorization: Bearer $SLACK_TOKEN")
+    
+    # Check for rate limit
+    if echo "$response" | grep -q '"error":"ratelimited"'; then
+        echo -e "${YELLOW}⚠️  Rate limited on channel list${NC}" >&2
+        return
+    fi
+    
+    echo "$response" | jq -r ".channels[] | select(.name == \"$SYNC_CHANNEL\") | .id" 2>/dev/null
 }
 
 # Send response to Slack
@@ -80,10 +89,16 @@ send_response() {
 EOF
 )
     
-    curl -s -X POST https://slack.com/api/chat.postMessage \
+    local send_response=$(curl -s -X POST https://slack.com/api/chat.postMessage \
         -H "Authorization: Bearer $SLACK_TOKEN" \
         -H "Content-Type: application/json" \
-        -d "$json_payload" > /dev/null
+        -d "$json_payload")
+    
+    # Check for rate limit
+    if echo "$send_response" | grep -q '"error":"ratelimited"'; then
+        echo -e "${YELLOW}⚠️  Rate limited on send. Message queued for later.${NC}"
+        log_activity "Rate limited when sending response. Message not sent."
+    fi
 }
 
 # Process message with Claude
@@ -136,6 +151,14 @@ check_messages() {
     # Get recent messages
     local response=$(curl -s -X GET "https://slack.com/api/conversations.history?channel=$channel_id&limit=10" \
         -H "Authorization: Bearer $SLACK_TOKEN")
+    
+    # Check for rate limit
+    if echo "$response" | grep -q '"error":"ratelimited"'; then
+        echo -e "${YELLOW}⚠️  Rate limited. Waiting $RATE_LIMIT_BACKOFF seconds...${NC}"
+        log_activity "Rate limited by Slack API. Backing off for $RATE_LIMIT_BACKOFF seconds"
+        sleep $RATE_LIMIT_BACKOFF
+        return
+    fi
     
     # Process each message
     echo "$response" | jq -r '.messages[] | @base64' 2>/dev/null | while IFS= read -r encoded_msg; do
