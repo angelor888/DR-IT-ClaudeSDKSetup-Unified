@@ -101,4 +101,25 @@ All 27 servers including:
 - 27 MCP servers configured
 - Machine-aware settings active
 
+## Slack Channel Guidelines
+
+### Channel Usage Rules
+- **#megan-morgan-sync**: ONLY for Claude-to-Claude communication
+  - Direct messages between Megan and Morgan
+  - Auto-responder testing
+  - Real-time collaboration
+  - Troubleshooting active issues
+  
+- **#it-report**: For permanent documentation
+  - Final reports after issues are resolved
+  - System documentation
+  - Architecture guides
+  - Setup instructions
+  - Reference materials
+
+### Important: Never mix channel purposes!
+- Error discussions go to #megan-morgan-sync
+- Final documentation goes to #it-report
+- This keeps channels organized and searchable
+
 <!-- Auto-updated by memory watch -->
