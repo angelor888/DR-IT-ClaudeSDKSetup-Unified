@@ -180,7 +180,9 @@ check_messages() {
                 local sender=$(echo "$sender_info" | grep -o 'Sent from \*[^*]*\*' | sed 's/Sent from \*//' | sed 's/\*//')
                 
                 # Only process if from different machine
-                if [[ "${sender,,}" != "${MACHINE_NAME,,}" ]]; then
+                sender_lower=$(echo "$sender" | tr '[:upper:]' '[:lower:]')
+                machine_lower=$(echo "$MACHINE_NAME" | tr '[:upper:]' '[:lower:]')
+                if [[ "$sender_lower" != "$machine_lower" ]]; then
                     # Extract time
                     local msg_time=$(echo "$sender_info" | grep -o 'at [0-9:]* [AP]M' || date "+%I:%M %p")
                     
