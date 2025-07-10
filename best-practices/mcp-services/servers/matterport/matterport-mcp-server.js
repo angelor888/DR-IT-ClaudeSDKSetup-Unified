@@ -163,13 +163,31 @@ class MatterportMCPServer {
         url: `${this.baseURL}${endpoint}`,
         data,
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'Authorization': `Token ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
       });
 
       return response.data;
     } catch (error) {
+      // Try alternative authentication methods
+      if (error.response?.status === 401) {
+        try {
+          // Try with different header format
+          const altResponse = await axios({
+            method,
+            url: `${this.baseURL}${endpoint}`,
+            data,
+            headers: {
+              'X-API-Key': this.apiKey,
+              'Content-Type': 'application/json',
+            },
+          });
+          return altResponse.data;
+        } catch (altError) {
+          throw new Error(`Matterport API authentication failed. Token may be invalid or expired. Error: ${error.response?.data?.message || error.message}`);
+        }
+      }
       throw new Error(`Matterport API error: ${error.response?.data?.message || error.message}`);
     }
   }
