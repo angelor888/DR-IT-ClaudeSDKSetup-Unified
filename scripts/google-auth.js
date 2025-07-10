@@ -8,10 +8,15 @@
 const { google } = require('googleapis');
 const readline = require('readline');
 
-// Your OAuth credentials
-const CLIENT_ID = '1093418410151-gc3lh422n3qqhhs37cv0e7hqsvfacud7.apps.googleusercontent.com';
-const CLIENT_SECRET = 'REDACTED_CLIENT_SECRET';
+// Your OAuth credentials (loaded from environment)
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const REDIRECT_URI = 'http://localhost';
+
+if (!CLIENT_ID || !CLIENT_SECRET) {
+  console.error('❌ Error: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set in environment variables');
+  process.exit(1);
+}
 
 // Scopes for Google services we want to access
 const SCOPES = [
