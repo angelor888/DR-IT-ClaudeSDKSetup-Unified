@@ -92,11 +92,22 @@ async function main() {
     .replace(/\[(.+?)\]\(.+?\)/g, '$1')
     .replace(/^---+$/gm, '─'.repeat(30));
   
-  // Find the channel
-  const channel = await findChannel('it-report');
+  // Try to find the channel - first try megan-morgan-sync, then fall back to it-report
+  let channel = await findChannel('megan-morgan-sync');
   
   if (!channel) {
-    console.error('❌ Could not find #it-report channel');
+    console.log('⚠️  Could not find #megan-morgan-sync by name (private channel)');
+    console.log('   Using known channel ID: C0952ES6BJR\n');
+    // Use the known channel ID for megan-morgan-sync
+    channel = { id: 'C0952ES6BJR', name: 'megan-morgan-sync' };
+  }
+  
+  if (!channel) {
+    console.error('❌ Could not find any suitable channel');
+    console.log('\n💡 To fix this:');
+    console.log('   1. Go to #megan-morgan-sync in Slack');
+    console.log('   2. Type: /invite @sky-ai');
+    console.log('   3. Re-run this script');
     return;
   }
   
@@ -172,7 +183,7 @@ async function main() {
     }
   }
   
-  console.log('\n✅ Daily report sent to #it-report');
+  console.log(`\n✅ Daily report sent to #${channel.name}`);
 }
 
 main().catch(err => {
