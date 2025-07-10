@@ -100,7 +100,7 @@ check_slack() {
         
         # Show who we are
         local team=$(echo "$response" | jq -r '.team // "Unknown"')
-        echo -e "${CYAN}  Team: $team | Machine: ${MACHINE_NAME^}${NC}"
+        echo -e "${CYAN}  Team: $team | Machine: $(echo ${MACHINE_NAME} | tr '[:lower:]' '[:upper:]')${NC}"
     else
         echo -e "${YELLOW}  ⚠ Slack not connected${NC}"
     fi
