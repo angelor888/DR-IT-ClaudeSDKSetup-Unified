@@ -1,0 +1,25 @@
+{
+  "name": "matterport-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Matterport 3D model management",
+  "main": "matterport-mcp-server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node matterport-mcp-server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.15.0",
+    "axios": "^1.7.2"
+  },
+  "keywords": [
+    "mcp",
+    "matterport",
+    "3d-models",
+    "claude"
+  ],
+  "author": "DuetRight IT",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

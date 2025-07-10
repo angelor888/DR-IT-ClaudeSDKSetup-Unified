@@ -222,3 +222,26 @@ services:
       - "mcp.type=communication"
       - "mcp.version=2.5.0"
       - "com.centurylinklabs.watchtower.enable=true"
+
+  # ======= MCP Matterport Service =======
+  mcp-matterport:
+    build:
+      context: ../servers/matterport
+      dockerfile: Dockerfile
+    container_name: mcp-matterport-enhanced
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - MCP_SERVICE_NAME=matterport
+      - MCP_LOG_LEVEL=info
+      - MATTERPORT_API_KEY=${MATTERPORT_API_KEY:-}
+      - MATTERPORT_APPLICATION_KEY=${MATTERPORT_APPLICATION_KEY:-}
+    stdin_open: true
+    tty: true
+    ports:
+      - "8091:8091"
+    labels:
+      - "mcp.service=matterport"
+      - "mcp.type=3d-models"
+      - "mcp.version=1.0.0"
+      - "com.centurylinklabs.watchtower.enable=true"
