@@ -15,7 +15,7 @@ async function introspectRequest() {
   
   const query = `
     {
-      __type(name: "FormInput") {
+      __type(name: "QuoteCreateInput") {
         name
         description
         inputFields {

@@ -5,12 +5,29 @@
  */
 
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+
+// Try to load from .env first, then fall back to ~/.config/claude/environment
 require('dotenv').config();
 
-const ACCESS_TOKEN = process.env.JOBBER_ACCESS_TOKEN;
+let ACCESS_TOKEN = process.env.JOBBER_ACCESS_TOKEN;
+
+// If not in .env, try to load from ~/.config/claude/environment
+if (!ACCESS_TOKEN) {
+  const envPath = path.join(os.homedir(), '.config', 'claude', 'environment');
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    const match = envContent.match(/export JOBBER_ACCESS_TOKEN="([^"]+)"/);
+    if (match) {
+      ACCESS_TOKEN = match[1];
+    }
+  }
+}
 
 if (!ACCESS_TOKEN) {
-  console.error('❌ Missing JOBBER_ACCESS_TOKEN in .env file');
+  console.error('❌ Missing JOBBER_ACCESS_TOKEN in .env file or ~/.config/claude/environment');
   process.exit(1);
 }
 
@@ -18,9 +35,9 @@ const JOBBER_API_URL = 'https://api.getjobber.com/api/graphql';
 
 // Create headers
 const headers = {
-  'Authorization': `Bearer ${ACCESS_TOKEN}`,
+  'Authorization': `bearer ${ACCESS_TOKEN}`, // Jobber requires lowercase 'bearer'
   'Content-Type': 'application/json',
-  'X-API-VERSION': '2024-01-08'
+  'X-JOBBER-GRAPHQL-VERSION': '2025-01-20' // Updated to correct header name and version
 };
 
 async function testConnection() {

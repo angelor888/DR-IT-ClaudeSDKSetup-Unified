@@ -1,4 +1,32 @@
 
+# Dependencies
+node_modules/
+
 # Environment files
 .env
 .env.local
+.env.*.local
+
+# Test results
+test-results/
+
+# Temporary files
+*.tmp
+*.log
+
+# Config files with potential secrets
+configs/
+
+# MacOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Build outputs
+dist/
+build/
+
+# Reports with sensitive data
+sky-ai-channel-addition-report.json
