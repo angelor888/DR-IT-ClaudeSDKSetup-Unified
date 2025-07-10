@@ -7,7 +7,7 @@
 const axios = require('axios');
 
 // Load the API key from environment
-const MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || 'REDACTED_API_KEY';
+const MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 async function testGoogleMaps() {
   console.log('🗺️  Testing Google Maps API');
