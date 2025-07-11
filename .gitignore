@@ -30,3 +30,4 @@ build/
 
 # Reports with sensitive data
 sky-ai-channel-addition-report.json
+.env.backup.*
