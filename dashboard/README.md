@@ -61,6 +61,9 @@ dashboard/
 
 - `GET /` - API info
 - `GET /health` - Health check
+- `POST /api/test/firestore/write` - Test Firestore write
+- `GET /api/test/firestore/read` - Test Firestore read
+- `GET /api/test/firestore/status` - Check Firestore connection
 - `GET /api/*` - Service endpoints (coming soon)
 
 ## Phase 1 Status
@@ -68,15 +71,22 @@ dashboard/
 - ✅ TypeScript/Express setup
 - ✅ Basic project structure
 - ✅ Health check endpoint
-- ⏳ Firebase project setup
+- ✅ Firebase project setup & Firestore connected
+- ✅ Basic data models (User, Task, Event)
+- ✅ Firestore test endpoints working
 - ⏳ Service module migration
 - ⏳ Authentication implementation
 - ⏳ Frontend development
 
+## Firebase Setup
+
+1. **Service Account**: Place `firebase-service-account.json` in dashboard directory
+2. **Environment**: Firebase project ID is configured in `.env`
+3. **Collections**: Using `users`, `tasks`, `events`, `jobs`, `automations`
+
 ## Next Steps
 
-1. Set up Firebase project
-2. Migrate existing service scripts to modules
-3. Implement authentication
-4. Build Vue.js frontend
-5. Deploy to Cloud Run
+1. Migrate existing service scripts to modules
+2. Implement Firebase Authentication
+3. Build Vue.js frontend with real-time updates
+4. Deploy to Cloud Run via Firebase

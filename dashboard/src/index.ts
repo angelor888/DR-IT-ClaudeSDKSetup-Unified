@@ -9,6 +9,12 @@ import path from 'path';
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
+// Initialize Firebase
+import { initializeFirebase } from './config/firebase';
+import { logger } from './utils/logger';
+
+const log = logger.child('Server');
+
 // Initialize Express app
 const app: Application = express();
 const PORT = process.env.PORT || 8080;
@@ -43,7 +49,11 @@ app.get('/', (_req: Request, res: Response) => {
   });
 });
 
-// API routes will be added here
+// API routes
+import firestoreTestRoutes from './api/test/firestore';
+app.use('/api/test/firestore', firestoreTestRoutes);
+
+// Service routes will be added here
 // app.use('/api/auth', authRoutes);
 // app.use('/api/jobber', jobberRoutes);
 // app.use('/api/slack', slackRoutes);
@@ -67,9 +77,31 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-  console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Initialize services and start server
+async function startServer() {
+  try {
+    // Initialize Firebase
+    initializeFirebase();
+    log.info('Firebase initialized successfully');
+
+    // Start Express server
+    app.listen(PORT, () => {
+      log.info(`Server running on port ${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+      console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔥 Firebase: Connected to ${process.env.FIREBASE_PROJECT_ID}`);
+      console.log(`🧪 Test endpoints:`);
+      console.log(`   POST http://localhost:${PORT}/api/test/firestore/write`);
+      console.log(`   GET  http://localhost:${PORT}/api/test/firestore/read`);
+      console.log(`   GET  http://localhost:${PORT}/api/test/firestore/status`);
+    });
+  } catch (error) {
+    log.error('Failed to start server', error);
+    console.error('💥 Server startup failed:', error);
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();

@@ -22,10 +22,9 @@ interface EnvironmentConfig {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   
-  // Firebase (to be added when project is created)
-  FIREBASE_PROJECT_ID?: string;
-  FIREBASE_PRIVATE_KEY?: string;
-  FIREBASE_CLIENT_EMAIL?: string;
+  // Firebase
+  FIREBASE_PROJECT_ID: string;
+  FIREBASE_SERVICE_ACCOUNT_PATH: string;
 }
 
 function getEnvVar(key: string, defaultValue?: string): string {
@@ -36,9 +35,6 @@ function getEnvVar(key: string, defaultValue?: string): string {
   return value;
 }
 
-function getOptionalEnvVar(key: string, defaultValue?: string): string | undefined {
-  return process.env[key] || defaultValue;
-}
 
 export const config: EnvironmentConfig = {
   NODE_ENV: getEnvVar('NODE_ENV', 'development'),
@@ -64,8 +60,7 @@ export const config: EnvironmentConfig = {
   GOOGLE_CLIENT_ID: getEnvVar('GOOGLE_CLIENT_ID'),
   GOOGLE_CLIENT_SECRET: getEnvVar('GOOGLE_CLIENT_SECRET'),
   
-  // Firebase (optional for now)
-  FIREBASE_PROJECT_ID: getOptionalEnvVar('FIREBASE_PROJECT_ID'),
-  FIREBASE_PRIVATE_KEY: getOptionalEnvVar('FIREBASE_PRIVATE_KEY'),
-  FIREBASE_CLIENT_EMAIL: getOptionalEnvVar('FIREBASE_CLIENT_EMAIL'),
+  // Firebase
+  FIREBASE_PROJECT_ID: getEnvVar('FIREBASE_PROJECT_ID'),
+  FIREBASE_SERVICE_ACCOUNT_PATH: getEnvVar('FIREBASE_SERVICE_ACCOUNT_PATH', './firebase-service-account.json'),
 };
