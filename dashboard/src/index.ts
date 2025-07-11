@@ -51,10 +51,12 @@ app.get('/', (_req: Request, res: Response) => {
 
 // API routes
 import firestoreTestRoutes from './api/test/firestore';
+import authRoutes from './api/auth/routes';
+
 app.use('/api/test/firestore', firestoreTestRoutes);
+app.use('/api/auth', authRoutes);
 
 // Service routes will be added here
-// app.use('/api/auth', authRoutes);
 // app.use('/api/jobber', jobberRoutes);
 // app.use('/api/slack', slackRoutes);
 // app.use('/api/quickbooks', quickbooksRoutes);
@@ -95,6 +97,11 @@ async function startServer() {
       console.log(`   POST http://localhost:${PORT}/api/test/firestore/write`);
       console.log(`   GET  http://localhost:${PORT}/api/test/firestore/read`);
       console.log(`   GET  http://localhost:${PORT}/api/test/firestore/status`);
+      console.log(`🔐 Auth endpoints:`);
+      console.log(`   POST http://localhost:${PORT}/api/auth/register`);
+      console.log(`   GET  http://localhost:${PORT}/api/auth/user`);
+      console.log(`   PATCH http://localhost:${PORT}/api/auth/user`);
+      console.log(`   POST http://localhost:${PORT}/api/auth/reset-password`);
     });
   } catch (error) {
     log.error('Failed to start server', error);

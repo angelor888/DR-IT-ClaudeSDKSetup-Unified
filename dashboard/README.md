@@ -59,12 +59,27 @@ dashboard/
 
 ## API Endpoints
 
+### Public Endpoints
 - `GET /` - API info
 - `GET /health` - Health check
+
+### Authentication Endpoints
+- `POST /api/auth/register` - Create new user account
+- `GET /api/auth/user` - Get current user (requires auth)
+- `PATCH /api/auth/user` - Update user profile (requires auth)
+- `DELETE /api/auth/user` - Soft delete account (requires auth)
+- `POST /api/auth/reset-password` - Send password reset email
+- `GET /api/auth/health` - Auth service health check
+
+### Test Endpoints
 - `POST /api/test/firestore/write` - Test Firestore write
 - `GET /api/test/firestore/read` - Test Firestore read
 - `GET /api/test/firestore/status` - Check Firestore connection
-- `GET /api/*` - Service endpoints (coming soon)
+
+### Service Endpoints (Coming Soon)
+- `/api/slack/*` - Slack integration
+- `/api/jobber/*` - Jobber integration
+- `/api/quickbooks/*` - QuickBooks integration
 
 ## Phase 1 Status
 
@@ -74,15 +89,30 @@ dashboard/
 - ✅ Firebase project setup & Firestore connected
 - ✅ Basic data models (User, Task, Event)
 - ✅ Firestore test endpoints working
+- ✅ Authentication implementation (Firebase Auth)
+- ✅ Auth middleware for protected routes
 - ⏳ Service module migration
-- ⏳ Authentication implementation
 - ⏳ Frontend development
+- ⏳ Firestore security rules
 
 ## Firebase Setup
 
 1. **Service Account**: Place `firebase-service-account.json` in dashboard directory
 2. **Environment**: Firebase project ID is configured in `.env`
 3. **Collections**: Using `users`, `tasks`, `events`, `jobs`, `automations`
+4. **Authentication**: Firebase Auth enabled with Email/Password
+5. **Client Config**: Available in `src/config/firebase-client.ts`
+
+## Authentication
+
+The API uses Firebase Authentication with Bearer token authorization:
+
+```bash
+# Get a token using Firebase client SDK, then:
+curl -H "Authorization: Bearer <token>" http://localhost:8080/api/auth/user
+```
+
+Test authentication with: `npx ts-node src/scripts/test-auth.ts`
 
 ## Next Steps
 

@@ -68,3 +68,6 @@ export function getCollection(name: keyof typeof collections): admin.firestore.C
 // Helper to create timestamps
 export const timestamp = admin.firestore.FieldValue.serverTimestamp;
 export const FieldValue = admin.firestore.FieldValue;
+
+// Export createUser helper
+export { createUser } from '../models/User';
