@@ -5,8 +5,9 @@ import { Application } from 'express';
 describe('Health Check Endpoints', () => {
   let app: Application;
 
-  beforeAll(() => {
-    app = createApp();
+  beforeAll(async () => {
+    const result = await createApp();
+    app = result.app;
   });
 
   describe('GET /health', () => {

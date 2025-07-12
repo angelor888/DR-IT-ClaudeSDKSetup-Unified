@@ -6,9 +6,10 @@ import { initializeFirebase, getAuth, getFirestore } from '../../config/firebase
 describe('Auth Endpoints Integration Tests', () => {
   let app: Application;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     initializeFirebase();
-    app = createApp();
+    const result = await createApp();
+    app = result.app;
   });
 
   beforeEach(() => {

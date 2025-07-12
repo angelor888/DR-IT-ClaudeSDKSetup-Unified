@@ -23,6 +23,12 @@ async function startServer() {
       servicesEnabled: Object.entries(config.services)
         .filter(([_, service]) => service.enabled)
         .map(([name]) => name),
+      featuresEnabled: {
+        websocket: config.features?.websocket?.enabled !== false,
+        redis: config.features?.redis?.enabled !== false,
+        jobs: config.features?.jobs?.enabled !== false,
+        scheduler: config.features?.scheduler?.enabled !== false,
+      },
     });
 
     // Initialize Firebase
@@ -55,11 +61,11 @@ async function startServer() {
       await initializeMatterportService();
     }
 
-    // Create Express app
-    const app = createApp();
+    // Create Express app with HTTP server for WebSocket support
+    const { server } = await createApp();
 
-    // Start Express server
-    const server = app.listen(PORT, () => {
+    // Start server
+    server.listen(PORT, () => {
       log.info(`Server running on port ${PORT}`);
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`🏥 Health check: http://localhost:${PORT}/health`);
@@ -71,6 +77,21 @@ async function startServer() {
           .map(([name]) => name)
           .join(', ')}`
       );
+
+      // Phase 2B features
+      if (config.features?.websocket?.enabled !== false) {
+        console.log(`🔌 WebSocket: ws://localhost:${PORT}`);
+      }
+      if (config.features?.redis?.enabled !== false) {
+        console.log(`💾 Redis Cache: Connected`);
+      }
+      if (config.features?.jobs?.enabled !== false) {
+        console.log(`⚡ Background Jobs: Active`);
+      }
+      if (config.features?.scheduler?.enabled !== false) {
+        console.log(`⏰ Job Scheduler: Running`);
+      }
+
       console.log(`🧪 Test endpoints:`);
       console.log(`   POST http://localhost:${PORT}/api/test/firestore/write`);
       console.log(`   GET  http://localhost:${PORT}/api/test/firestore/read`);
@@ -104,6 +125,11 @@ async function startServer() {
         console.log(`   GET  http://localhost:${PORT}/api/twilio/calls`);
         console.log(`   GET  http://localhost:${PORT}/api/twilio/account`);
         console.log(`   POST http://localhost:${PORT}/api/twilio/webhooks/*`);
+      }
+
+      if (config.features?.websocket?.enabled !== false) {
+        console.log(`🔌 WebSocket info:`);
+        console.log(`   GET  http://localhost:${PORT}/api/websocket/info`);
       }
     });
 

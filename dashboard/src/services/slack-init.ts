@@ -24,7 +24,8 @@ export async function initializeSlackService(): Promise<void> {
     log.info('Slack service initialized and registered with health monitor');
   } catch (error) {
     log.error('Failed to initialize Slack service', error);
-    throw error;
+    // Don't throw - allow server to start even if Slack fails
+    log.warn('Continuing without Slack service - check SLACK_BOT_TOKEN');
   }
 }
 

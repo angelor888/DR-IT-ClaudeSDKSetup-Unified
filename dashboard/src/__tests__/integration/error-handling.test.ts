@@ -11,8 +11,9 @@ import {
 describe('Error Handling Integration Tests', () => {
   let app: Application;
 
-  beforeAll(() => {
-    app = createApp();
+  beforeAll(async () => {
+    const result = await createApp();
+    app = result.app;
   });
 
   describe('BaseError handling', () => {

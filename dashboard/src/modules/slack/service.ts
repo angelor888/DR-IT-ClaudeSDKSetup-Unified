@@ -262,14 +262,17 @@ export class SlackService {
     team: string;
   }> {
     const response = await this.client.testAuth();
-    if (!response.ok) {
-      throw new Error('Failed to get bot info');
+    log.debug('Auth test response', { response });
+    
+    if (!response || !response.ok || !response.data) {
+      log.error('Auth test failed', { response });
+      throw new Error(response?.error || 'Failed to get bot info - no response data');
     }
     return {
-      userId: response.data!.user_id,
-      botId: response.data!.bot_id,
-      teamId: response.data!.team_id,
-      team: response.data!.team,
+      userId: response.data.user_id,
+      botId: response.data.bot_id,
+      teamId: response.data.team_id,
+      team: response.data.team,
     };
   }
 
@@ -302,4 +305,14 @@ export class SlackService {
   destroy() {
     this.client.destroy();
   }
+}
+
+// Singleton instance
+let slackService: SlackService | null = null;
+
+export function getSlackService(): SlackService {
+  if (!slackService) {
+    slackService = new SlackService();
+  }
+  return slackService;
 }

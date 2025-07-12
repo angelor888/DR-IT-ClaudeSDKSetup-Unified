@@ -1,10 +1,39 @@
 {
   "dependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.13",
     "axios": "^1.10.0",
     "body-parser": "^2.2.0",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "googleapis": "^152.0.0",
-    "twilio": "^5.7.2"
+    "twilio": "^5.7.2",
+    "typescript": "^5.8.3"
+  },
+  "name": "dr-it-claudesdksetup-unified",
+  "version": "1.0.0",
+  "description": "> **One Environment. Two Machines. Zero Confusion.**",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/angelor888/DR-IT-ClaudeSDKSetup-Unified.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/angelor888/DR-IT-ClaudeSDKSetup-Unified/issues"
+  },
+  "homepage": "https://github.com/angelor888/DR-IT-ClaudeSDKSetup-Unified#readme",
+  "devDependencies": {
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2"
   }
 }

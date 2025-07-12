@@ -82,13 +82,16 @@ function loadConfigFromEnv(): DeepPartial<AppConfig> {
     }
   }
 
+  const nodeEnv = (env.NODE_ENV as Environment) || 'development';
+  
   return {
     server: {
       port: parseNumber(env.PORT, 8080),
-      nodeEnv: (env.NODE_ENV as Environment) || 'development',
+      nodeEnv,
       apiVersion: env.API_VERSION || 'v1',
       corsOrigin: parseCorsOrigin(env.CORS_ORIGIN),
       corsCredentials: parseBoolean(env.CORS_CREDENTIALS, true),
+      isProduction: nodeEnv === 'production',
     },
     firebase: firebaseConfig,
     services: {
@@ -177,10 +180,33 @@ function loadConfigFromEnv(): DeepPartial<AppConfig> {
       matterportEnabled: parseBoolean(env.FEATURE_MATTERPORT_ENABLED, false),
       emailEnabled: parseBoolean(env.FEATURE_EMAIL_ENABLED, true),
       twilioEnabled: parseBoolean(env.FEATURE_TWILIO_ENABLED, true),
+      websocket: {
+        enabled: parseBoolean(env.FEATURE_WEBSOCKET_ENABLED, true),
+      },
+      redis: {
+        enabled: parseBoolean(env.FEATURE_REDIS_ENABLED, true),
+      },
+      jobs: {
+        enabled: parseBoolean(env.FEATURE_JOBS_ENABLED, true),
+      },
+      scheduler: {
+        enabled: parseBoolean(env.FEATURE_SCHEDULER_ENABLED, true),
+      },
     },
     production: {
       url: env.PRODUCTION_URL,
       apiUrl: env.PRODUCTION_API_URL,
+    },
+    redis: {
+      url: env.REDIS_URL || 'redis://localhost:6379',
+    },
+    cors: {
+      origin: parseCorsOrigin(env.CORS_ORIGIN),
+    },
+    reports: {
+      dailyRecipients: env.REPORT_DAILY_RECIPIENTS?.split(',') || [],
+      weeklyRecipients: env.REPORT_WEEKLY_RECIPIENTS?.split(',') || [],
+      monthlyRecipients: env.REPORT_MONTHLY_RECIPIENTS?.split(',') || [],
     },
   };
 }
@@ -211,6 +237,9 @@ function mergeConfigs(base: DeepPartial<AppConfig>, override: DeepPartial<AppCon
     development: { ...base.development!, ...override.development } as DevelopmentConfig,
     features: { ...base.features!, ...override.features } as FeatureFlags,
     production: { ...base.production!, ...override.production },
+    redis: { ...base.redis!, ...override.redis },
+    cors: { ...base.cors!, ...override.cors },
+    reports: { ...base.reports!, ...override.reports },
   };
 }
 

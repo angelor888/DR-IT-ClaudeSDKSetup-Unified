@@ -5,7 +5,7 @@ describe('Jobber Integration Tests', () => {
   let app: any;
   const authToken = 'test-jwt-token';
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Mock Firebase auth
     jest
       .spyOn(require('../../middleware/auth'), 'verifyToken')
@@ -14,7 +14,8 @@ describe('Jobber Integration Tests', () => {
         next();
       });
 
-    app = createApp();
+    const result = await createApp();
+    app = result.app;
   });
 
   afterEach(() => {

@@ -198,6 +198,30 @@ export class HealthMonitor extends EventEmitter {
     return this.lastSystemHealth?.services[serviceName];
   }
 
+  async checkServiceHealth(serviceName: string): Promise<ServiceHealthCheck> {
+    const service = this.services.get(serviceName);
+    if (!service) {
+      return {
+        name: serviceName,
+        status: 'unhealthy',
+        message: 'Service not registered',
+        lastCheck: new Date(),
+      };
+    }
+
+    try {
+      const health = await service.checkHealth();
+      return health;
+    } catch (error) {
+      return {
+        name: serviceName,
+        status: 'unhealthy',
+        message: error instanceof Error ? error.message : 'Health check failed',
+        lastCheck: new Date(),
+      };
+    }
+  }
+
   // Express route handler
   async handleHealthRequest(_req: any, res: any): Promise<void> {
     try {

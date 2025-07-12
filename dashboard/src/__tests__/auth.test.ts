@@ -6,9 +6,10 @@ import { getAuth, getFirestore, initializeFirebase } from '../config/firebase';
 describe('Auth Endpoints', () => {
   let app: Application;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     initializeFirebase();
-    app = createApp();
+    const result = await createApp();
+    app = result.app;
   });
 
   describe('POST /api/auth/register', () => {

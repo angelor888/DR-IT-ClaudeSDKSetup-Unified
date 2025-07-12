@@ -137,6 +137,19 @@ export class GoogleService {
   }
 
   /**
+   * Get calendar events - convenience method for sync worker
+   */
+  async getCalendarEvents(calendarId: string, startDate: Date, endDate: Date, userId?: string) {
+    const result = await this.calendar.listEvents({
+      calendarId,
+      timeMin: startDate,
+      timeMax: endDate,
+      userId,
+    });
+    return result.events;
+  }
+
+  /**
    * Health check for the unified Google service
    */
   async checkHealth() {
@@ -224,4 +237,14 @@ export class GoogleService {
       };
     }
   }
+}
+
+// Singleton instance
+let googleService: GoogleService | null = null;
+
+export function getGoogleService(): GoogleService {
+  if (!googleService) {
+    googleService = new GoogleService();
+  }
+  return googleService;
 }

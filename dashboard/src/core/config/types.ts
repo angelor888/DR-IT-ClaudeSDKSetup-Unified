@@ -4,6 +4,7 @@ export interface ServerConfig {
   apiVersion: string;
   corsOrigin: string[];
   corsCredentials: boolean;
+  isProduction?: boolean;
 }
 
 export interface FirebaseConfig {
@@ -113,6 +114,18 @@ export interface FeatureFlags {
   matterportEnabled: boolean;
   emailEnabled: boolean;
   twilioEnabled: boolean;
+  websocket?: {
+    enabled?: boolean;
+  };
+  redis?: {
+    enabled?: boolean;
+  };
+  jobs?: {
+    enabled?: boolean;
+  };
+  scheduler?: {
+    enabled?: boolean;
+  };
 }
 
 export interface AppConfig {
@@ -136,6 +149,17 @@ export interface AppConfig {
   production: {
     url?: string;
     apiUrl?: string;
+  };
+  redis?: {
+    url?: string;
+  };
+  cors?: {
+    origin?: string | string[];
+  };
+  reports?: {
+    dailyRecipients?: string[];
+    weeklyRecipients?: string[];
+    monthlyRecipients?: string[];
   };
 }
 

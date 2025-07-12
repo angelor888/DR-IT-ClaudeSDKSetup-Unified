@@ -5,8 +5,9 @@ import { createApp } from '../../app';
 describe('Application Integration Tests', () => {
   let app: Application;
 
-  beforeAll(() => {
-    app = createApp();
+  beforeAll(async () => {
+    const result = await createApp();
+    app = result.app;
   });
 
   describe('Request ID Middleware', () => {

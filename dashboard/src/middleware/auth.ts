@@ -4,23 +4,7 @@ import { logger } from '../utils/logger';
 
 const log = logger.child('AuthMiddleware');
 
-// Extend Express Request to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        uid: string;
-        email?: string;
-        emailVerified?: boolean;
-        displayName?: string;
-        photoURL?: string;
-        phoneNumber?: string;
-        disabled?: boolean;
-        customClaims?: Record<string, any>;
-      };
-    }
-  }
-}
+// User interface is declared in types/express.d.ts
 
 /**
  * Middleware to verify Firebase ID tokens
@@ -50,17 +34,13 @@ export async function verifyToken(req: Request, res: Response, next: NextFunctio
 
     // Attach user to request
     req.user = {
-      uid: userRecord.uid,
-      email: userRecord.email,
-      emailVerified: userRecord.emailVerified,
-      displayName: userRecord.displayName,
-      photoURL: userRecord.photoURL,
-      phoneNumber: userRecord.phoneNumber,
-      disabled: userRecord.disabled,
-      customClaims: userRecord.customClaims,
+      ...decodedToken,
+      id: decodedToken.uid, // Add alias for uid
+      roles: userRecord.customClaims?.roles || [],
+      teamId: userRecord.customClaims?.teamId,
     };
 
-    log.debug('User authenticated', { uid: req.user.uid, email: req.user.email });
+    log.debug('User authenticated', { uid: req.user.uid, email: req.user?.email });
     next();
   } catch (error: any) {
     log.error('Token verification failed', error);
@@ -118,14 +98,10 @@ export async function optionalAuth(
     const userRecord = await getAuth().getUser(decodedToken.uid);
 
     req.user = {
-      uid: userRecord.uid,
-      email: userRecord.email,
-      emailVerified: userRecord.emailVerified,
-      displayName: userRecord.displayName,
-      photoURL: userRecord.photoURL,
-      phoneNumber: userRecord.phoneNumber,
-      disabled: userRecord.disabled,
-      customClaims: userRecord.customClaims,
+      ...decodedToken,
+      id: decodedToken.uid, // Add alias for uid
+      roles: userRecord.customClaims?.roles || [],
+      teamId: userRecord.customClaims?.teamId,
     };
   } catch (error) {
     // Invalid token, continue without user

@@ -16,7 +16,7 @@ describe('Slack Integration Tests', () => {
   let mockSlackClient: any;
   const authToken = 'test-jwt-token';
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Create mock Slack client
     mockSlackClient = {
       checkHealth: jest.fn().mockResolvedValue({
@@ -109,7 +109,8 @@ describe('Slack Integration Tests', () => {
         next();
       });
 
-    app = createApp();
+    const result = await createApp();
+    app = result.app;
   });
 
   afterEach(() => {

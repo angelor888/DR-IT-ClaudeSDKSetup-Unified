@@ -1,11 +1,17 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
-import { apiLimiter } from './middleware/rateLimiter';
+import { createServer } from 'http';
 import { requestIdMiddleware, errorHandler, notFoundHandler } from './core/middleware';
 import { config } from './core/config';
+
+// Security imports
+import { securityHeaders, additionalSecurityHeaders, corsOptions } from './security/headers';
+import { rateLimiters } from './security/rate-limiter';
+
+// Cache middleware
+import { cacheServiceHealth } from './cache/middleware';
 
 // API routes
 import firestoreTestRoutes from './api/test/firestore';
@@ -13,36 +19,55 @@ import authRoutes from './api/auth/routes';
 import healthRoutes from './api/health/routes';
 import documentationRoutes from './api/documentation/routes';
 
-export function createApp(): Application {
+// Phase 2B features
+import { initializeWebSocket } from './realtime/websocket';
+import { initializeRedis } from './cache/redis';
+import { initializeJobQueues } from './jobs/queue';
+import { initializeScheduler } from './jobs/scheduler';
+
+export async function createApp(): Promise<{ app: Application; server: any }> {
   const app: Application = express();
+  const server = createServer(app);
+
+  // Initialize Phase 2B services
+  if (config.features?.websocket?.enabled !== false) {
+    initializeWebSocket(server);
+  }
+
+  if (config.features?.redis?.enabled !== false) {
+    await initializeRedis();
+  }
+
+  if (config.features?.jobs?.enabled !== false) {
+    initializeJobQueues();
+    
+    if (config.features?.scheduler?.enabled !== false) {
+      const scheduler = initializeScheduler();
+      scheduler.start();
+    }
+  }
 
   // Request ID should be first
   app.use(requestIdMiddleware);
 
   // Security middleware
-  app.use(helmet());
-  app.use(
-    cors({
-      origin: config.server.corsOrigin,
-      credentials: config.server.corsCredentials,
-    })
-  );
+  app.use(securityHeaders);
+  app.use(additionalSecurityHeaders);
+  app.use(cors(corsOptions));
   app.use(compression());
 
   // Request logging with request ID
   if (config.server.nodeEnv !== 'test' && config.development.logRequests) {
-    morgan.token('request-id', (req: Request) => req.id);
-    app.use(morgan(':request-id :method :url :status :response-time ms'));
+    morgan.token('request-id', (req: any) => req.id);
+    morgan.token('user-id', (req: any) => req.user?.id || 'anonymous');
+    app.use(morgan(':request-id :user-id :method :url :status :response-time ms'));
   }
 
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-  // Apply rate limiting to all API routes
-  app.use('/api/', apiLimiter);
-
-  // Health check endpoint
-  app.get('/health', (req: Request, res: Response) => {
+  // Health check endpoint (no rate limiting)
+  app.get('/health', cacheServiceHealth, (req: Request, res: Response) => {
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -54,7 +79,7 @@ export function createApp(): Application {
   });
 
   // Root endpoint
-  app.get('/', (req: Request, res: Response) => {
+  app.get('/', rateLimiters.api, (req: Request, res: Response) => {
     res.json({
       message: 'DuetRight Dashboard API',
       version: config.server.apiVersion,
@@ -62,33 +87,52 @@ export function createApp(): Application {
         health: '/health',
         api: `/api/${config.server.apiVersion}/*`,
         documentation: `/api/${config.server.apiVersion}/docs`,
+        websocket: config.features?.websocket?.enabled !== false ? '/socket.io' : undefined,
       },
       requestId: req.id,
     });
   });
 
   // Documentation (available in all environments)
-  app.use(`/api/${config.server.apiVersion}/docs`, documentationRoutes);
+  app.use(`/api/${config.server.apiVersion}/docs`, rateLimiters.api, documentationRoutes);
 
-  // API routes
-  app.use('/api/health', healthRoutes);
-  app.use('/api/test/firestore', firestoreTestRoutes);
-  app.use('/api/auth', authRoutes);
+  // API routes with specific rate limiters
+  app.use('/api/health', rateLimiters.health, healthRoutes);
+  app.use('/api/test/firestore', rateLimiters.api, firestoreTestRoutes);
+  app.use('/api/auth', rateLimiters.auth, authRoutes);
 
-  // Service routes (only if enabled)
+  // Service routes (only if enabled) with API rate limiting
   if (config.services.slack.enabled) {
     const slackRoutes = require('./api/slack').default;
-    app.use('/api/slack', slackRoutes);
+    app.use('/api/slack', rateLimiters.api, slackRoutes);
   }
 
   if (config.services.jobber.enabled) {
     const jobberRoutes = require('./api/jobber').default;
-    app.use('/api/jobber', jobberRoutes);
+    app.use('/api/jobber', rateLimiters.api, jobberRoutes);
   }
 
   if (config.services.twilio.enabled) {
     const twilioRoutes = require('./api/twilio').default;
-    app.use('/api/twilio', twilioRoutes);
+    app.use('/api/twilio', rateLimiters.api, twilioRoutes);
+  }
+
+  // Job management routes (if enabled)
+  if (config.features?.jobs?.enabled !== false) {
+    const jobRoutes = require('./api/jobs').default;
+    app.use('/api/jobs', rateLimiters.api, jobRoutes);
+  }
+
+  // WebSocket info endpoint
+  if (config.features?.websocket?.enabled !== false) {
+    app.get('/api/websocket/info', rateLimiters.api, (req: Request, res: Response) => {
+      res.json({
+        enabled: true,
+        url: `${req.protocol}://${req.get('host')}`,
+        transports: ['websocket', 'polling'],
+        path: '/socket.io',
+      });
+    });
   }
 
   // 404 handler
@@ -97,5 +141,5 @@ export function createApp(): Application {
   // Global error handler (must be last)
   app.use(errorHandler);
 
-  return app;
+  return { app, server };
 }

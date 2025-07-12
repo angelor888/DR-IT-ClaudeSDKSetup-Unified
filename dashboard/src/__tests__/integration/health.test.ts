@@ -7,8 +7,9 @@ describe('Health Endpoints Integration Tests', () => {
   let app: Application;
   let healthMonitor: ReturnType<typeof getHealthMonitor>;
 
-  beforeAll(() => {
-    app = createApp();
+  beforeAll(async () => {
+    const result = await createApp();
+    app = result.app;
     healthMonitor = getHealthMonitor();
   });
 

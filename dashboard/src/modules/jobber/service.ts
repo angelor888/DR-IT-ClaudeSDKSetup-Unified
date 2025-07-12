@@ -362,3 +362,13 @@ export class JobberService {
     }
   }
 }
+
+// Singleton instance
+let jobberService: JobberService | null = null;
+
+export function getJobberService(): JobberService {
+  if (!jobberService) {
+    jobberService = new JobberService();
+  }
+  return jobberService;
+}
