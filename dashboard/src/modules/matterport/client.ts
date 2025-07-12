@@ -1,6 +1,6 @@
 // Matterport API client wrapper
-import axios, { AxiosInstance } from 'axios';
-import { logger } from '../../utils/logger';
+import { BaseService, BaseServiceOptions } from '../../core/services/base.service';
+import { config } from '../../core/config';
 import {
   MatterportModel,
   MatterportSpace,
@@ -12,33 +12,45 @@ import {
   MatterportApiResponse,
 } from './types';
 
-const log = logger.child('MatterportClient');
-
-export class MatterportClient {
-  private api: AxiosInstance;
+export class MatterportClient extends BaseService {
   private apiKey: string;
 
-  constructor(apiKey: string = process.env.MATTERPORT_API_KEY || '') {
-    this.apiKey = apiKey;
-    this.api = axios.create({
+  constructor(options: Partial<BaseServiceOptions> = {}) {
+    // Get Matterport configuration
+    const matterportConfig = config.services.matterport;
+    
+    if (!matterportConfig.apiKey) {
+      throw new Error('Matterport API key is required. Please provide MATTERPORT_API_KEY.');
+    }
+
+    // Initialize BaseService with Matterport configuration
+    super({
+      name: 'matterport',
       baseURL: 'https://api.matterport.com/api/v1',
+      timeout: options.timeout || 30000,
       headers: {
-        Authorization: `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${matterportConfig.apiKey}`,
         'Content-Type': 'application/json',
+        ...options.headers,
       },
+      circuitBreaker: {
+        failureThreshold: 5,
+        resetTimeout: 60000,
+        monitoringPeriod: 60000,
+        ...options.circuitBreaker,
+      },
+      retry: {
+        maxAttempts: 3,
+        initialDelay: 1000,
+        maxDelay: 30000,
+        factor: 2,
+        jitter: true,
+        ...options.retry,
+      },
+      ...options,
     });
 
-    // Add response interceptor for error handling
-    this.api.interceptors.response.use(
-      response => response,
-      error => {
-        log.error('Matterport API error', {
-          status: error.response?.status,
-          data: error.response?.data,
-        });
-        throw error;
-      }
-    );
+    this.apiKey = matterportConfig.apiKey;
   }
 
   // Model operations
@@ -53,32 +65,32 @@ export class MatterportClient {
     } = {}
   ): Promise<MatterportApiResponse<MatterportModel[]>> {
     try {
-      const response = await this.api.get('/models', {
-        params: {
-          page: options.page || 1,
-          limit: options.limit || 20,
-          status: options.status,
-          visibility: options.visibility,
-          q: options.search,
-          tags: options.tags?.join(','),
-        },
+      const params = new URLSearchParams({
+        page: (options.page || 1).toString(),
+        limit: (options.limit || 20).toString(),
+        ...(options.status && { status: options.status }),
+        ...(options.visibility && { visibility: options.visibility }),
+        ...(options.search && { q: options.search }),
+        ...(options.tags && { tags: options.tags.join(',') }),
       });
+
+      const response = await this.get(`/models?${params}`);
       return response.data;
     } catch (error) {
-      log.error('Failed to list models', error);
+      this.log.error('Failed to list models', error);
       throw error;
     }
   }
 
   async getModel(modelId: string): Promise<MatterportModel | null> {
     try {
-      const response = await this.api.get(`/models/${modelId}`);
+      const response = await this.get(`/models/${modelId}`);
       return response.data.data;
     } catch (error: any) {
       if (error.response?.status === 404) {
         return null;
       }
-      log.error(`Failed to get model ${modelId}`, error);
+      this.log.error(`Failed to get model ${modelId}`, error);
       throw error;
     }
   }
@@ -95,19 +107,19 @@ export class MatterportClient {
     }
   ): Promise<MatterportModel> {
     try {
-      const response = await this.api.patch(`/models/${modelId}`, updates);
+      const response = await this.patch(`/models/${modelId}`, updates);
       return response.data.data;
     } catch (error) {
-      log.error(`Failed to update model ${modelId}`, error);
+      this.log.error(`Failed to update model ${modelId}`, error);
       throw error;
     }
   }
 
   async deleteModel(modelId: string): Promise<void> {
     try {
-      await this.api.delete(`/models/${modelId}`);
+      await this.delete(`/models/${modelId}`);
     } catch (error) {
-      log.error(`Failed to delete model ${modelId}`, error);
+      this.log.error(`Failed to delete model ${modelId}`, error);
       throw error;
     }
   }
@@ -115,10 +127,10 @@ export class MatterportClient {
   // Space operations
   async listSpaces(modelId: string): Promise<MatterportSpace[]> {
     try {
-      const response = await this.api.get(`/models/${modelId}/spaces`);
+      const response = await this.get(`/models/${modelId}/spaces`);
       return response.data.data || [];
     } catch (error) {
-      log.error(`Failed to list spaces for model ${modelId}`, error);
+      this.log.error(`Failed to list spaces for model ${modelId}`, error);
       throw error;
     }
   }
@@ -126,10 +138,10 @@ export class MatterportClient {
   // Measurement operations
   async listMeasurements(modelId: string): Promise<MatterportMeasurement[]> {
     try {
-      const response = await this.api.get(`/models/${modelId}/measurements`);
+      const response = await this.get(`/models/${modelId}/measurements`);
       return response.data.data || [];
     } catch (error) {
-      log.error(`Failed to list measurements for model ${modelId}`, error);
+      this.log.error(`Failed to list measurements for model ${modelId}`, error);
       throw error;
     }
   }
@@ -143,19 +155,19 @@ export class MatterportClient {
     }
   ): Promise<MatterportMeasurement> {
     try {
-      const response = await this.api.post(`/models/${modelId}/measurements`, measurement);
+      const response = await this.post(`/models/${modelId}/measurements`, measurement);
       return response.data.data;
     } catch (error) {
-      log.error(`Failed to create measurement for model ${modelId}`, error);
+      this.log.error(`Failed to create measurement for model ${modelId}`, error);
       throw error;
     }
   }
 
   async deleteMeasurement(modelId: string, measurementId: string): Promise<void> {
     try {
-      await this.api.delete(`/models/${modelId}/measurements/${measurementId}`);
+      await this.delete(`/models/${modelId}/measurements/${measurementId}`);
     } catch (error) {
-      log.error(`Failed to delete measurement ${measurementId}`, error);
+      this.log.error(`Failed to delete measurement ${measurementId}`, error);
       throw error;
     }
   }
@@ -163,10 +175,10 @@ export class MatterportClient {
   // Annotation operations
   async listAnnotations(modelId: string): Promise<MatterportAnnotation[]> {
     try {
-      const response = await this.api.get(`/models/${modelId}/annotations`);
+      const response = await this.get(`/models/${modelId}/annotations`);
       return response.data.data || [];
     } catch (error) {
-      log.error(`Failed to list annotations for model ${modelId}`, error);
+      this.log.error(`Failed to list annotations for model ${modelId}`, error);
       throw error;
     }
   }
@@ -183,10 +195,10 @@ export class MatterportClient {
     }
   ): Promise<MatterportAnnotation> {
     try {
-      const response = await this.api.post(`/models/${modelId}/annotations`, annotation);
+      const response = await this.post(`/models/${modelId}/annotations`, annotation);
       return response.data.data;
     } catch (error) {
-      log.error(`Failed to create annotation for model ${modelId}`, error);
+      this.log.error(`Failed to create annotation for model ${modelId}`, error);
       throw error;
     }
   }
@@ -197,22 +209,22 @@ export class MatterportClient {
     updates: Partial<MatterportAnnotation>
   ): Promise<MatterportAnnotation> {
     try {
-      const response = await this.api.patch(
+      const response = await this.patch(
         `/models/${modelId}/annotations/${annotationId}`,
         updates
       );
       return response.data.data;
     } catch (error) {
-      log.error(`Failed to update annotation ${annotationId}`, error);
+      this.log.error(`Failed to update annotation ${annotationId}`, error);
       throw error;
     }
   }
 
   async deleteAnnotation(modelId: string, annotationId: string): Promise<void> {
     try {
-      await this.api.delete(`/models/${modelId}/annotations/${annotationId}`);
+      await this.delete(`/models/${modelId}/annotations/${annotationId}`);
     } catch (error) {
-      log.error(`Failed to delete annotation ${annotationId}`, error);
+      this.log.error(`Failed to delete annotation ${annotationId}`, error);
       throw error;
     }
   }
@@ -220,10 +232,10 @@ export class MatterportClient {
   // Tour operations
   async listTours(modelId: string): Promise<MatterportTour[]> {
     try {
-      const response = await this.api.get(`/models/${modelId}/tours`);
+      const response = await this.get(`/models/${modelId}/tours`);
       return response.data.data || [];
     } catch (error) {
-      log.error(`Failed to list tours for model ${modelId}`, error);
+      this.log.error(`Failed to list tours for model ${modelId}`, error);
       throw error;
     }
   }
@@ -239,10 +251,10 @@ export class MatterportClient {
     }
   ): Promise<MatterportTour> {
     try {
-      const response = await this.api.post(`/models/${modelId}/tours`, tour);
+      const response = await this.post(`/models/${modelId}/tours`, tour);
       return response.data.data;
     } catch (error) {
-      log.error(`Failed to create tour for model ${modelId}`, error);
+      this.log.error(`Failed to create tour for model ${modelId}`, error);
       throw error;
     }
   }
@@ -253,19 +265,19 @@ export class MatterportClient {
     updates: Partial<MatterportTour>
   ): Promise<MatterportTour> {
     try {
-      const response = await this.api.patch(`/models/${modelId}/tours/${tourId}`, updates);
+      const response = await this.patch(`/models/${modelId}/tours/${tourId}`, updates);
       return response.data.data;
     } catch (error) {
-      log.error(`Failed to update tour ${tourId}`, error);
+      this.log.error(`Failed to update tour ${tourId}`, error);
       throw error;
     }
   }
 
   async deleteTour(modelId: string, tourId: string): Promise<void> {
     try {
-      await this.api.delete(`/models/${modelId}/tours/${tourId}`);
+      await this.delete(`/models/${modelId}/tours/${tourId}`);
     } catch (error) {
-      log.error(`Failed to delete tour ${tourId}`, error);
+      this.log.error(`Failed to delete tour ${tourId}`, error);
       throw error;
     }
   }
@@ -286,29 +298,29 @@ export class MatterportClient {
     }
   ): Promise<MatterportShare> {
     try {
-      const response = await this.api.post(`/models/${modelId}/shares`, share);
+      const response = await this.post(`/models/${modelId}/shares`, share);
       return response.data.data;
     } catch (error) {
-      log.error(`Failed to create share for model ${modelId}`, error);
+      this.log.error(`Failed to create share for model ${modelId}`, error);
       throw error;
     }
   }
 
   async listShares(modelId: string): Promise<MatterportShare[]> {
     try {
-      const response = await this.api.get(`/models/${modelId}/shares`);
+      const response = await this.get(`/models/${modelId}/shares`);
       return response.data.data || [];
     } catch (error) {
-      log.error(`Failed to list shares for model ${modelId}`, error);
+      this.log.error(`Failed to list shares for model ${modelId}`, error);
       throw error;
     }
   }
 
   async deleteShare(modelId: string, shareId: string): Promise<void> {
     try {
-      await this.api.delete(`/models/${modelId}/shares/${shareId}`);
+      await this.delete(`/models/${modelId}/shares/${shareId}`);
     } catch (error) {
-      log.error(`Failed to delete share ${shareId}`, error);
+      this.log.error(`Failed to delete share ${shareId}`, error);
       throw error;
     }
   }
@@ -316,10 +328,10 @@ export class MatterportClient {
   // Webhook operations
   async listWebhooks(): Promise<MatterportWebhook[]> {
     try {
-      const response = await this.api.get('/webhooks');
+      const response = await this.get('/webhooks');
       return response.data.data || [];
     } catch (error) {
-      log.error('Failed to list webhooks', error);
+      this.log.error('Failed to list webhooks', error);
       throw error;
     }
   }
@@ -330,10 +342,10 @@ export class MatterportClient {
     secret?: string;
   }): Promise<MatterportWebhook> {
     try {
-      const response = await this.api.post('/webhooks', webhook);
+      const response = await this.post('/webhooks', webhook);
       return response.data.data;
     } catch (error) {
-      log.error('Failed to create webhook', error);
+      this.log.error('Failed to create webhook', error);
       throw error;
     }
   }
@@ -343,19 +355,19 @@ export class MatterportClient {
     updates: Partial<MatterportWebhook>
   ): Promise<MatterportWebhook> {
     try {
-      const response = await this.api.patch(`/webhooks/${webhookId}`, updates);
+      const response = await this.patch(`/webhooks/${webhookId}`, updates);
       return response.data.data;
     } catch (error) {
-      log.error(`Failed to update webhook ${webhookId}`, error);
+      this.log.error(`Failed to update webhook ${webhookId}`, error);
       throw error;
     }
   }
 
   async deleteWebhook(webhookId: string): Promise<void> {
     try {
-      await this.api.delete(`/webhooks/${webhookId}`);
+      await this.delete(`/webhooks/${webhookId}`);
     } catch (error) {
-      log.error(`Failed to delete webhook ${webhookId}`, error);
+      this.log.error(`Failed to delete webhook ${webhookId}`, error);
       throw error;
     }
   }
@@ -388,5 +400,42 @@ export class MatterportClient {
     const height = options.height || 600;
 
     return `<iframe width="${width}" height="${height}" src="https://my.matterport.com/show/?${params.toString()}" frameborder="0" allowfullscreen allow="xr-spatial-tracking"></iframe>`;
+  }
+
+  /**
+   * Health check implementation for Matterport API
+   */
+  async checkHealth() {
+    try {
+      const startTime = Date.now();
+      
+      // Use a simple API call to check if Matterport API is accessible
+      await this.get('/models?limit=1');
+      
+      const responseTime = Date.now() - startTime;
+      
+      return {
+        name: 'matterport',
+        status: 'healthy' as const,
+        message: 'Matterport API accessible',
+        lastCheck: new Date(),
+        responseTime,
+        details: {
+          baseURL: this.options.baseURL,
+          hasValidApiKey: !!this.apiKey,
+        },
+      };
+    } catch (error) {
+      return {
+        name: 'matterport',
+        status: 'unhealthy' as const,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        lastCheck: new Date(),
+        details: {
+          baseURL: this.options.baseURL,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
+    }
   }
 }

@@ -338,4 +338,27 @@ export class JobberService {
       throw error;
     }
   }
+
+  /**
+   * Health check for the Jobber service
+   */
+  async checkHealth() {
+    try {
+      // Try to get an authenticated client
+      const client = await this.getAuthenticatedClient();
+      return await client.checkHealth();
+    } catch (authError) {
+      // If authentication fails, report as degraded but not completely unhealthy
+      return {
+        name: 'jobber',
+        status: 'degraded' as const,
+        message: 'OAuth token not available or expired',
+        lastCheck: new Date(),
+        details: {
+          authError: authError instanceof Error ? authError.message : 'Unknown auth error',
+          needsAuthentication: true,
+        },
+      };
+    }
+  }
 }

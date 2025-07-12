@@ -492,4 +492,51 @@ export class JobberClient extends BaseService {
       }
     );
   }
+
+  /**
+   * Health check implementation for Jobber GraphQL API
+   */
+  async checkHealth() {
+    try {
+      const startTime = Date.now();
+      
+      // Use a simple introspection query to check if GraphQL API is accessible
+      const introspectionQuery = `
+        query {
+          __schema {
+            types {
+              name
+            }
+          }
+        }
+      `;
+      
+      await this.query(introspectionQuery);
+      
+      const responseTime = Date.now() - startTime;
+      
+      return {
+        name: 'jobber',
+        status: 'healthy' as const,
+        message: 'Jobber GraphQL API accessible',
+        lastCheck: new Date(),
+        responseTime,
+        details: {
+          baseURL: this.options.baseURL,
+          hasValidToken: true,
+        },
+      };
+    } catch (error) {
+      return {
+        name: 'jobber',
+        status: 'unhealthy' as const,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        lastCheck: new Date(),
+        details: {
+          baseURL: this.options.baseURL,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
+    }
+  }
 }

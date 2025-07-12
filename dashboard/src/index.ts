@@ -7,6 +7,8 @@ import { getHealthMonitor } from './core/services/health-monitor';
 import { initializeSlackService, shutdownSlackService } from './services/slack-init';
 import { initializeJobberService, shutdownJobberService } from './services/jobber-init';
 import { initializeTwilioService, shutdownTwilioService } from './services/twilio-init';
+import { initializeGoogleService, shutdownGoogleService } from './services/google-init';
+import { initializeMatterportService, shutdownMatterportService } from './services/matterport-init';
 
 const config = getConfig();
 const log = logger.child('Server');
@@ -43,6 +45,14 @@ async function startServer() {
 
     if (config.services.twilio.enabled) {
       await initializeTwilioService();
+    }
+
+    if (config.services.google.enabled) {
+      await initializeGoogleService();
+    }
+
+    if (config.services.matterport.enabled) {
+      await initializeMatterportService();
     }
 
     // Create Express app
@@ -119,6 +129,14 @@ async function startServer() {
 
       if (config.services.twilio.enabled) {
         await shutdownTwilioService();
+      }
+
+      if (config.services.google.enabled) {
+        await shutdownGoogleService();
+      }
+
+      if (config.services.matterport.enabled) {
+        await shutdownMatterportService();
       }
 
       process.exit(0);

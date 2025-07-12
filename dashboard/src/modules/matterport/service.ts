@@ -11,8 +11,8 @@ export class MatterportService {
   private client: MatterportClient;
   private db = getFirestore();
 
-  constructor(apiKey?: string) {
-    this.client = new MatterportClient(apiKey);
+  constructor() {
+    this.client = new MatterportClient();
   }
 
   // Model management
@@ -423,6 +423,25 @@ export class MatterportService {
     } catch (error) {
       log.error('Failed to link model to Jobber property', error);
       throw error;
+    }
+  }
+
+  /**
+   * Health check for the Matterport service
+   */
+  async checkHealth() {
+    try {
+      return await this.client.checkHealth();
+    } catch (error) {
+      return {
+        name: 'matterport',
+        status: 'unhealthy' as const,
+        message: 'Matterport service unavailable',
+        lastCheck: new Date(),
+        details: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
     }
   }
 }

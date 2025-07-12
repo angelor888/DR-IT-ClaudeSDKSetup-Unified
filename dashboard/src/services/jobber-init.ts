@@ -7,31 +7,47 @@ const log = logger.child('JobberInit');
 
 export async function initializeJobberService(): Promise<void> {
   if (!config.services.jobber.enabled) {
-    log.info('Jobber service is disabled');
+    log.info('Jobber service is disabled, skipping initialization');
     return;
   }
 
   try {
+    log.info('Initializing Jobber service...');
+    
     const jobberService = new JobberService();
     const healthMonitor = getHealthMonitor();
 
-    // Try to get an authenticated client for health monitoring
-    // If no valid token exists, this will fail gracefully
-    try {
-      const client = await jobberService.getAuthenticatedClient();
-      healthMonitor.registerService(client);
-      log.info('Jobber service initialized and registered with health monitor');
-    } catch (authError) {
-      log.warn(
-        'Jobber service initialized but no valid OAuth token available for health monitoring',
-        { error: authError }
-      );
-      log.info('Health monitoring will be registered when first OAuth token is obtained');
+    // Check initial health status
+    const healthCheck = await jobberService.checkHealth();
+    
+    if (healthCheck.status === 'healthy' || healthCheck.status === 'degraded') {
+      log.info('Jobber service initialized successfully', {
+        status: healthCheck.status,
+        message: healthCheck.message,
+        needsAuth: (healthCheck.details as any)?.needsAuthentication || false,
+      });
+      
+      // Create a health check wrapper that maintains the service interface
+      const serviceHealthChecker = {
+        name: 'jobber',
+        checkHealth: () => jobberService.checkHealth(),
+      };
+      
+      // Register for health monitoring
+      healthMonitor.registerService(serviceHealthChecker as any);
+    } else {
+      log.error('Jobber service failed health check during initialization', {
+        status: healthCheck.status,
+        message: healthCheck.message,
+      });
     }
   } catch (error) {
-    log.error('Failed to initialize Jobber service', error);
-    // Don't throw - service should still start even if Jobber fails
-    log.warn('Continuing without Jobber service');
+    log.error('Failed to initialize Jobber service', {
+      error: error instanceof Error ? error.message : error,
+    });
+    
+    // Don't throw error to prevent app startup failure
+    // Jobber is not critical for core functionality
   }
 }
 
