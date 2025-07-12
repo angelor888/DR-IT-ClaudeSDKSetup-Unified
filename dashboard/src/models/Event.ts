@@ -29,7 +29,8 @@ export type EventCategory =
   | 'task'
   | 'matterport'
   | 'gmail'
-  | 'drive';
+  | 'drive'
+  | 'grok';
 
 export interface Event {
   id: string;

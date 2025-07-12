@@ -101,6 +101,14 @@ All 27 servers including:
 - 27 MCP servers configured
 - Machine-aware settings active
 
+### Critical Workflow Reminder
+**NEVER violate Rule #4: Git checkpoint after EVERY success**
+- Correct: Build component → Test (`npx tsc --noEmit`) → Commit → Next component
+- Wrong: Build all components → Test once → Commit everything
+- Each component MUST have its own git checkpoint for safe rollback
+- Test-and-commit cycle prevents losing multiple components' work
+- Enables precise problem isolation and rollback capability
+
 ## Slack Channel Guidelines
 
 ### Channel Usage Rules
@@ -121,5 +129,53 @@ All 27 servers including:
 - Error discussions go to #megan-morgan-sync
 - Final documentation goes to #it-report
 - This keeps channels organized and searchable
+
+## Automatic Slack Reporting Workflow
+
+### Implementation Reports
+**ALWAYS post implementation reports to #it-report after completing major features:**
+
+1. **When to Auto-Post:**
+   - After successful feature implementation and commit
+   - Phase completions (Phase 3A, 3B, etc.)
+   - Major module implementations (Customer Management, Job Management, etc.)
+   - System integrations and API implementations
+   - Testing and deployment milestones
+
+2. **Report Format for Slack:**
+   ```
+   🎯 **[Feature Name] - Implementation Complete**
+   
+   📋 **Project Summary**
+   [Brief description of what was accomplished]
+   
+   🏗️ **Components Built**
+   • Component 1 - Description
+   • Component 2 - Description
+   
+   ⚡ **Technical Features**
+   • Feature highlights
+   • Performance improvements
+   • Quality metrics
+   
+   📝 **Git Details**
+   • **Commit**: `commit-hash`
+   • **Status**: ✅ Complete
+   
+   🚀 **Next Phase**
+   [What's coming next]
+   ```
+
+3. **Slack Integration Method:**
+   - Use existing SlackService and `/api/slack/messages` endpoint
+   - Target channel: `#it-report`
+   - Include proper formatting with emojis and structure
+   - Handle authentication via existing middleware
+
+### Memory Persistence
+- This workflow is now a core part of the development process
+- Auto-posting ensures immediate team visibility
+- Maintains comprehensive project documentation
+- Supports cross-session continuity and knowledge retention
 
 <!-- Auto-updated by memory watch -->

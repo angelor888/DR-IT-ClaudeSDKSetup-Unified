@@ -84,6 +84,16 @@ export interface CalendlyConfig {
   baseUrl?: string;
 }
 
+export interface GrokConfig {
+  enabled: boolean;
+  apiKey?: string;
+  baseUrl?: string;
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
+  streamingEnabled?: boolean;
+}
+
 export interface SecurityConfig {
   jwtSecret?: string;
   jwtExpiresIn?: string;
@@ -124,6 +134,7 @@ export interface FeatureFlags {
   emailEnabled: boolean;
   twilioEnabled: boolean;
   calendlyEnabled: boolean;
+  grokEnabled: boolean;
   websocket?: {
     enabled?: boolean;
   };
@@ -150,6 +161,7 @@ export interface AppConfig {
     email: EmailConfig;
     twilio: TwilioConfig;
     calendly: CalendlyConfig;
+    grok: GrokConfig;
   };
   security: SecurityConfig;
   cache: CacheConfig;

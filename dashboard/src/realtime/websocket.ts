@@ -5,11 +5,13 @@ import { config } from '../core/config';
 import { authenticateSocket } from './middleware/auth';
 import { EventHandlers } from './handlers';
 import { EventTypes, SocketWithAuth } from './types';
+import { GrokService } from '../modules/grok';
 
 export class WebSocketServer {
   private io: SocketIOServer;
   private readonly log = logger.child('WebSocket');
   private readonly handlers: EventHandlers;
+  private grokService?: GrokService;
 
   constructor(httpServer: HttpServer) {
     this.io = new SocketIOServer(httpServer, {
@@ -25,6 +27,18 @@ export class WebSocketServer {
     this.handlers = new EventHandlers(this.io);
     this.setupMiddleware();
     this.setupConnectionHandlers();
+    
+    // Initialize Grok service if enabled
+    if (config.features.grokEnabled) {
+      try {
+        this.grokService = new GrokService();
+        this.grokService.initialize().catch(error => {
+          this.log.error('Failed to initialize Grok service for WebSocket:', error);
+        });
+      } catch (error) {
+        this.log.error('Failed to create Grok service for WebSocket:', error);
+      }
+    }
   }
 
   private setupMiddleware(): void {
@@ -82,6 +96,11 @@ export class WebSocketServer {
       this.handlers.handleNotificationPreferences(socket, preferences);
     });
 
+    // Handle Grok AI integration if enabled
+    if (config.features.grokEnabled) {
+      this.setupGrokHandlers(socket);
+    }
+
     // Join specific rooms
     socket.on(EventTypes.JOIN_ROOM, (roomName: string) => {
       if (this.isAuthorizedForRoom(socket, roomName)) {
@@ -102,6 +121,12 @@ export class WebSocketServer {
     });
   }
 
+  private setupGrokHandlers(socket: SocketWithAuth): void {
+    if (!this.grokService) return;
+    
+    this.grokService.handleWebSocketConnection(socket, socket.userId);
+  }
+
   private isAuthorizedForRoom(socket: SocketWithAuth, room: string): boolean {
     // Implement room authorization logic
     const [type, id] = room.split(':');
@@ -113,6 +138,9 @@ export class WebSocketServer {
         return socket.teamId === id;
       case 'service':
         return (socket.roles?.includes('admin') || socket.roles?.includes('viewer')) ?? false;
+      case 'grok':
+        // Allow authenticated users to join Grok conversation rooms
+        return true;
       default:
         return false;
     }

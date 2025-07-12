@@ -117,6 +117,11 @@ export async function createApp(): Promise<{ app: Application; server: any }> {
     app.use('/api/twilio', rateLimiters.api, twilioRoutes);
   }
 
+  if (config.services.grok.enabled) {
+    const grokRoutes = require('./api/grok/routes').default;
+    app.use('/api/grok', rateLimiters.api, grokRoutes);
+  }
+
   // Job management routes (if enabled)
   if (config.features?.jobs?.enabled !== false) {
     const jobRoutes = require('./api/jobs').default;
