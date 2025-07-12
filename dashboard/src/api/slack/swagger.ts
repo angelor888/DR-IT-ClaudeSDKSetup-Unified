@@ -51,7 +51,7 @@
  *               type: string
  *             last_set:
  *               type: number
- *     
+ *
  *     SlackMessage:
  *       type: object
  *       properties:
@@ -81,7 +81,7 @@
  *           type: array
  *           items:
  *             type: object
- *     
+ *
  *     SlackUser:
  *       type: object
  *       properties:
@@ -129,7 +129,7 @@
  *               type: string
  *             image_72:
  *               type: string
- *     
+ *
  *     SlackBotInfo:
  *       type: object
  *       properties:
@@ -145,7 +145,7 @@
  *         team:
  *           type: string
  *           example: My Workspace
- *     
+ *
  *     SendMessageRequest:
  *       type: object
  *       required:
@@ -174,7 +174,7 @@
  *           description: Legacy message attachments
  *           items:
  *             type: object
- *     
+ *
  *     BulkMessageRequest:
  *       type: object
  *       required:

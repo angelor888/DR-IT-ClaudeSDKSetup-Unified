@@ -40,29 +40,16 @@ export class ServiceTimeoutError extends ServiceError {
 }
 
 export class ServiceRateLimitError extends ServiceError {
-  constructor(
-    service: string,
-    retryAfter?: number,
-    details?: Record<string, any>
-  ) {
-    super(
-      service,
-      `${service} rate limit exceeded`,
-      'SERVICE_RATE_LIMIT',
-      429,
-      { ...details, retryAfter }
-    );
+  constructor(service: string, retryAfter?: number, details?: Record<string, any>) {
+    super(service, `${service} rate limit exceeded`, 'SERVICE_RATE_LIMIT', 429, {
+      ...details,
+      retryAfter,
+    });
   }
 }
 
 export class ServiceConfigurationError extends ServiceError {
   constructor(service: string, message: string, details?: Record<string, any>) {
-    super(
-      service,
-      message,
-      'SERVICE_CONFIG_ERROR',
-      500,
-      details
-    );
+    super(service, message, 'SERVICE_CONFIG_ERROR', 500, details);
   }
 }

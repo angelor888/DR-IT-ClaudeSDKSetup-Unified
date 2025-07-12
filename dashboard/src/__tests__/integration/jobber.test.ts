@@ -7,12 +7,12 @@ describe('Jobber Integration Tests', () => {
 
   beforeEach(() => {
     // Mock Firebase auth
-    jest.spyOn(require('../../middleware/auth'), 'verifyToken').mockImplementation(
-      (req: any, _res: any, next: any) => {
+    jest
+      .spyOn(require('../../middleware/auth'), 'verifyToken')
+      .mockImplementation((req: any, _res: any, next: any) => {
         req.user = { uid: 'test-user-id' };
         next();
-      }
-    );
+      });
 
     app = createApp();
   });
@@ -27,10 +27,10 @@ describe('Jobber Integration Tests', () => {
       const response = await request(app)
         .get('/api/jobber/jobs')
         .set('Authorization', `Bearer ${authToken}`);
-      
+
       // Should not be 404 (route not found)
       expect(response.status).not.toBe(404);
-      
+
       // Will likely be 500 or other error due to missing auth/config, but route should exist
       expect([200, 401, 500]).toContain(response.status);
     });

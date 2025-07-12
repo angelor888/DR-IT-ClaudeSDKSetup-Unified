@@ -1,6 +1,6 @@
 // Jobber GraphQL API client wrapper
 import { BaseService, BaseServiceOptions } from '../../core/services/base.service';
-import { 
+import {
   JobberGraphQLResponse,
   JobberConnection,
   JobberClient as JobberClientType,
@@ -8,11 +8,10 @@ import {
   JobberQuote,
   JobberJob,
   JobberInvoice,
-  JobberUser
+  JobberUser,
 } from './types';
 
 export class JobberClient extends BaseService {
-
   constructor(accessToken: string, options: Partial<BaseServiceOptions> = {}) {
     if (!accessToken) {
       throw new Error('Jobber access token is required');
@@ -23,7 +22,7 @@ export class JobberClient extends BaseService {
       baseURL: 'https://api.getjobber.com/api',
       timeout: 30000,
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         'X-JOBBER-GRAPHQL-VERSION': '2025-01-20',
       },
@@ -73,12 +72,14 @@ export class JobberClient extends BaseService {
   }
 
   // Client operations
-  async getClients(options: {
-    first?: number;
-    after?: string;
-    searchTerm?: string;
-    includeArchived?: boolean;
-  } = {}): Promise<JobberConnection<JobberClientType>> {
+  async getClients(
+    options: {
+      first?: number;
+      after?: string;
+      searchTerm?: string;
+      includeArchived?: boolean;
+    } = {}
+  ): Promise<JobberConnection<JobberClientType>> {
     const query = `
       query GetClients($first: Int, $after: String, $searchTerm: String, $filter: ClientFilterInput) {
         clients(first: $first, after: $after, searchTerm: $searchTerm, filter: $filter) {
@@ -122,8 +123,17 @@ export class JobberClient extends BaseService {
       filter: options.includeArchived ? {} : { isArchived: false },
     };
 
-    const response = await this.query<{ clients: JobberConnection<JobberClientType> }>(query, variables);
-    return response.data?.clients || { edges: [], pageInfo: { hasNextPage: false, hasPreviousPage: false }, totalCount: 0 };
+    const response = await this.query<{ clients: JobberConnection<JobberClientType> }>(
+      query,
+      variables
+    );
+    return (
+      response.data?.clients || {
+        edges: [],
+        pageInfo: { hasNextPage: false, hasPreviousPage: false },
+        totalCount: 0,
+      }
+    );
   }
 
   async getClient(id: string): Promise<JobberClientType | null> {
@@ -224,11 +234,13 @@ export class JobberClient extends BaseService {
   }
 
   // Request operations
-  async getRequests(options: {
-    first?: number;
-    after?: string;
-    status?: 'new' | 'converted' | 'closed';
-  } = {}): Promise<JobberConnection<JobberRequest>> {
+  async getRequests(
+    options: {
+      first?: number;
+      after?: string;
+      status?: 'new' | 'converted' | 'closed';
+    } = {}
+  ): Promise<JobberConnection<JobberRequest>> {
     const query = `
       query GetRequests($first: Int, $after: String, $filter: RequestFilterInput) {
         requests(first: $first, after: $after, filter: $filter) {
@@ -273,16 +285,27 @@ export class JobberClient extends BaseService {
       filter: options.status ? { status: options.status } : {},
     };
 
-    const response = await this.query<{ requests: JobberConnection<JobberRequest> }>(query, variables);
-    return response.data?.requests || { edges: [], pageInfo: { hasNextPage: false, hasPreviousPage: false }, totalCount: 0 };
+    const response = await this.query<{ requests: JobberConnection<JobberRequest> }>(
+      query,
+      variables
+    );
+    return (
+      response.data?.requests || {
+        edges: [],
+        pageInfo: { hasNextPage: false, hasPreviousPage: false },
+        totalCount: 0,
+      }
+    );
   }
 
   // Quote operations
-  async getQuotes(options: {
-    first?: number;
-    after?: string;
-    status?: 'draft' | 'awaiting_response' | 'approved' | 'rejected';
-  } = {}): Promise<JobberConnection<JobberQuote>> {
+  async getQuotes(
+    options: {
+      first?: number;
+      after?: string;
+      status?: 'draft' | 'awaiting_response' | 'approved' | 'rejected';
+    } = {}
+  ): Promise<JobberConnection<JobberQuote>> {
     const query = `
       query GetQuotes($first: Int, $after: String, $filter: QuoteFilterInput) {
         quotes(first: $first, after: $after, filter: $filter) {
@@ -333,15 +356,23 @@ export class JobberClient extends BaseService {
     };
 
     const response = await this.query<{ quotes: JobberConnection<JobberQuote> }>(query, variables);
-    return response.data?.quotes || { edges: [], pageInfo: { hasNextPage: false, hasPreviousPage: false }, totalCount: 0 };
+    return (
+      response.data?.quotes || {
+        edges: [],
+        pageInfo: { hasNextPage: false, hasPreviousPage: false },
+        totalCount: 0,
+      }
+    );
   }
 
   // Job operations
-  async getJobs(options: {
-    first?: number;
-    after?: string;
-    status?: 'active' | 'completed' | 'cancelled';
-  } = {}): Promise<JobberConnection<JobberJob>> {
+  async getJobs(
+    options: {
+      first?: number;
+      after?: string;
+      status?: 'active' | 'completed' | 'cancelled';
+    } = {}
+  ): Promise<JobberConnection<JobberJob>> {
     const query = `
       query GetJobs($first: Int, $after: String, $filter: JobFilterInput) {
         jobs(first: $first, after: $after, filter: $filter) {
@@ -391,15 +422,23 @@ export class JobberClient extends BaseService {
     };
 
     const response = await this.query<{ jobs: JobberConnection<JobberJob> }>(query, variables);
-    return response.data?.jobs || { edges: [], pageInfo: { hasNextPage: false, hasPreviousPage: false }, totalCount: 0 };
+    return (
+      response.data?.jobs || {
+        edges: [],
+        pageInfo: { hasNextPage: false, hasPreviousPage: false },
+        totalCount: 0,
+      }
+    );
   }
 
   // Invoice operations
-  async getInvoices(options: {
-    first?: number;
-    after?: string;
-    status?: 'draft' | 'awaiting_payment' | 'paid' | 'past_due';
-  } = {}): Promise<JobberConnection<JobberInvoice>> {
+  async getInvoices(
+    options: {
+      first?: number;
+      after?: string;
+      status?: 'draft' | 'awaiting_payment' | 'paid' | 'past_due';
+    } = {}
+  ): Promise<JobberConnection<JobberInvoice>> {
     const query = `
       query GetInvoices($first: Int, $after: String, $filter: InvoiceFilterInput) {
         invoices(first: $first, after: $after, filter: $filter) {
@@ -441,7 +480,16 @@ export class JobberClient extends BaseService {
       filter: options.status ? { status: options.status } : {},
     };
 
-    const response = await this.query<{ invoices: JobberConnection<JobberInvoice> }>(query, variables);
-    return response.data?.invoices || { edges: [], pageInfo: { hasNextPage: false, hasPreviousPage: false }, totalCount: 0 };
+    const response = await this.query<{ invoices: JobberConnection<JobberInvoice> }>(
+      query,
+      variables
+    );
+    return (
+      response.data?.invoices || {
+        edges: [],
+        pageInfo: { hasNextPage: false, hasPreviousPage: false },
+        totalCount: 0,
+      }
+    );
   }
 }

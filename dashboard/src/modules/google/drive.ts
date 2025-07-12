@@ -24,30 +24,34 @@ export class DriveService {
   }
 
   // List files
-  async listFiles(options: {
-    q?: string;
-    fields?: string;
-    pageSize?: number;
-    pageToken?: string;
-    orderBy?: string;
-    userId?: string;
-  } = {}): Promise<{
+  async listFiles(
+    options: {
+      q?: string;
+      fields?: string;
+      pageSize?: number;
+      pageToken?: string;
+      orderBy?: string;
+      userId?: string;
+    } = {}
+  ): Promise<{
     files: DriveFile[];
     nextPageToken?: string;
   }> {
     try {
       const drive = await this.getDriveClient(options.userId);
-      
+
       const response = await drive.files.list({
         q: options.q,
-        fields: options.fields || 'nextPageToken, files(id, name, mimeType, size, modifiedTime, parents, webViewLink, iconLink, thumbnailLink, createdTime, owners, shared)',
+        fields:
+          options.fields ||
+          'nextPageToken, files(id, name, mimeType, size, modifiedTime, parents, webViewLink, iconLink, thumbnailLink, createdTime, owners, shared)',
         pageSize: options.pageSize || 50,
         pageToken: options.pageToken,
         orderBy: options.orderBy || 'modifiedTime desc',
       });
 
       return {
-        files: response.data.files as DriveFile[] || [],
+        files: (response.data.files as DriveFile[]) || [],
         nextPageToken: response.data.nextPageToken || undefined,
       };
     } catch (error) {
@@ -64,7 +68,7 @@ export class DriveService {
         fileId,
         fields: '*',
       });
-      
+
       return response.data as DriveFile;
     } catch (error: any) {
       if (error.code === 404) {
@@ -86,7 +90,7 @@ export class DriveService {
   }): Promise<DriveFile> {
     try {
       const drive = await this.getDriveClient(options.userId);
-      
+
       // Create file metadata
       const fileMetadata: drive_v3.Schema$File = {
         name: options.name,
@@ -97,11 +101,12 @@ export class DriveService {
       // Create media
       const media = {
         mimeType: options.mimeType,
-        body: typeof options.content === 'string' 
-          ? Readable.from([options.content])
-          : options.content instanceof Buffer
-          ? Readable.from(options.content)
-          : options.content,
+        body:
+          typeof options.content === 'string'
+            ? Readable.from([options.content])
+            : options.content instanceof Buffer
+              ? Readable.from(options.content)
+              : options.content,
       };
 
       const response = await drive.files.create({
@@ -120,7 +125,7 @@ export class DriveService {
           'file.uploaded',
           `Uploaded file: ${options.name}`,
           { source: 'dashboard' },
-          { 
+          {
             fileId: file.id,
             fileName: options.name,
             mimeType: options.mimeType,
@@ -151,7 +156,7 @@ export class DriveService {
   ): Promise<DriveFile> {
     try {
       const drive = await this.getDriveClient(options.userId);
-      
+
       const updateData: any = {
         fileId,
         fields: 'id, name, mimeType, size, modifiedTime, parents, webViewLink',
@@ -169,11 +174,12 @@ export class DriveService {
       if (options.content && options.mimeType) {
         updateData.media = {
           mimeType: options.mimeType,
-          body: typeof options.content === 'string'
-            ? Readable.from([options.content])
-            : options.content instanceof Buffer
-            ? Readable.from(options.content)
-            : options.content,
+          body:
+            typeof options.content === 'string'
+              ? Readable.from([options.content])
+              : options.content instanceof Buffer
+                ? Readable.from(options.content)
+                : options.content,
         };
       }
 
@@ -200,16 +206,18 @@ export class DriveService {
       await drive.files.delete({ fileId });
 
       // Log file deletion
-      await this.db.collection('events').add(
-        createEvent(
-          'file',
-          'drive',
-          'file.deleted',
-          `Deleted file`,
-          { source: 'dashboard' },
-          { fileId }
-        )
-      );
+      await this.db
+        .collection('events')
+        .add(
+          createEvent(
+            'file',
+            'drive',
+            'file.deleted',
+            `Deleted file`,
+            { source: 'dashboard' },
+            { fileId }
+          )
+        );
     } catch (error) {
       log.error(`Failed to delete file ${fileId}`, error);
       throw error;
@@ -220,7 +228,7 @@ export class DriveService {
   async downloadFile(fileId: string, userId?: string): Promise<Buffer> {
     try {
       const drive = await this.getDriveClient(userId);
-      
+
       // Get file metadata first
       const file = await this.getFile(fileId, userId);
       if (!file) {
@@ -232,16 +240,22 @@ export class DriveService {
       if (file.mimeType?.startsWith('application/vnd.google-apps.')) {
         // Google Docs/Sheets/Slides need to be exported
         const exportMimeType = this.getExportMimeType(file.mimeType);
-        response = await drive.files.export({
-          fileId,
-          mimeType: exportMimeType,
-        }, { responseType: 'stream' });
+        response = await drive.files.export(
+          {
+            fileId,
+            mimeType: exportMimeType,
+          },
+          { responseType: 'stream' }
+        );
       } else {
         // Regular files can be downloaded directly
-        response = await drive.files.get({
-          fileId,
-          alt: 'media',
-        }, { responseType: 'stream' });
+        response = await drive.files.get(
+          {
+            fileId,
+            alt: 'media',
+          },
+          { responseType: 'stream' }
+        );
       }
 
       // Convert stream to buffer
@@ -307,7 +321,7 @@ export class DriveService {
   ): Promise<any> {
     try {
       const drive = await this.getDriveClient(options.userId);
-      
+
       const permission: drive_v3.Schema$Permission = {
         type: options.type,
         role: options.role,
@@ -342,7 +356,7 @@ export class DriveService {
   ): Promise<DriveFile> {
     try {
       const drive = await this.getDriveClient(options.userId);
-      
+
       const response = await drive.files.copy({
         fileId,
         requestBody: {
@@ -364,7 +378,8 @@ export class DriveService {
   private getExportMimeType(googleMimeType: string): string {
     const exportMap: { [key: string]: string } = {
       'application/vnd.google-apps.document': 'application/pdf',
-      'application/vnd.google-apps.spreadsheet': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.google-apps.spreadsheet':
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.google-apps.presentation': 'application/pdf',
       'application/vnd.google-apps.drawing': 'image/png',
     };

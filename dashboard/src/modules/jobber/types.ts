@@ -45,7 +45,13 @@ export interface JobberRequest {
 export interface JobberQuote {
   id: string;
   quoteNumber: string;
-  quoteStatus: 'draft' | 'awaiting_response' | 'approved' | 'changes_requested' | 'rejected' | 'archived';
+  quoteStatus:
+    | 'draft'
+    | 'awaiting_response'
+    | 'approved'
+    | 'changes_requested'
+    | 'rejected'
+    | 'archived';
   title: string;
   client?: JobberClient;
   property?: JobberProperty;

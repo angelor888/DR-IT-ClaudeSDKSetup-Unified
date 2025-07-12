@@ -15,7 +15,7 @@ describe('Environment Configuration', () => {
   describe('validateEnvironment', () => {
     it('should throw error when required variables are missing', () => {
       delete process.env.FIREBASE_PROJECT_ID;
-      
+
       expect(() => validateEnvironment()).toThrow(
         'Missing required environment variables: FIREBASE_PROJECT_ID'
       );
@@ -24,8 +24,9 @@ describe('Environment Configuration', () => {
     it('should pass when all required variables are present', () => {
       process.env.FIREBASE_PROJECT_ID = 'test-project';
       process.env.FIREBASE_CLIENT_EMAIL = 'test@example.com';
-      process.env.FIREBASE_PRIVATE_KEY = '-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----';
-      
+      process.env.FIREBASE_PRIVATE_KEY =
+        '-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----';
+
       expect(() => validateEnvironment()).not.toThrow();
     });
 
@@ -33,7 +34,7 @@ describe('Environment Configuration', () => {
       process.env.FIREBASE_PROJECT_ID = 'test-project';
       process.env.FIREBASE_CLIENT_EMAIL = 'test@example.com';
       process.env.FIREBASE_PRIVATE_KEY = 'invalid-key';
-      
+
       expect(() => validateEnvironment()).toThrow(
         'FIREBASE_PRIVATE_KEY must be a valid private key string'
       );

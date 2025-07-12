@@ -15,14 +15,10 @@ export interface SlackRequestHeaders {
  * Verify Slack request signature
  * https://api.slack.com/authentication/verifying-requests-from-slack
  */
-export function verifySlackRequest(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+export function verifySlackRequest(req: Request, res: Response, next: NextFunction): void {
   try {
     const signingSecret = config.services.slack.signingSecret;
-    
+
     if (!signingSecret) {
       log.error('Slack signing secret not configured');
       throw new SlackWebhookError('Webhook verification not configured');
@@ -31,7 +27,7 @@ export function verifySlackRequest(
     // Get headers
     const timestamp = req.headers['x-slack-request-timestamp'] as string;
     const signature = req.headers['x-slack-signature'] as string;
-    
+
     if (!timestamp || !signature) {
       throw new SlackWebhookError('Missing required Slack headers', {
         missingHeaders: {
@@ -45,8 +41,9 @@ export function verifySlackRequest(
     const requestTimestamp = parseInt(timestamp);
     const currentTimestamp = Math.floor(Date.now() / 1000);
     const timeDiff = Math.abs(currentTimestamp - requestTimestamp);
-    
-    if (timeDiff > 300) { // 5 minutes
+
+    if (timeDiff > 300) {
+      // 5 minutes
       throw new SlackWebhookError('Request timestamp too old', {
         requestTimestamp,
         currentTimestamp,
@@ -57,19 +54,14 @@ export function verifySlackRequest(
     // Build the signing base string
     const rawBody = (req as any).rawBody || JSON.stringify(req.body);
     const sigBasestring = `v0:${timestamp}:${rawBody}`;
-    
+
     // Create the signature
-    const mySignature = 'v0=' + crypto
-      .createHmac('sha256', signingSecret)
-      .update(sigBasestring)
-      .digest('hex');
-    
+    const mySignature =
+      'v0=' + crypto.createHmac('sha256', signingSecret).update(sigBasestring).digest('hex');
+
     // Compare signatures using timing-safe comparison
-    const isValid = crypto.timingSafeEqual(
-      Buffer.from(mySignature),
-      Buffer.from(signature)
-    );
-    
+    const isValid = crypto.timingSafeEqual(Buffer.from(mySignature), Buffer.from(signature));
+
     if (!isValid) {
       log.warn('Invalid Slack signature', {
         requestId: req.id,
@@ -109,17 +101,13 @@ export function verifySlackRequest(
 /**
  * Middleware to capture raw body for signature verification
  */
-export function captureRawBody(
-  req: Request,
-  _res: Response,
-  next: NextFunction
-): void {
+export function captureRawBody(req: Request, _res: Response, next: NextFunction): void {
   let data = '';
-  
-  req.on('data', (chunk) => {
+
+  req.on('data', chunk => {
     data += chunk;
   });
-  
+
   req.on('end', () => {
     (req as any).rawBody = data;
     next();
@@ -129,21 +117,17 @@ export function captureRawBody(
 /**
  * Handle Slack URL verification challenge
  */
-export function handleUrlVerification(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+export function handleUrlVerification(req: Request, res: Response, next: NextFunction): void {
   if (req.body?.type === 'url_verification') {
     log.info('Handling Slack URL verification challenge', {
       challenge: req.body.challenge,
       requestId: req.id,
     });
-    
+
     res.json({ challenge: req.body.challenge });
     return;
   }
-  
+
   next();
 }
 

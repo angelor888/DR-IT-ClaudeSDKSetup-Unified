@@ -17,14 +17,14 @@ export const apiLimiter = rateLimit({
     log.warn('Rate limit exceeded', {
       ip: req.ip,
       path: req.path,
-      method: req.method
+      method: req.method,
     });
     res.status(429).json({
       error: 'Rate Limit Exceeded',
       message: 'Too many requests, please try again later',
-      retryAfter: res.getHeader('Retry-After')
+      retryAfter: res.getHeader('Retry-After'),
     });
-  }
+  },
 });
 
 // Strict limiter for auth endpoints - 5 requests per 15 minutes per IP
@@ -39,14 +39,14 @@ export const authLimiter = rateLimit({
     log.warn('Auth rate limit exceeded', {
       ip: req.ip,
       path: req.path,
-      userAgent: req.get('user-agent')
+      userAgent: req.get('user-agent'),
     });
     res.status(429).json({
       error: 'Too Many Attempts',
       message: 'Too many authentication attempts, please try again later',
-      retryAfter: res.getHeader('Retry-After')
+      retryAfter: res.getHeader('Retry-After'),
     });
-  }
+  },
 });
 
 // Webhook limiter - 500 requests per minute (for high-frequency webhooks)
@@ -55,7 +55,7 @@ export const webhookLimiter = rateLimit({
   max: 500,
   message: 'Webhook rate limit exceeded',
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 // Create account limiter - 3 accounts per hour per IP
@@ -67,14 +67,14 @@ export const createAccountLimiter = rateLimit({
   handler: (req: Request, res: Response) => {
     log.warn('Account creation rate limit exceeded', {
       ip: req.ip,
-      userAgent: req.get('user-agent')
+      userAgent: req.get('user-agent'),
     });
     res.status(429).json({
       error: 'Rate Limit Exceeded',
       message: 'Too many accounts created, please try again later',
-      code: 'AUTH_RATE_LIMIT'
+      code: 'AUTH_RATE_LIMIT',
     });
-  }
+  },
 });
 
 // Password reset limiter - 3 requests per hour per IP
@@ -85,12 +85,12 @@ export const passwordResetLimiter = rateLimit({
   handler: (req: Request, res: Response) => {
     log.warn('Password reset rate limit exceeded', {
       ip: req.ip,
-      email: req.body?.email
+      email: req.body?.email,
     });
     res.status(429).json({
       error: 'Rate Limit Exceeded',
       message: 'Too many password reset requests, please try again later',
-      code: 'AUTH_RESET_RATE_LIMIT'
+      code: 'AUTH_RESET_RATE_LIMIT',
     });
-  }
+  },
 });

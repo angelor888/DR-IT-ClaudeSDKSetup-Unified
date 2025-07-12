@@ -18,7 +18,7 @@ describe('Auth Endpoints', () => {
         .send({
           email: 'invalid-email',
           password: 'Test123!',
-          displayName: 'Test User'
+          displayName: 'Test User',
         })
         .expect(422);
 
@@ -26,8 +26,8 @@ describe('Auth Endpoints', () => {
         error: 'Validation Error',
         message: 'Invalid input data',
         errors: {
-          email: expect.arrayContaining(['Valid email is required'])
-        }
+          email: expect.arrayContaining(['Valid email is required']),
+        },
       });
     });
 
@@ -37,7 +37,7 @@ describe('Auth Endpoints', () => {
         .send({
           email: 'test@example.com',
           password: 'weak',
-          displayName: 'Test User'
+          displayName: 'Test User',
         })
         .expect(422);
 
@@ -51,8 +51,8 @@ describe('Auth Endpoints', () => {
         displayName: 'Test User',
         emailVerified: false,
         metadata: {
-          creationTime: new Date().toISOString()
-        }
+          creationTime: new Date().toISOString(),
+        },
       };
 
       // Mock Firebase Auth
@@ -62,9 +62,9 @@ describe('Auth Endpoints', () => {
       // Mock Firestore
       const firestore = getFirestore();
       const mockDoc = { set: jest.fn().mockResolvedValueOnce({}) };
-      const mockCollection = { 
+      const mockCollection = {
         doc: jest.fn().mockReturnValueOnce(mockDoc),
-        add: jest.fn().mockResolvedValueOnce({})
+        add: jest.fn().mockResolvedValueOnce({}),
       };
       (firestore.collection as jest.Mock).mockReturnValue(mockCollection);
 
@@ -73,7 +73,7 @@ describe('Auth Endpoints', () => {
         .send({
           email: 'test@example.com',
           password: 'Test123!',
-          displayName: 'Test User'
+          displayName: 'Test User',
         })
         .expect(201);
 
@@ -83,8 +83,8 @@ describe('Auth Endpoints', () => {
           uid: 'test-uid-123',
           email: 'test@example.com',
           displayName: 'Test User',
-          emailVerified: false
-        }
+          emailVerified: false,
+        },
       });
     });
 
@@ -93,28 +93,28 @@ describe('Auth Endpoints', () => {
       const auth = getAuth();
       (auth.createUser as jest.Mock).mockResolvedValue({
         uid: 'test-uid',
-        email: 'test@example.com'
+        email: 'test@example.com',
       });
 
       // Mock Firestore
       const firestore = getFirestore();
       const mockDoc = { set: jest.fn().mockResolvedValue({}) };
-      const mockCollection = { 
+      const mockCollection = {
         doc: jest.fn().mockReturnValue(mockDoc),
-        add: jest.fn().mockResolvedValue({})
+        add: jest.fn().mockResolvedValue({}),
       };
       (firestore.collection as jest.Mock).mockReturnValue(mockCollection);
 
       // Make multiple requests to trigger rate limit
-      const requests = Array(4).fill(null).map(() => 
-        request(app)
-          .post('/api/auth/register')
-          .send({
+      const requests = Array(4)
+        .fill(null)
+        .map(() =>
+          request(app).post('/api/auth/register').send({
             email: 'test@example.com',
             password: 'Test123!',
-            displayName: 'Test User'
+            displayName: 'Test User',
           })
-      );
+        );
 
       await Promise.all(requests);
 
@@ -124,28 +124,26 @@ describe('Auth Endpoints', () => {
         .send({
           email: 'test@example.com',
           password: 'Test123!',
-          displayName: 'Test User'
+          displayName: 'Test User',
         })
         .expect(429);
 
       expect(response.body).toMatchObject({
         error: 'Rate Limit Exceeded',
-        message: 'Too many accounts created, please try again later'
+        message: 'Too many accounts created, please try again later',
       });
     });
   });
 
   describe('GET /api/auth/health', () => {
     it('should return health status without auth', async () => {
-      const response = await request(app)
-        .get('/api/auth/health')
-        .expect(200);
+      const response = await request(app).get('/api/auth/health').expect(200);
 
       expect(response.body).toMatchObject({
         success: true,
         service: 'auth',
         authenticated: false,
-        user: null
+        user: null,
       });
     });
   });

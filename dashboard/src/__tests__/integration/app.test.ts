@@ -12,7 +12,7 @@ describe('Application Integration Tests', () => {
   describe('Request ID Middleware', () => {
     it('should add request ID to all responses', async () => {
       const response = await request(app).get('/health');
-      
+
       expect(response.headers['x-request-id']).toBeDefined();
       expect(response.headers['x-request-id']).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -21,10 +21,8 @@ describe('Application Integration Tests', () => {
 
     it('should use existing request ID if provided', async () => {
       const requestId = '123e4567-e89b-12d3-a456-426614174000';
-      const response = await request(app)
-        .get('/health')
-        .set('X-Request-Id', requestId);
-      
+      const response = await request(app).get('/health').set('X-Request-Id', requestId);
+
       expect(response.headers['x-request-id']).toBe(requestId);
     });
   });
@@ -35,7 +33,7 @@ describe('Application Integration Tests', () => {
         .options('/api/health')
         .set('Origin', 'http://localhost:3000')
         .set('Access-Control-Request-Method', 'GET');
-      
+
       expect(response.status).toBe(204);
       expect(response.headers['access-control-allow-origin']).toBeDefined();
     });
@@ -43,10 +41,8 @@ describe('Application Integration Tests', () => {
 
   describe('Error Handling', () => {
     it('should return 404 with proper format for unknown routes', async () => {
-      const response = await request(app)
-        .get('/api/unknown-route')
-        .expect(404);
-      
+      const response = await request(app).get('/api/unknown-route').expect(404);
+
       expect(response.body).toMatchObject({
         error: {
           code: 'ROUTE_NOT_FOUND',
@@ -63,7 +59,7 @@ describe('Application Integration Tests', () => {
         .set('Content-Type', 'application/json')
         .send('invalid json')
         .expect(400);
-      
+
       expect(response.body.error).toBeDefined();
     });
   });
@@ -72,10 +68,8 @@ describe('Application Integration Tests', () => {
     it('should enforce rate limits on API endpoints', async () => {
       // Note: This test assumes the rate limiter is configured for testing
       // In real tests, you might want to mock the rate limiter
-      const response = await request(app)
-        .get('/api/health')
-        .expect(200);
-      
+      const response = await request(app).get('/api/health').expect(200);
+
       expect(response.headers['x-ratelimit-limit']).toBeDefined();
       expect(response.headers['x-ratelimit-remaining']).toBeDefined();
     });
@@ -83,10 +77,8 @@ describe('Application Integration Tests', () => {
 
   describe('Compression', () => {
     it('should compress large responses', async () => {
-      const response = await request(app)
-        .get('/api/v1/docs/spec')
-        .set('Accept-Encoding', 'gzip');
-      
+      const response = await request(app).get('/api/v1/docs/spec').set('Accept-Encoding', 'gzip');
+
       // Check if response is compressed (if endpoint returns large data)
       // This is a simplified test - in practice you'd check content-encoding
       expect(response.status).toBeLessThan(500);

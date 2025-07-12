@@ -34,7 +34,7 @@ export class Logger {
   constructor(context: string = 'App', requestId?: string) {
     this.context = context;
     this.requestId = requestId;
-    
+
     // Default to INFO level
     // Level will be set via setLogLevel method to avoid circular dependency
     this.level = LogLevel.INFO;
@@ -42,7 +42,7 @@ export class Logger {
 
   private formatLog(level: LogLevel, message: string, data?: any): LogEntry | string {
     const levelName = LogLevel[level];
-    
+
     const logEntry: LogEntry = {
       timestamp: new Date().toISOString(),
       level: levelName,
@@ -75,7 +75,7 @@ export class Logger {
         output += ` [${this.requestId}]`;
       }
       output += ` ${message}`;
-      
+
       if (logEntry.error) {
         output += `\n  Error: ${logEntry.error.message}`;
         if (logEntry.error.stack && this.level >= LogLevel.DEBUG) {
@@ -84,7 +84,7 @@ export class Logger {
       } else if (logEntry.data) {
         output += `\n  Data: ${JSON.stringify(logEntry.data, null, 2)}`;
       }
-      
+
       return output;
     }
   }
@@ -93,7 +93,7 @@ export class Logger {
     if (level > this.level) return;
 
     const formatted = this.formatLog(level, message, data);
-    
+
     switch (level) {
       case LogLevel.ERROR:
         console.error(formatted);

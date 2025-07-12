@@ -15,7 +15,7 @@ export const testConfig: DeepPartial<AppConfig> = {
     logFormat: 'json',
   },
   development: {
-    disableAuth: true, // Disable auth in tests
+    disableAuth: false, // Keep auth enabled for integration tests
     mockServices: true, // Mock external services
     logRequests: false,
   },
@@ -24,7 +24,7 @@ export const testConfig: DeepPartial<AppConfig> = {
   },
   // Enable Slack and Jobber for testing, disable others
   services: {
-    slack: { 
+    slack: {
       enabled: true,
       botToken: 'xoxb-test-token',
       signingSecret: 'test-signing-secret',
@@ -32,7 +32,7 @@ export const testConfig: DeepPartial<AppConfig> = {
       channelId: 'C123456',
       notificationsChannelId: 'C234567',
     },
-    jobber: { 
+    jobber: {
       enabled: true,
       clientId: 'test-jobber-client-id',
       clientSecret: 'test-jobber-client-secret',

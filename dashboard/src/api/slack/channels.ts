@@ -4,11 +4,7 @@ import { verifyToken } from '../../middleware/auth';
 import { getSlackService } from '../../modules/slack';
 import { validate } from '../../middleware/validation';
 import { apiLimiter } from '../../middleware/rateLimiter';
-import { 
-  channelIdValidation,
-  searchQueryValidation,
-  paginationValidation 
-} from './validation';
+import { channelIdValidation, searchQueryValidation, paginationValidation } from './validation';
 
 // Import Swagger documentation
 import './swagger';
@@ -25,8 +21,9 @@ const getSlackServiceInstance = () => getSlackService();
  * GET /api/slack/channels
  * List all Slack channels
  */
-router.get('/channels', 
-  verifyToken, 
+router.get(
+  '/channels',
+  verifyToken,
   paginationValidation,
   validate,
   async (req: Request, res: Response, next: NextFunction) => {
@@ -34,7 +31,7 @@ router.get('/channels',
       const includeArchived = req.query.includeArchived === 'true';
       const slackService = getSlackServiceInstance();
       const channels = await slackService.getChannels(includeArchived);
-      
+
       res.json({
         success: true,
         data: channels,
@@ -51,14 +48,15 @@ router.get('/channels',
  * POST /api/slack/channels/sync
  * Sync channels from Slack
  */
-router.post('/channels/sync', 
+router.post(
+  '/channels/sync',
   verifyToken,
   validate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const slackService = getSlackServiceInstance();
       const channels = await slackService.syncChannels();
-      
+
       res.json({
         success: true,
         message: 'Channels synced successfully',
@@ -76,7 +74,8 @@ router.post('/channels/sync',
  * GET /api/slack/channels/search
  * Search channels by name
  */
-router.get('/channels/search', 
+router.get(
+  '/channels/search',
   verifyToken,
   searchQueryValidation,
   validate,
@@ -85,7 +84,7 @@ router.get('/channels/search',
       const { q } = req.query;
       const slackService = getSlackServiceInstance();
       const channels = await slackService.searchChannelsByName(q as string);
-      
+
       res.json({
         success: true,
         data: channels,
@@ -102,7 +101,8 @@ router.get('/channels/search',
  * GET /api/slack/channels/:channelId/messages
  * Get recent messages from a channel
  */
-router.get('/channels/:channelId/messages', 
+router.get(
+  '/channels/:channelId/messages',
   verifyToken,
   channelIdValidation,
   paginationValidation,
@@ -113,7 +113,7 @@ router.get('/channels/:channelId/messages',
       const limit = parseInt(req.query.limit as string) || 20;
       const slackService = getSlackServiceInstance();
       const messages = await slackService.getRecentMessages(channelId, limit);
-      
+
       res.json({
         success: true,
         data: messages,

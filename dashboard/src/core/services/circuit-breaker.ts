@@ -96,7 +96,7 @@ export class CircuitBreaker extends EventEmitter {
   private onFailure(): void {
     this.failures++;
     this.lastFailureTime = Date.now();
-    
+
     if (this.state === CircuitState.HALF_OPEN) {
       this.open();
     } else if (this.failures >= this.options.failureThreshold) {
@@ -110,19 +110,19 @@ export class CircuitBreaker extends EventEmitter {
   private open(): void {
     this.state = CircuitState.OPEN;
     this.nextAttempt = Date.now() + this.options.resetTimeout;
-    
+
     log.warn(`Circuit breaker opened for ${this.name}`, {
       failures: this.failures,
       nextAttempt: new Date(this.nextAttempt).toISOString(),
     });
-    
+
     this.emit('open');
   }
 
   private halfOpen(): void {
     this.state = CircuitState.HALF_OPEN;
     this.successes = 0;
-    
+
     log.info(`Circuit breaker half-open for ${this.name}`);
     this.emit('halfOpen');
   }
@@ -131,7 +131,7 @@ export class CircuitBreaker extends EventEmitter {
     this.state = CircuitState.CLOSED;
     this.failures = 0;
     this.successes = 0;
-    
+
     log.info(`Circuit breaker closed for ${this.name}`);
     this.emit('close');
   }

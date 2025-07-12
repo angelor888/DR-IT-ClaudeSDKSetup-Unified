@@ -19,12 +19,7 @@ interface ErrorResponse {
   };
 }
 
-export function errorHandler(
-  err: Error,
-  req: Request,
-  res: Response,
-  _next: NextFunction
-): void {
+export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction): void {
   // Log error with context
   const errorContext = {
     error: err,
@@ -40,7 +35,7 @@ export function errorHandler(
 
   // Determine if this is an operational error
   const isOperational = isOperationalError(err);
-  
+
   // Log based on error type
   if (isOperational) {
     log.warn('Operational error occurred', errorContext);
@@ -77,9 +72,8 @@ export function errorHandler(
   const response: ErrorResponse = {
     error: {
       code: 'INTERNAL_ERROR',
-      message: config.server.nodeEnv === 'production' 
-        ? 'An unexpected error occurred' 
-        : err.message,
+      message:
+        config.server.nodeEnv === 'production' ? 'An unexpected error occurred' : err.message,
       statusCode,
       timestamp: new Date().toISOString(),
       path: req.path,

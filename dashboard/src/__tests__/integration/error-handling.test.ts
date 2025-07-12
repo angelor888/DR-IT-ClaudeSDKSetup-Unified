@@ -1,11 +1,11 @@
 import request from 'supertest';
 import { Application } from 'express';
 import { createApp } from '../../app';
-import { 
-  ValidationError, 
-  AuthenticationError, 
+import {
+  ValidationError,
+  AuthenticationError,
   ServiceUnavailableError,
-  ResourceNotFoundError 
+  ResourceNotFoundError,
 } from '../../core/errors';
 
 describe('Error Handling Integration Tests', () => {
@@ -25,9 +25,7 @@ describe('Error Handling Integration Tests', () => {
         ]);
       });
 
-      const response = await request(app)
-        .get('/test/validation-error')
-        .expect(422);
+      const response = await request(app).get('/test/validation-error').expect(422);
 
       expect(response.body).toMatchObject({
         error: {
@@ -50,9 +48,7 @@ describe('Error Handling Integration Tests', () => {
         throw new AuthenticationError('Invalid credentials');
       });
 
-      const response = await request(app)
-        .get('/test/auth-error')
-        .expect(401);
+      const response = await request(app).get('/test/auth-error').expect(401);
 
       expect(response.body).toMatchObject({
         error: {
@@ -69,9 +65,7 @@ describe('Error Handling Integration Tests', () => {
         throw new ServiceUnavailableError('Slack', 'Slack API is down');
       });
 
-      const response = await request(app)
-        .get('/test/service-error')
-        .expect(503);
+      const response = await request(app).get('/test/service-error').expect(503);
 
       expect(response.body).toMatchObject({
         error: {
@@ -91,9 +85,7 @@ describe('Error Handling Integration Tests', () => {
         throw new ResourceNotFoundError('User', '123');
       });
 
-      const response = await request(app)
-        .get('/test/not-found-error')
-        .expect(404);
+      const response = await request(app).get('/test/not-found-error').expect(404);
 
       expect(response.body).toMatchObject({
         error: {
@@ -116,9 +108,7 @@ describe('Error Handling Integration Tests', () => {
         throw new Error('Something went wrong');
       });
 
-      const response = await request(app)
-        .get('/test/unexpected-error')
-        .expect(500);
+      const response = await request(app).get('/test/unexpected-error').expect(500);
 
       expect(response.body).toMatchObject({
         error: {
@@ -136,13 +126,11 @@ describe('Error Handling Integration Tests', () => {
 
     it('should handle async errors', async () => {
       app.get('/test/async-error', async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise(resolve => setTimeout(resolve, 10));
         throw new Error('Async error');
       });
 
-      const response = await request(app)
-        .get('/test/async-error')
-        .expect(500);
+      const response = await request(app).get('/test/async-error').expect(500);
 
       expect(response.body.error.code).toBe('INTERNAL_ERROR');
     });
@@ -151,7 +139,7 @@ describe('Error Handling Integration Tests', () => {
   describe('Request ID propagation', () => {
     it('should include request ID in all error responses', async () => {
       const requestId = 'test-request-id-123';
-      
+
       app.get('/test/error-with-request-id', () => {
         throw new ValidationError('Test error', []);
       });
@@ -176,7 +164,7 @@ describe('Error Handling Integration Tests', () => {
 
       for (const { path } of endpoints) {
         const response = await request(app).get(path);
-        
+
         expect(response.body).toHaveProperty('error');
         expect(response.body.error).toMatchObject({
           code: expect.any(String),

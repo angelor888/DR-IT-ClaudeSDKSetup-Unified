@@ -3,12 +3,12 @@ import { getFirestore } from '../../config/firebase';
 import * as admin from 'firebase-admin';
 import { JobberClient } from './client';
 import { JobberAuth } from './auth';
-import { 
+import {
   JobberClient as JobberClientType,
   JobberRequest,
   JobberQuote,
   JobberJob,
-  JobberInvoice
+  JobberInvoice,
 } from './types';
 import { logger } from '../../utils/logger';
 import { createEvent } from '../../models/Event';
@@ -70,16 +70,18 @@ export class JobberService {
       await batch.commit();
 
       // Log sync event
-      await this.getDb().collection('events').add(
-        createEvent(
-          'sync',
-          'jobber',
-          'clients.synced',
-          `Synced ${allClients.length} Jobber clients`,
-          { source: 'dashboard' },
-          { clientCount: allClients.length }
-        )
-      );
+      await this.getDb()
+        .collection('events')
+        .add(
+          createEvent(
+            'sync',
+            'jobber',
+            'clients.synced',
+            `Synced ${allClients.length} Jobber clients`,
+            { source: 'dashboard' },
+            { clientCount: allClients.length }
+          )
+        );
 
       log.info(`Synced ${allClients.length} clients`);
       return allClients;
@@ -107,10 +109,13 @@ export class JobberService {
 
       if (jobberClient) {
         // Cache in Firestore
-        await this.getDb().collection('jobber_clients').doc(id).set({
-          ...jobberClient,
-          lastSynced: new Date(),
-        });
+        await this.getDb()
+          .collection('jobber_clients')
+          .doc(id)
+          .set({
+            ...jobberClient,
+            lastSynced: new Date(),
+          });
       }
 
       return jobberClient;
@@ -137,22 +142,27 @@ export class JobberService {
       }
 
       // Store in Firestore
-      await this.getDb().collection('jobber_clients').doc(newClient.id).set({
-        ...newClient,
-        lastSynced: new Date(),
-      });
+      await this.getDb()
+        .collection('jobber_clients')
+        .doc(newClient.id)
+        .set({
+          ...newClient,
+          lastSynced: new Date(),
+        });
 
       // Log event
-      await this.getDb().collection('events').add(
-        createEvent(
-          'create',
-          'jobber',
-          'client.created',
-          `Created new client: ${newClient.firstName} ${newClient.lastName || newClient.companyName}`,
-          { source: 'dashboard' },
-          { clientId: newClient.id }
-        )
-      );
+      await this.getDb()
+        .collection('events')
+        .add(
+          createEvent(
+            'create',
+            'jobber',
+            'client.created',
+            `Created new client: ${newClient.firstName} ${newClient.lastName || newClient.companyName}`,
+            { source: 'dashboard' },
+            { clientId: newClient.id }
+          )
+        );
 
       return newClient;
     } catch (error) {
@@ -177,7 +187,7 @@ export class JobberService {
     try {
       const client = await this.getAuthenticatedClient();
       const result = await client.getRequests({ status, first: 50 });
-      
+
       const requests = result.edges.map(edge => edge.node);
 
       // Update cache
@@ -199,11 +209,13 @@ export class JobberService {
   }
 
   // Quote operations
-  async getQuotes(status?: 'draft' | 'awaiting_response' | 'approved' | 'rejected'): Promise<JobberQuote[]> {
+  async getQuotes(
+    status?: 'draft' | 'awaiting_response' | 'approved' | 'rejected'
+  ): Promise<JobberQuote[]> {
     try {
       const client = await this.getAuthenticatedClient();
       const result = await client.getQuotes({ status, first: 50 });
-      
+
       const quotes = result.edges.map(edge => edge.node);
 
       // Update cache
@@ -229,7 +241,7 @@ export class JobberService {
     try {
       const client = await this.getAuthenticatedClient();
       const result = await client.getJobs({ status, first: 50 });
-      
+
       const jobs = result.edges.map(edge => edge.node);
 
       // Update cache
@@ -251,11 +263,13 @@ export class JobberService {
   }
 
   // Invoice operations
-  async getInvoices(status?: 'draft' | 'awaiting_payment' | 'paid' | 'past_due'): Promise<JobberInvoice[]> {
+  async getInvoices(
+    status?: 'draft' | 'awaiting_payment' | 'paid' | 'past_due'
+  ): Promise<JobberInvoice[]> {
     try {
       const client = await this.getAuthenticatedClient();
       const result = await client.getInvoices({ status, first: 50 });
-      
+
       const invoices = result.edges.map(edge => edge.node);
 
       // Update cache

@@ -16,49 +16,49 @@ export const env = {
   firebase: {
     projectId: () => config.firebase.projectId,
     clientEmail: () => config.firebase.clientEmail,
-    privateKey: () => config.firebase.privateKey
+    privateKey: () => config.firebase.privateKey,
   },
-  
+
   // Server
   server: {
     port: () => config.server.port,
     nodeEnv: () => config.server.nodeEnv,
-    isProduction: () => config.server.nodeEnv === 'production'
+    isProduction: () => config.server.nodeEnv === 'production',
   },
-  
+
   // Services
   slack: {
     botToken: () => config.services.slack.botToken,
     signingSecret: () => config.services.slack.signingSecret,
-    appToken: () => config.services.slack.appToken
+    appToken: () => config.services.slack.appToken,
   },
-  
+
   jobber: {
     clientId: () => config.services.jobber.clientId,
     clientSecret: () => config.services.jobber.clientSecret,
-    redirectUri: () => config.services.jobber.redirectUri
+    redirectUri: () => config.services.jobber.redirectUri,
   },
-  
+
   quickbooks: {
     clientId: () => config.services.quickbooks.clientId,
     clientSecret: () => config.services.quickbooks.clientSecret,
-    redirectUri: () => config.services.quickbooks.redirectUri
+    redirectUri: () => config.services.quickbooks.redirectUri,
   },
-  
+
   sendgrid: {
     apiKey: () => config.services.email.sendgridApiKey,
-    fromEmail: () => config.services.email.fromEmail
+    fromEmail: () => config.services.email.fromEmail,
   },
-  
+
   google: {
     clientId: () => config.services.google.clientId,
     clientSecret: () => config.services.google.clientSecret,
-    redirectUri: () => config.services.google.redirectUri
+    redirectUri: () => config.services.google.redirectUri,
   },
-  
+
   matterport: {
-    apiKey: () => config.services.matterport.apiKey
-  }
+    apiKey: () => config.services.matterport.apiKey,
+  },
 };
 
 export function getEnv(key: string): string {

@@ -75,16 +75,16 @@ describe('Slack Integration Tests', () => {
         ts: '1234567890.123456',
         text: 'Hello, World!',
       }),
-      searchChannelsByName: jest.fn().mockResolvedValue([
-        { id: 'C123456', name: 'general', is_archived: false },
-      ]),
+      searchChannelsByName: jest
+        .fn()
+        .mockResolvedValue([{ id: 'C123456', name: 'general', is_archived: false }]),
       getRecentMessages: jest.fn().mockResolvedValue([
         { ts: '1234567890.123456', text: 'Hello', user: 'U123456' },
         { ts: '1234567890.123457', text: 'World', user: 'U234567' },
       ]),
-      syncUsers: jest.fn().mockResolvedValue([
-        { id: 'U123456', name: 'testuser', real_name: 'Test User' },
-      ]),
+      syncUsers: jest
+        .fn()
+        .mockResolvedValue([{ id: 'U123456', name: 'testuser', real_name: 'Test User' }]),
       getUserById: jest.fn().mockResolvedValue({
         id: 'U123456',
         name: 'testuser',
@@ -100,14 +100,14 @@ describe('Slack Integration Tests', () => {
 
     // Set up mocks
     (getSlackService as jest.Mock).mockReturnValue(mockSlackService);
-    
+
     // Mock Firebase auth
-    jest.spyOn(require('../../middleware/auth'), 'verifyToken').mockImplementation(
-      (req: any, _res: any, next: any) => {
+    jest
+      .spyOn(require('../../middleware/auth'), 'verifyToken')
+      .mockImplementation((req: any, _res: any, next: any) => {
         req.user = { uid: 'test-user-id' };
         next();
-      }
-    );
+      });
 
     app = createApp();
   });
@@ -329,9 +329,7 @@ describe('Slack Integration Tests', () => {
 
   describe('Authentication', () => {
     it('should require authentication', async () => {
-      const response = await request(app)
-        .get('/api/slack/channels')
-        .expect(401);
+      const response = await request(app).get('/api/slack/channels').expect(401);
 
       expect(response.body.success).toBe(false);
     });
@@ -340,14 +338,14 @@ describe('Slack Integration Tests', () => {
   describe('Rate Limiting', () => {
     it('should apply rate limiting', async () => {
       // Make multiple requests quickly
-      const promises = Array(10).fill(null).map(() =>
-        request(app)
-          .get('/api/slack/channels')
-          .set('Authorization', `Bearer ${authToken}`)
-      );
+      const promises = Array(10)
+        .fill(null)
+        .map(() =>
+          request(app).get('/api/slack/channels').set('Authorization', `Bearer ${authToken}`)
+        );
 
       const responses = await Promise.all(promises);
-      
+
       // In test environment, rate limiting might not trigger
       // so we just check that the endpoint works
       expect(responses[0].status).toBe(200);

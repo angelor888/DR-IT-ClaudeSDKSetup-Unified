@@ -16,10 +16,10 @@ const jobberAuth = new JobberAuth();
 router.get('/auth/url', async (req: Request, res: Response) => {
   try {
     const redirectUri = `${req.protocol}://${req.get('host')}/api/jobber/auth/callback`;
-    const state = req.query.state as string || undefined;
-    
+    const state = (req.query.state as string) || undefined;
+
     const authUrl = jobberAuth.getAuthorizationUrl(redirectUri, state);
-    
+
     res.json({
       success: true,
       data: {
@@ -44,7 +44,7 @@ router.get('/auth/url', async (req: Request, res: Response) => {
 router.get('/auth/callback', async (req: Request, res: Response) => {
   try {
     const { code, state: _state } = req.query;
-    
+
     if (!code || typeof code !== 'string') {
       res.status(400).json({
         success: false,
@@ -52,10 +52,10 @@ router.get('/auth/callback', async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     const redirectUri = `${req.protocol}://${req.get('host')}/api/jobber/auth/callback`;
     const tokens = await jobberAuth.exchangeAuthCode(code, redirectUri);
-    
+
     // In production, you might want to redirect to a success page
     res.json({
       success: true,
@@ -83,7 +83,7 @@ router.get('/auth/callback', async (req: Request, res: Response) => {
 router.post('/auth/refresh', async (_req: Request, res: Response) => {
   try {
     const accessToken = await jobberAuth.getAccessToken();
-    
+
     res.json({
       success: true,
       message: 'Token refreshed successfully',

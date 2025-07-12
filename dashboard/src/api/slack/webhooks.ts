@@ -2,11 +2,11 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { SlackWebhookHandler } from '../../modules/slack/webhooks';
 import { logger } from '../../utils/logger';
-import { 
-  verifySlackRequest, 
-  captureRawBody, 
+import {
+  verifySlackRequest,
+  captureRawBody,
   handleUrlVerification,
-  slackEventRateLimit 
+  slackEventRateLimit,
 } from './webhook-security';
 import { validate } from '../../middleware/validation';
 import { webhookEventValidation } from './validation';
@@ -15,7 +15,9 @@ const router = Router();
 const log = logger.child('SlackWebhooks');
 
 // Initialize webhook handler with a default secret for tests
-const webhookHandler = new SlackWebhookHandler(process.env.SLACK_SIGNING_SECRET || 'test-signing-secret');
+const webhookHandler = new SlackWebhookHandler(
+  process.env.SLACK_SIGNING_SECRET || 'test-signing-secret'
+);
 
 // Apply raw body capture for signature verification
 router.use(captureRawBody);
@@ -24,7 +26,8 @@ router.use(captureRawBody);
  * POST /api/slack/webhooks/events
  * Handle Slack event subscriptions
  */
-router.post('/events',
+router.post(
+  '/events',
   slackEventRateLimit,
   verifySlackRequest,
   handleUrlVerification,
@@ -58,21 +61,22 @@ router.post('/events',
  * POST /api/slack/webhooks/slash-commands
  * Handle Slack slash commands
  */
-router.post('/slash-commands',
+router.post(
+  '/slash-commands',
   verifySlackRequest,
   async (req: Request, res: Response, _next: NextFunction) => {
     try {
-      const { 
-        command, 
-        text, 
-        user_id, 
-        user_name, 
-        channel_id, 
+      const {
+        command,
+        text,
+        user_id,
+        user_name,
+        channel_id,
         channel_name,
         team_id,
         team_domain,
         response_url,
-        trigger_id 
+        trigger_id,
       } = req.body;
 
       log.info('Received slash command', {
@@ -98,7 +102,7 @@ router.post('/slash-commands',
             triggerId: trigger_id,
           });
           break;
-        
+
         default:
           response = {
             response_type: 'ephemeral',
@@ -121,13 +125,14 @@ router.post('/slash-commands',
  * POST /api/slack/webhooks/interactive
  * Handle Slack interactive components (buttons, select menus, etc.)
  */
-router.post('/interactive',
+router.post(
+  '/interactive',
   verifySlackRequest,
   async (req: Request, res: Response, _next: NextFunction) => {
     try {
       // Slack sends interactive payloads as URL-encoded form data
       const payload = JSON.parse(req.body.payload);
-      
+
       log.info('Received interactive action', {
         type: payload.type,
         callbackId: payload.callback_id,
@@ -141,16 +146,16 @@ router.post('/interactive',
         case 'block_actions':
           response = await handleBlockActions(payload);
           break;
-        
+
         case 'view_submission':
           response = await handleViewSubmission(payload);
           break;
-        
+
         case 'view_closed':
           // No response needed for view_closed
           res.status(200).send();
           return;
-        
+
         default:
           log.warn('Unknown interaction type', { type: payload.type });
           response = { text: 'Unknown interaction type' };
@@ -168,36 +173,30 @@ router.post('/interactive',
  * POST /api/slack/webhooks/options
  * Handle options requests for select menus
  */
-router.post('/options',
-  verifySlackRequest,
-  async (req: Request, res: Response) => {
-    try {
-      const payload = JSON.parse(req.body.payload);
-      
-      log.info('Received options request', {
-        blockId: payload.block_id,
-        actionId: payload.action_id,
-        requestId: req.id,
-      });
+router.post('/options', verifySlackRequest, async (req: Request, res: Response) => {
+  try {
+    const payload = JSON.parse(req.body.payload);
 
-      // Return options based on the request
-      const options = await getOptionsForAction(payload);
-      
-      res.json({
-        options: options,
-      });
-    } catch (error) {
-      log.error('Failed to handle options request', error);
-      res.json({ options: [] });
-    }
+    log.info('Received options request', {
+      blockId: payload.block_id,
+      actionId: payload.action_id,
+      requestId: req.id,
+    });
+
+    // Return options based on the request
+    const options = await getOptionsForAction(payload);
+
+    res.json({
+      options: options,
+    });
+  } catch (error) {
+    log.error('Failed to handle options request', error);
+    res.json({ options: [] });
   }
-);
+});
 
 // Command handlers
-async function handleDuetRightCommand(
-  text: string,
-  _context: any
-): Promise<any> {
+async function handleDuetRightCommand(text: string, _context: any): Promise<any> {
   const args = text.trim().split(/\s+/);
   const subcommand = args[0]?.toLowerCase();
 
@@ -205,27 +204,28 @@ async function handleDuetRightCommand(
     case 'help':
       return {
         response_type: 'ephemeral',
-        text: '*DuetRight Commands:*\n' +
-              '• `/dr help` - Show this help message\n' +
-              '• `/dr status` - Check system status\n' +
-              '• `/dr sync` - Sync data from all services\n' +
-              '• `/dr report [daily|weekly|monthly]` - Generate reports',
+        text:
+          '*DuetRight Commands:*\n' +
+          '• `/dr help` - Show this help message\n' +
+          '• `/dr status` - Check system status\n' +
+          '• `/dr sync` - Sync data from all services\n' +
+          '• `/dr report [daily|weekly|monthly]` - Generate reports',
       };
-    
+
     case 'status':
       // TODO: Implement status check
       return {
         response_type: 'in_channel',
         text: '✅ All systems operational',
       };
-    
+
     case 'sync':
       // TODO: Implement sync functionality
       return {
         response_type: 'in_channel',
         text: '🔄 Starting sync process...',
       };
-    
+
     default:
       return {
         response_type: 'ephemeral',

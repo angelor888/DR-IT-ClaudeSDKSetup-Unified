@@ -15,30 +15,32 @@ import documentationRoutes from './api/documentation/routes';
 
 export function createApp(): Application {
   const app: Application = express();
-  
+
   // Request ID should be first
   app.use(requestIdMiddleware);
-  
+
   // Security middleware
   app.use(helmet());
-  app.use(cors({
-    origin: config.server.corsOrigin,
-    credentials: config.server.corsCredentials,
-  }));
+  app.use(
+    cors({
+      origin: config.server.corsOrigin,
+      credentials: config.server.corsCredentials,
+    })
+  );
   app.use(compression());
-  
+
   // Request logging with request ID
   if (config.server.nodeEnv !== 'test' && config.development.logRequests) {
     morgan.token('request-id', (req: Request) => req.id);
     app.use(morgan(':request-id :method :url :status :response-time ms'));
   }
-  
+
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  
+
   // Apply rate limiting to all API routes
   app.use('/api/', apiLimiter);
-  
+
   // Health check endpoint
   app.get('/health', (req: Request, res: Response) => {
     res.json({
@@ -50,7 +52,7 @@ export function createApp(): Application {
       version: config.server.apiVersion,
     });
   });
-  
+
   // Root endpoint
   app.get('/', (req: Request, res: Response) => {
     res.json({
@@ -64,15 +66,15 @@ export function createApp(): Application {
       requestId: req.id,
     });
   });
-  
+
   // Documentation (available in all environments)
   app.use(`/api/${config.server.apiVersion}/docs`, documentationRoutes);
-  
+
   // API routes
   app.use('/api/health', healthRoutes);
   app.use('/api/test/firestore', firestoreTestRoutes);
   app.use('/api/auth', authRoutes);
-  
+
   // Service routes (only if enabled)
   if (config.services.slack.enabled) {
     const slackRoutes = require('./api/slack').default;
@@ -83,12 +85,12 @@ export function createApp(): Application {
     const jobberRoutes = require('./api/jobber').default;
     app.use('/api/jobber', jobberRoutes);
   }
-  
+
   // 404 handler
   app.use(notFoundHandler);
-  
+
   // Global error handler (must be last)
   app.use(errorHandler);
-  
+
   return app;
 }

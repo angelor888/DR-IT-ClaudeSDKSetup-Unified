@@ -26,32 +26,28 @@ declare global {
  * Middleware to verify Firebase ID tokens
  * Mobile-ready: Works with tokens from web, iOS, or Android
  */
-export async function verifyToken(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export async function verifyToken(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({
         success: false,
         error: 'No token provided',
-        code: 'AUTH_NO_TOKEN'
+        code: 'AUTH_NO_TOKEN',
       });
       return;
     }
 
     const token = authHeader.split('Bearer ')[1];
-    
+
     // Verify the ID token
     const decodedToken = await getAuth().verifyIdToken(token);
-    
+
     // Get full user record for additional info
     const userRecord = await getAuth().getUser(decodedToken.uid);
-    
+
     // Attach user to request
     req.user = {
       uid: userRecord.uid,
@@ -61,38 +57,38 @@ export async function verifyToken(
       photoURL: userRecord.photoURL,
       phoneNumber: userRecord.phoneNumber,
       disabled: userRecord.disabled,
-      customClaims: userRecord.customClaims
+      customClaims: userRecord.customClaims,
     };
-    
+
     log.debug('User authenticated', { uid: req.user.uid, email: req.user.email });
     next();
   } catch (error: any) {
     log.error('Token verification failed', error);
-    
+
     // Provide specific error messages for better mobile debugging
     if (error.code === 'auth/id-token-expired') {
       res.status(401).json({
         success: false,
         error: 'Token expired',
-        code: 'AUTH_TOKEN_EXPIRED'
+        code: 'AUTH_TOKEN_EXPIRED',
       });
     } else if (error.code === 'auth/id-token-revoked') {
       res.status(401).json({
         success: false,
         error: 'Token revoked',
-        code: 'AUTH_TOKEN_REVOKED'
+        code: 'AUTH_TOKEN_REVOKED',
       });
     } else if (error.code === 'auth/argument-error') {
       res.status(401).json({
         success: false,
         error: 'Invalid token format',
-        code: 'AUTH_INVALID_TOKEN'
+        code: 'AUTH_INVALID_TOKEN',
       });
     } else {
       res.status(401).json({
         success: false,
         error: 'Authentication failed',
-        code: 'AUTH_FAILED'
+        code: 'AUTH_FAILED',
       });
     }
   }
@@ -109,7 +105,7 @@ export async function optionalAuth(
   next: NextFunction
 ): Promise<void> {
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     // No token provided, continue without user
     next();
@@ -120,7 +116,7 @@ export async function optionalAuth(
     const token = authHeader.split('Bearer ')[1];
     const decodedToken = await getAuth().verifyIdToken(token);
     const userRecord = await getAuth().getUser(decodedToken.uid);
-    
+
     req.user = {
       uid: userRecord.uid,
       email: userRecord.email,
@@ -129,13 +125,15 @@ export async function optionalAuth(
       photoURL: userRecord.photoURL,
       phoneNumber: userRecord.phoneNumber,
       disabled: userRecord.disabled,
-      customClaims: userRecord.customClaims
+      customClaims: userRecord.customClaims,
     };
   } catch (error) {
     // Invalid token, continue without user
-    log.debug('Optional auth: Invalid token provided', { error: error instanceof Error ? error.message : String(error) });
+    log.debug('Optional auth: Invalid token provided', {
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
-  
+
   next();
 }
 
@@ -149,7 +147,7 @@ export function requireClaim(claim: string, value: any = true) {
       res.status(401).json({
         success: false,
         error: 'Authentication required',
-        code: 'AUTH_REQUIRED'
+        code: 'AUTH_REQUIRED',
       });
       return;
     }
@@ -159,7 +157,7 @@ export function requireClaim(claim: string, value: any = true) {
         success: false,
         error: 'Insufficient permissions',
         code: 'AUTH_FORBIDDEN',
-        required: claim
+        required: claim,
       });
       return;
     }
@@ -172,16 +170,12 @@ export function requireClaim(claim: string, value: any = true) {
  * Middleware to ensure email is verified
  * Important for production use
  */
-export function requireVerifiedEmail(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+export function requireVerifiedEmail(req: Request, res: Response, next: NextFunction): void {
   if (!req.user) {
     res.status(401).json({
       success: false,
       error: 'Authentication required',
-      code: 'AUTH_REQUIRED'
+      code: 'AUTH_REQUIRED',
     });
     return;
   }
@@ -190,7 +184,7 @@ export function requireVerifiedEmail(
     res.status(403).json({
       success: false,
       error: 'Email verification required',
-      code: 'AUTH_EMAIL_NOT_VERIFIED'
+      code: 'AUTH_EMAIL_NOT_VERIFIED',
     });
     return;
   }

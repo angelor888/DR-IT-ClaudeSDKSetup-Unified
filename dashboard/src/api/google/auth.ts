@@ -17,10 +17,10 @@ const googleAuth = new GoogleAuth();
 router.get('/auth/url', verifyToken, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.uid;
-    const state = req.query.state as string || userId;
-    
+    const state = (req.query.state as string) || userId;
+
     const authUrl = googleAuth.getAuthorizationUrl(state, userId);
-    
+
     res.json({
       success: true,
       data: {
@@ -44,7 +44,7 @@ router.get('/auth/url', verifyToken, async (req: Request, res: Response) => {
 router.get('/auth/callback', async (req: Request, res: Response) => {
   try {
     const { code, state } = req.query;
-    
+
     if (!code || typeof code !== 'string') {
       res.status(400).json({
         success: false,
@@ -52,14 +52,14 @@ router.get('/auth/callback', async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     // State contains userId
-    const userId = state as string || undefined;
+    const userId = (state as string) || undefined;
     await googleAuth.exchangeAuthCode(code, userId);
-    
+
     // Get user info
     const userInfo = await googleAuth.getUserInfo(userId);
-    
+
     // In production, redirect to a success page
     res.json({
       success: true,
@@ -89,7 +89,7 @@ router.get('/auth/status', verifyToken, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.uid;
     const isAuthenticated = await googleAuth.isAuthenticated(userId);
-    
+
     let userInfo = null;
     if (isAuthenticated) {
       try {
@@ -98,7 +98,7 @@ router.get('/auth/status', verifyToken, async (req: Request, res: Response) => {
         // Token might be invalid
       }
     }
-    
+
     res.json({
       success: true,
       data: {
@@ -124,7 +124,7 @@ router.post('/auth/revoke', verifyToken, async (req: Request, res: Response) => 
   try {
     const userId = req.user?.uid;
     await googleAuth.revokeTokens(userId);
-    
+
     res.json({
       success: true,
       message: 'Authorization revoked successfully',

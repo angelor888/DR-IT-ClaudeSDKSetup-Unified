@@ -39,30 +39,30 @@ export class JobberAuth {
     try {
       // Get tokens from Firestore
       const doc = await this.getDb().collection('service_tokens').doc('jobber').get();
-      
+
       if (!doc.exists) {
         // Use token from environment if no stored token
         const envToken = process.env.JOBBER_ACCESS_TOKEN;
         if (!envToken) {
           throw new Error('No Jobber access token available');
         }
-        
+
         // Store the env token
         await this.storeTokens({
           access_token: envToken,
           refresh_token: process.env.JOBBER_REFRESH_TOKEN || '',
-          expires_at: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days
+          expires_at: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
           token_type: 'Bearer',
           scope: 'all',
         });
-        
+
         return envToken;
       }
 
       const tokens = doc.data() as JobberTokens;
 
       // Check if token is expired (with 5 minute buffer)
-      if (tokens.expires_at <= Date.now() + (5 * 60 * 1000)) {
+      if (tokens.expires_at <= Date.now() + 5 * 60 * 1000) {
         log.info('Access token expired, refreshing...');
         return await this.refreshAccessToken(tokens.refresh_token);
       }
@@ -95,13 +95,13 @@ export class JobberAuth {
       const tokens: JobberTokens = {
         access_token: response.data.access_token,
         refresh_token: response.data.refresh_token || refreshToken,
-        expires_at: Date.now() + (response.data.expires_in * 1000),
+        expires_at: Date.now() + response.data.expires_in * 1000,
         token_type: response.data.token_type,
         scope: response.data.scope,
       };
 
       await this.storeTokens(tokens);
-      
+
       log.info('Successfully refreshed access token');
       return tokens.access_token;
     } catch (error: any) {
@@ -114,10 +114,13 @@ export class JobberAuth {
 
   // Store tokens in Firestore
   private async storeTokens(tokens: JobberTokens): Promise<void> {
-    await this.getDb().collection('service_tokens').doc('jobber').set({
-      ...tokens,
-      updatedAt: new Date(),
-    });
+    await this.getDb()
+      .collection('service_tokens')
+      .doc('jobber')
+      .set({
+        ...tokens,
+        updatedAt: new Date(),
+      });
   }
 
   // Exchange authorization code for tokens (for initial OAuth flow)
@@ -142,13 +145,13 @@ export class JobberAuth {
       const tokens: JobberTokens = {
         access_token: response.data.access_token,
         refresh_token: response.data.refresh_token,
-        expires_at: Date.now() + (response.data.expires_in * 1000),
+        expires_at: Date.now() + response.data.expires_in * 1000,
         token_type: response.data.token_type,
         scope: response.data.scope,
       };
 
       await this.storeTokens(tokens);
-      
+
       log.info('Successfully exchanged auth code for tokens');
       return tokens;
     } catch (error: any) {

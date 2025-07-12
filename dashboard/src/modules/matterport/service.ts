@@ -1,12 +1,7 @@
 // Matterport service layer - business logic
 import { getFirestore } from '../../config/firebase';
 import { MatterportClient } from './client';
-import { 
-  MatterportModel,
-  MatterportAnnotation,
-  MatterportTour,
-  MatterportShare
-} from './types';
+import { MatterportModel, MatterportAnnotation, MatterportTour, MatterportShare } from './types';
 import { logger } from '../../utils/logger';
 import { createEvent } from '../../models/Event';
 
@@ -30,7 +25,7 @@ export class MatterportService {
       // Fetch all models
       while (hasMore) {
         const response = await this.client.listModels({ page, limit: 50 });
-        
+
         if (response.data) {
           allModels.push(...response.data);
         }
@@ -51,16 +46,18 @@ export class MatterportService {
       await batch.commit();
 
       // Log sync event
-      await this.db.collection('events').add(
-        createEvent(
-          'sync',
-          'matterport',
-          'models.synced',
-          `Synced ${allModels.length} Matterport models`,
-          { source: 'dashboard' },
-          { modelCount: allModels.length }
-        )
-      );
+      await this.db
+        .collection('events')
+        .add(
+          createEvent(
+            'sync',
+            'matterport',
+            'models.synced',
+            `Synced ${allModels.length} Matterport models`,
+            { source: 'dashboard' },
+            { modelCount: allModels.length }
+          )
+        );
 
       log.info(`Synced ${allModels.length} models`);
       return allModels;
@@ -70,11 +67,13 @@ export class MatterportService {
     }
   }
 
-  async getModels(options: {
-    status?: 'processing' | 'active' | 'inactive';
-    visibility?: 'public' | 'private' | 'unlisted';
-    tags?: string[];
-  } = {}): Promise<MatterportModel[]> {
+  async getModels(
+    options: {
+      status?: 'processing' | 'active' | 'inactive';
+      visibility?: 'public' | 'private' | 'unlisted';
+      tags?: string[];
+    } = {}
+  ): Promise<MatterportModel[]> {
     try {
       let query = this.db.collection('matterport_models') as FirebaseFirestore.Query;
 
@@ -113,10 +112,13 @@ export class MatterportService {
 
       if (model) {
         // Cache in Firestore
-        await this.db.collection('matterport_models').doc(modelId).set({
-          ...model,
-          lastSynced: new Date(),
-        });
+        await this.db
+          .collection('matterport_models')
+          .doc(modelId)
+          .set({
+            ...model,
+            lastSynced: new Date(),
+          });
       }
 
       return model;
@@ -140,22 +142,27 @@ export class MatterportService {
       const model = await this.client.updateModel(modelId, updates);
 
       // Update in Firestore
-      await this.db.collection('matterport_models').doc(modelId).update({
-        ...updates,
-        modified: new Date().toISOString(),
-      });
+      await this.db
+        .collection('matterport_models')
+        .doc(modelId)
+        .update({
+          ...updates,
+          modified: new Date().toISOString(),
+        });
 
       // Log update event
-      await this.db.collection('events').add(
-        createEvent(
-          'update',
-          'matterport',
-          'model.updated',
-          `Updated Matterport model: ${model.name}`,
-          { source: 'dashboard' },
-          { modelId, updates }
-        )
-      );
+      await this.db
+        .collection('events')
+        .add(
+          createEvent(
+            'update',
+            'matterport',
+            'model.updated',
+            `Updated Matterport model: ${model.name}`,
+            { source: 'dashboard' },
+            { modelId, updates }
+          )
+        );
 
       return model;
     } catch (error) {
@@ -210,16 +217,18 @@ export class MatterportService {
         .set(newAnnotation);
 
       // Log creation event
-      await this.db.collection('events').add(
-        createEvent(
-          'create',
-          'matterport',
-          'annotation.created',
-          `Created annotation: ${annotation.title}`,
-          { source: 'dashboard' },
-          { modelId, annotationId: newAnnotation.id }
-        )
-      );
+      await this.db
+        .collection('events')
+        .add(
+          createEvent(
+            'create',
+            'matterport',
+            'annotation.created',
+            `Created annotation: ${annotation.title}`,
+            { source: 'dashboard' },
+            { modelId, annotationId: newAnnotation.id }
+          )
+        );
 
       return newAnnotation;
     } catch (error) {
@@ -273,16 +282,18 @@ export class MatterportService {
         .set(newTour);
 
       // Log creation event
-      await this.db.collection('events').add(
-        createEvent(
-          'create',
-          'matterport',
-          'tour.created',
-          `Created tour: ${tour.name}`,
-          { source: 'dashboard' },
-          { modelId, tourId: newTour.id }
-        )
-      );
+      await this.db
+        .collection('events')
+        .add(
+          createEvent(
+            'create',
+            'matterport',
+            'tour.created',
+            `Created tour: ${tour.name}`,
+            { source: 'dashboard' },
+            { modelId, tourId: newTour.id }
+          )
+        );
 
       return newTour;
     } catch (error) {
@@ -312,16 +323,18 @@ export class MatterportService {
         .set(share);
 
       // Log share event
-      await this.db.collection('events').add(
-        createEvent(
-          'share',
-          'matterport',
-          'model.shared',
-          `Created ${options.type} share for model`,
-          { source: 'dashboard' },
-          { modelId, shareId: share.id, shareType: options.type }
-        )
-      );
+      await this.db
+        .collection('events')
+        .add(
+          createEvent(
+            'share',
+            'matterport',
+            'model.shared',
+            `Created ${options.type} share for model`,
+            { source: 'dashboard' },
+            { modelId, shareId: share.id, shareType: options.type }
+          )
+        );
 
       return share;
     } catch (error) {
@@ -331,12 +344,15 @@ export class MatterportService {
   }
 
   // Get embed code
-  getEmbedCode(modelId: string, options?: {
-    width?: number;
-    height?: number;
-    autoplay?: boolean;
-    tour?: string;
-  }): string {
+  getEmbedCode(
+    modelId: string,
+    options?: {
+      width?: number;
+      height?: number;
+      autoplay?: boolean;
+      tour?: string;
+    }
+  ): string {
     return this.client.generateEmbedCode(modelId, options);
   }
 
@@ -396,10 +412,7 @@ export class MatterportService {
   }
 
   // Link Matterport model to Jobber property
-  async linkToJobberProperty(
-    modelId: string,
-    jobberPropertyId: string
-  ): Promise<void> {
+  async linkToJobberProperty(modelId: string, jobberPropertyId: string): Promise<void> {
     try {
       await this.db.collection('matterport_models').doc(modelId).update({
         'metadata.jobberPropertyId': jobberPropertyId,

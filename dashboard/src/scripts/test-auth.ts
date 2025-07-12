@@ -11,7 +11,7 @@ const API_URL = 'http://localhost:8080';
 const TEST_USER = {
   email: `test${Date.now()}@duetright.com`,
   password: 'Test123!@#',
-  displayName: 'Test User'
+  displayName: 'Test User',
 };
 
 async function testAuth() {
@@ -23,9 +23,9 @@ async function testAuth() {
     const registerRes = await axios.post(`${API_URL}/api/auth/register`, TEST_USER);
     console.log('✅ Registration successful:', {
       uid: registerRes.data.user.uid,
-      email: registerRes.data.user.email
+      email: registerRes.data.user.email,
     });
-    
+
     // 2. Test duplicate registration (should fail)
     console.log('\n2️⃣ Testing duplicate registration (should fail)...');
     try {
@@ -60,7 +60,7 @@ async function testAuth() {
     // 5. Test password reset
     console.log('\n5️⃣ Testing password reset...');
     const resetRes = await axios.post(`${API_URL}/api/auth/reset-password`, {
-      email: TEST_USER.email
+      email: TEST_USER.email,
     });
     console.log('✅ Password reset email sent:', resetRes.data);
 
@@ -68,7 +68,6 @@ async function testAuth() {
     console.log('\nNote: To test authenticated endpoints, you need to:');
     console.log('1. Get a Firebase ID token from the client SDK');
     console.log('2. Include it in the Authorization header: Bearer <token>');
-    
   } catch (error: any) {
     console.error('\n❌ Test failed:', error.response?.data || error.message);
   }

@@ -20,10 +20,7 @@ export const paginationValidation = [
     .optional()
     .isInt({ min: 1, max: 200 })
     .withMessage('Limit must be between 1 and 200'),
-  query('cursor')
-    .optional()
-    .isString()
-    .withMessage('Cursor must be a string'),
+  query('cursor').optional().isString().withMessage('Cursor must be a string'),
 ];
 
 // Message validation rules
@@ -44,14 +41,8 @@ export const postMessageValidation = [
     .optional()
     .matches(/^\d{10}\.\d{6}$/)
     .withMessage('Invalid thread timestamp format'),
-  body('blocks')
-    .optional()
-    .isArray()
-    .withMessage('Blocks must be an array'),
-  body('attachments')
-    .optional()
-    .isArray()
-    .withMessage('Attachments must be an array'),
+  body('blocks').optional().isArray().withMessage('Blocks must be an array'),
+  body('attachments').optional().isArray().withMessage('Attachments must be an array'),
 ];
 
 export const updateMessageValidation = [
@@ -99,17 +90,9 @@ export const webhookHeaderValidation = [
 ];
 
 export const webhookEventValidation = [
-  body('type')
-    .notEmpty()
-    .withMessage('Event type is required'),
-  body('team_id')
-    .optional()
-    .isString()
-    .withMessage('Team ID must be a string'),
-  body('event')
-    .optional()
-    .isObject()
-    .withMessage('Event must be an object'),
+  body('type').notEmpty().withMessage('Event type is required'),
+  body('team_id').optional().isString().withMessage('Team ID must be a string'),
+  body('event').optional().isObject().withMessage('Event must be an object'),
 ];
 
 // File upload validation
@@ -171,8 +154,5 @@ export const searchValidation = [
     .optional()
     .isInt({ min: 1, max: 100 })
     .withMessage('Count must be between 1 and 100'),
-  query('page')
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage('Page must be a positive integer'),
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
 ];

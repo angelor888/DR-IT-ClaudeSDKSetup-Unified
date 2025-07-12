@@ -23,10 +23,10 @@ export const createUser = (data: Omit<User, 'id' | 'metadata'>): Omit<User, 'id'
   settings: data.settings || {
     notifications: true,
     theme: 'light',
-    timezone: 'America/New_York'
+    timezone: 'America/New_York',
   },
   metadata: {
     createdAt: timestamp(),
-    updatedAt: timestamp()
-  }
+    updatedAt: timestamp(),
+  },
 });

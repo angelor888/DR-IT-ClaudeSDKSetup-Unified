@@ -1,6 +1,6 @@
 import { timestamp } from '../config/firebase';
 
-export type EventType = 
+export type EventType =
   | 'user_action'
   | 'system_action'
   | 'webhook_received'
@@ -19,7 +19,7 @@ export type EventType =
   | 'email'
   | 'share';
 
-export type EventCategory = 
+export type EventCategory =
   | 'authentication'
   | 'jobber'
   | 'quickbooks'
@@ -36,7 +36,7 @@ export interface Event {
   type: EventType;
   category: EventCategory;
   action: string; // e.g., 'user.login', 'jobber.job.created', 'task.completed'
-  
+
   // Event details
   details: {
     userId?: string;
@@ -47,7 +47,7 @@ export interface Event {
     data?: Record<string, any>;
     [key: string]: any; // Allow additional properties
   };
-  
+
   // Context
   context: {
     ip?: string;
@@ -55,7 +55,7 @@ export interface Event {
     source: 'web' | 'api' | 'webhook' | 'system' | 'dashboard';
     traceId?: string; // For tracking related events
   };
-  
+
   // Timestamp
   timestamp: FirebaseFirestore.Timestamp | ReturnType<typeof timestamp>;
 }
@@ -73,10 +73,10 @@ export const createEvent = (
   action,
   details: {
     message,
-    ...details
+    ...details,
   },
   context,
-  timestamp: timestamp()
+  timestamp: timestamp(),
 });
 
 // Helper function to create error events
@@ -93,8 +93,8 @@ export const createErrorEvent = (
   details: {
     message: typeof error === 'string' ? error : error.message,
     data: typeof error === 'string' ? {} : { stack: error.stack },
-    ...additionalDetails
+    ...additionalDetails,
   },
   context,
-  timestamp: timestamp()
+  timestamp: timestamp(),
 });

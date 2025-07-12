@@ -18,7 +18,7 @@ router.get('/clients', verifyToken, async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 50;
     const clients = await jobberService.syncClients(limit);
-    
+
     res.json({
       success: true,
       data: clients,
@@ -42,7 +42,7 @@ router.get('/clients/:clientId', verifyToken, async (req: Request, res: Response
   try {
     const { clientId } = req.params;
     const client = await jobberService.getClient(clientId);
-    
+
     if (!client) {
       res.status(404).json({
         success: false,
@@ -50,7 +50,7 @@ router.get('/clients/:clientId', verifyToken, async (req: Request, res: Response
       });
       return;
     }
-    
+
     res.json({
       success: true,
       data: client,
@@ -72,7 +72,7 @@ router.get('/clients/:clientId', verifyToken, async (req: Request, res: Response
 router.post('/clients', verifyToken, async (req: Request, res: Response) => {
   try {
     const { firstName, lastName, companyName, email, phone, address } = req.body;
-    
+
     if (!email && !phone && !companyName) {
       res.status(400).json({
         success: false,
@@ -80,7 +80,7 @@ router.post('/clients', verifyToken, async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     const client = await jobberService.createClient({
       firstName,
       lastName,
@@ -89,7 +89,7 @@ router.post('/clients', verifyToken, async (req: Request, res: Response) => {
       phone,
       address,
     });
-    
+
     res.status(201).json({
       success: true,
       data: client,
@@ -112,7 +112,7 @@ router.post('/clients', verifyToken, async (req: Request, res: Response) => {
 router.get('/clients/search', verifyToken, async (req: Request, res: Response) => {
   try {
     const { q } = req.query;
-    
+
     if (!q || typeof q !== 'string') {
       res.status(400).json({
         success: false,
@@ -120,9 +120,9 @@ router.get('/clients/search', verifyToken, async (req: Request, res: Response) =
       });
       return;
     }
-    
+
     const clients = await jobberService.searchClients(q);
-    
+
     res.json({
       success: true,
       data: clients,

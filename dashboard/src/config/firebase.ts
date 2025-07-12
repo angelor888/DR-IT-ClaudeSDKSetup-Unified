@@ -17,23 +17,23 @@ export function initializeFirebase(): void {
       log.info('Firebase Admin SDK mocked for testing');
       return;
     }
-    
+
     // Path to service account key
     const serviceAccountPath = path.join(__dirname, '../../firebase-service-account.json');
-    
+
     // Initialize with service account
     app = admin.initializeApp({
       credential: admin.credential.cert(serviceAccountPath),
-      projectId: 'duetright-dashboard'
+      projectId: 'duetright-dashboard',
     });
 
     // Get Firestore instance
     db = admin.firestore();
-    
+
     // Configure Firestore settings
     db.settings({
       ignoreUndefinedProperties: true,
-      timestampsInSnapshots: true
+      timestampsInSnapshots: true,
     });
 
     log.info('Firebase Admin SDK initialized successfully');
@@ -65,7 +65,7 @@ export const collections = {
   tasks: 'tasks',
   events: 'events',
   jobs: 'jobs',
-  automations: 'automations'
+  automations: 'automations',
 } as const;
 
 // Helper to get collection reference

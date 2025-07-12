@@ -1,7 +1,7 @@
 // Matterport API client wrapper
 import axios, { AxiosInstance } from 'axios';
 import { logger } from '../../utils/logger';
-import { 
+import {
   MatterportModel,
   MatterportSpace,
   MatterportMeasurement,
@@ -9,7 +9,7 @@ import {
   MatterportTour,
   MatterportShare,
   MatterportWebhook,
-  MatterportApiResponse
+  MatterportApiResponse,
 } from './types';
 
 const log = logger.child('MatterportClient');
@@ -23,7 +23,7 @@ export class MatterportClient {
     this.api = axios.create({
       baseURL: 'https://api.matterport.com/api/v1',
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
       },
     });
@@ -42,14 +42,16 @@ export class MatterportClient {
   }
 
   // Model operations
-  async listModels(options: {
-    page?: number;
-    limit?: number;
-    status?: 'processing' | 'active' | 'inactive';
-    visibility?: 'public' | 'private' | 'unlisted';
-    search?: string;
-    tags?: string[];
-  } = {}): Promise<MatterportApiResponse<MatterportModel[]>> {
+  async listModels(
+    options: {
+      page?: number;
+      limit?: number;
+      status?: 'processing' | 'active' | 'inactive';
+      visibility?: 'public' | 'private' | 'unlisted';
+      search?: string;
+      tags?: string[];
+    } = {}
+  ): Promise<MatterportApiResponse<MatterportModel[]>> {
     try {
       const response = await this.api.get('/models', {
         params: {
@@ -251,10 +253,7 @@ export class MatterportClient {
     updates: Partial<MatterportTour>
   ): Promise<MatterportTour> {
     try {
-      const response = await this.api.patch(
-        `/models/${modelId}/tours/${tourId}`,
-        updates
-      );
+      const response = await this.api.patch(`/models/${modelId}/tours/${tourId}`, updates);
       return response.data.data;
     } catch (error) {
       log.error(`Failed to update tour ${tourId}`, error);
@@ -362,16 +361,19 @@ export class MatterportClient {
   }
 
   // Generate embed code
-  generateEmbedCode(modelId: string, options: {
-    width?: number;
-    height?: number;
-    autoplay?: boolean;
-    tour?: string;
-    start?: string;
-    brand?: boolean;
-    help?: boolean;
-    qs?: boolean;
-  } = {}): string {
+  generateEmbedCode(
+    modelId: string,
+    options: {
+      width?: number;
+      height?: number;
+      autoplay?: boolean;
+      tour?: string;
+      start?: string;
+      brand?: boolean;
+      help?: boolean;
+      qs?: boolean;
+    } = {}
+  ): string {
     const params = new URLSearchParams({
       m: modelId,
       ...(options.autoplay && { autoplay: '1' }),

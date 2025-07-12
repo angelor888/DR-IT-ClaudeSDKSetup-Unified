@@ -1,5 +1,9 @@
 import { SlackClient } from '../../modules/slack/client';
-import { SlackAuthError, SlackChannelNotFoundError, SlackRateLimitError } from '../../core/errors/slack.error';
+import {
+  SlackAuthError,
+  SlackChannelNotFoundError,
+  SlackRateLimitError,
+} from '../../core/errors/slack.error';
 import { config } from '../../core/config';
 
 // Mock axios and BaseService
@@ -37,10 +41,10 @@ describe('SlackClient', () => {
     it('should throw error if no token is provided', () => {
       // Mock config without token
       (config.services.slack as any).botToken = undefined;
-      
+
       expect(() => new SlackClient()).toThrow(SlackAuthError);
       expect(() => new SlackClient()).toThrow('Slack bot token is required');
-      
+
       // Restore token
       (config.services.slack as any).botToken = 'xoxb-test-token';
     });
@@ -407,9 +411,7 @@ describe('SlackClient', () => {
         data: {
           ok: true,
           messages: {
-            matches: [
-              { ts: '1234567890.123456', text: 'Hello world' },
-            ],
+            matches: [{ ts: '1234567890.123456', text: 'Hello world' }],
           },
         },
       };

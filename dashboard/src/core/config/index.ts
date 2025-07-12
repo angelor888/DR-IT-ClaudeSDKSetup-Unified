@@ -1,23 +1,23 @@
 import dotenv from 'dotenv';
 import path from 'path';
-import { 
-  AppConfig, 
-  Environment, 
-  ServerConfig, 
-  FirebaseConfig, 
-  SlackConfig, 
-  JobberConfig, 
-  QuickBooksConfig, 
-  GoogleConfig, 
-  MatterportConfig, 
-  EmailConfig, 
-  SecurityConfig, 
-  CacheConfig, 
-  MonitoringConfig, 
-  RateLimitConfig, 
-  DevelopmentConfig, 
+import {
+  AppConfig,
+  Environment,
+  ServerConfig,
+  FirebaseConfig,
+  SlackConfig,
+  JobberConfig,
+  QuickBooksConfig,
+  GoogleConfig,
+  MatterportConfig,
+  EmailConfig,
+  SecurityConfig,
+  CacheConfig,
+  MonitoringConfig,
+  RateLimitConfig,
+  DevelopmentConfig,
   FeatureFlags,
-  DeepPartial 
+  DeepPartial,
 } from './types';
 import { validateConfig } from './validation';
 import { developmentConfig } from './environments/development';
@@ -25,8 +25,8 @@ import { productionConfig } from './environments/production';
 import { testConfig } from './environments/test';
 import { initializeLogger } from '../logging/logger';
 
-// Load environment variables
-const envPath = path.join(__dirname, '../../../../.env');
+// Load environment variables  
+const envPath = path.join(__dirname, '../../../.env');
 const result = dotenv.config({ path: envPath });
 
 if (result.error && process.env.NODE_ENV !== 'test') {
@@ -51,7 +51,35 @@ function parseCorsOrigin(value: string | undefined): string[] {
 
 function loadConfigFromEnv(): DeepPartial<AppConfig> {
   const env = process.env;
-  
+
+  // Try to load Firebase config from service account file if env vars are missing
+  let firebaseConfig = {
+    projectId: env.FIREBASE_PROJECT_ID || '',
+    clientEmail: env.FIREBASE_CLIENT_EMAIL || '',
+    privateKey: env.FIREBASE_PRIVATE_KEY || '',
+    apiKey: env.FIREBASE_API_KEY,
+    authDomain: env.FIREBASE_AUTH_DOMAIN,
+    storageBucket: env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: env.FIREBASE_APP_ID,
+  };
+
+  // If Firebase env vars are missing, try to load from service account JSON
+  if (!firebaseConfig.projectId || !firebaseConfig.clientEmail || !firebaseConfig.privateKey) {
+    try {
+      const serviceAccountPath = env.FIREBASE_SERVICE_ACCOUNT_PATH || './firebase-service-account.json';
+      const serviceAccount = require(path.resolve(serviceAccountPath));
+      firebaseConfig = {
+        ...firebaseConfig,
+        projectId: firebaseConfig.projectId || serviceAccount.project_id,
+        clientEmail: firebaseConfig.clientEmail || serviceAccount.client_email,
+        privateKey: firebaseConfig.privateKey || serviceAccount.private_key,
+      };
+    } catch (error) {
+      // Service account file not found or invalid, continue with env vars
+    }
+  }
+
   return {
     server: {
       port: parseNumber(env.PORT, 8080),
@@ -60,16 +88,7 @@ function loadConfigFromEnv(): DeepPartial<AppConfig> {
       corsOrigin: parseCorsOrigin(env.CORS_ORIGIN),
       corsCredentials: parseBoolean(env.CORS_CREDENTIALS, true),
     },
-    firebase: {
-      projectId: env.FIREBASE_PROJECT_ID || '',
-      clientEmail: env.FIREBASE_CLIENT_EMAIL || '',
-      privateKey: env.FIREBASE_PRIVATE_KEY || '',
-      apiKey: env.FIREBASE_API_KEY,
-      authDomain: env.FIREBASE_AUTH_DOMAIN,
-      storageBucket: env.FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: env.FIREBASE_MESSAGING_SENDER_ID,
-      appId: env.FIREBASE_APP_ID,
-    },
+    firebase: firebaseConfig,
     services: {
       slack: {
         enabled: parseBoolean(env.FEATURE_SLACK_ENABLED, true),
@@ -163,9 +182,15 @@ function mergeConfigs(base: DeepPartial<AppConfig>, override: DeepPartial<AppCon
     services: {
       slack: { ...base.services?.slack!, ...override.services?.slack } as SlackConfig,
       jobber: { ...base.services?.jobber!, ...override.services?.jobber } as JobberConfig,
-      quickbooks: { ...base.services?.quickbooks!, ...override.services?.quickbooks } as QuickBooksConfig,
+      quickbooks: {
+        ...base.services?.quickbooks!,
+        ...override.services?.quickbooks,
+      } as QuickBooksConfig,
       google: { ...base.services?.google!, ...override.services?.google } as GoogleConfig,
-      matterport: { ...base.services?.matterport!, ...override.services?.matterport } as MatterportConfig,
+      matterport: {
+        ...base.services?.matterport!,
+        ...override.services?.matterport,
+      } as MatterportConfig,
       email: { ...base.services?.email!, ...override.services?.email } as EmailConfig,
     },
     security: { ...base.security!, ...override.security } as SecurityConfig,
@@ -181,9 +206,9 @@ function mergeConfigs(base: DeepPartial<AppConfig>, override: DeepPartial<AppCon
 export function loadConfig(): AppConfig {
   const baseConfig = loadConfigFromEnv();
   const env = baseConfig.server?.nodeEnv || 'development';
-  
+
   let environmentConfig: DeepPartial<AppConfig>;
-  
+
   switch (env) {
     case 'production':
       environmentConfig = productionConfig;
@@ -194,7 +219,7 @@ export function loadConfig(): AppConfig {
     default:
       environmentConfig = developmentConfig;
   }
-  
+
   const mergedConfig = mergeConfigs(baseConfig, environmentConfig);
   return validateConfig(mergedConfig);
 }

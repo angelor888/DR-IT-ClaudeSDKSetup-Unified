@@ -46,7 +46,10 @@ export class MapsService {
   }
 
   // Reverse geocode coordinates to address
-  async reverseGeocode(lat: number, lng: number): Promise<{
+  async reverseGeocode(
+    lat: number,
+    lng: number
+  ): Promise<{
     formatted_address: string;
     place_id: string;
     address_components: any[];
@@ -81,7 +84,8 @@ export class MapsService {
       const response = await axios.get(`${this.baseUrl}/place/details/json`, {
         params: {
           place_id: placeId,
-          fields: 'place_id,formatted_address,name,geometry,address_components,types,url,vicinity,website,formatted_phone_number,opening_hours,photos,rating,reviews,user_ratings_total',
+          fields:
+            'place_id,formatted_address,name,geometry,address_components,types,url,vicinity,website,formatted_phone_number,opening_hours,photos,rating,reviews,user_ratings_total',
           key: this.apiKey,
         },
       });
@@ -138,13 +142,15 @@ export class MapsService {
     arrival_time?: Date;
   }): Promise<DirectionsResult | null> {
     try {
-      const origin = typeof options.origin === 'string'
-        ? options.origin
-        : `${options.origin.lat},${options.origin.lng}`;
-      
-      const destination = typeof options.destination === 'string'
-        ? options.destination
-        : `${options.destination.lat},${options.destination.lng}`;
+      const origin =
+        typeof options.origin === 'string'
+          ? options.origin
+          : `${options.origin.lat},${options.origin.lng}`;
+
+      const destination =
+        typeof options.destination === 'string'
+          ? options.destination
+          : `${options.destination.lat},${options.destination.lng}`;
 
       const params: any = {
         origin,
@@ -156,7 +162,7 @@ export class MapsService {
 
       if (options.waypoints && options.waypoints.length > 0) {
         params.waypoints = options.waypoints
-          .map(wp => typeof wp === 'string' ? wp : `${wp.lat},${wp.lng}`)
+          .map(wp => (typeof wp === 'string' ? wp : `${wp.lat},${wp.lng}`))
           .join('|');
       }
 
@@ -165,9 +171,10 @@ export class MapsService {
       }
 
       if (options.departure_time) {
-        params.departure_time = options.departure_time === 'now'
-          ? 'now'
-          : Math.floor(options.departure_time.getTime() / 1000);
+        params.departure_time =
+          options.departure_time === 'now'
+            ? 'now'
+            : Math.floor(options.departure_time.getTime() / 1000);
       }
 
       if (options.arrival_time) {
@@ -207,11 +214,11 @@ export class MapsService {
   } | null> {
     try {
       const origins = options.origins
-        .map(o => typeof o === 'string' ? o : `${o.lat},${o.lng}`)
+        .map(o => (typeof o === 'string' ? o : `${o.lat},${o.lng}`))
         .join('|');
-      
+
       const destinations = options.destinations
-        .map(d => typeof d === 'string' ? d : `${d.lat},${d.lng}`)
+        .map(d => (typeof d === 'string' ? d : `${d.lat},${d.lng}`))
         .join('|');
 
       const params: any = {
@@ -227,9 +234,10 @@ export class MapsService {
       }
 
       if (options.departure_time) {
-        params.departure_time = options.departure_time === 'now'
-          ? 'now'
-          : Math.floor(options.departure_time.getTime() / 1000);
+        params.departure_time =
+          options.departure_time === 'now'
+            ? 'now'
+            : Math.floor(options.departure_time.getTime() / 1000);
       }
 
       const response = await axios.get(`${this.baseUrl}/distancematrix/json`, { params });
@@ -254,14 +262,14 @@ export class MapsService {
   }> {
     try {
       const geocoded = await this.geocodeAddress(address);
-      
+
       if (!geocoded) {
         return { isValid: false };
       }
 
       // Check if the result is precise enough
       const placeDetails = await this.getPlaceDetails(geocoded.place_id);
-      const isPrecise = placeDetails?.types?.some(type => 
+      const isPrecise = placeDetails?.types?.some(type =>
         ['street_address', 'premise', 'subpremise', 'room'].includes(type)
       );
 
@@ -299,7 +307,7 @@ export class MapsService {
       if (directions && directions.routes.length > 0) {
         const route = directions.routes[0];
         const leg = route.legs[0];
-        
+
         return {
           distance: leg.distance.text,
           duration: leg.duration.text,
@@ -326,7 +334,7 @@ export class MapsService {
     };
   }): string {
     if (!property.address) return '';
-    
+
     const parts = [
       property.address.street1,
       property.address.street2,
@@ -335,7 +343,7 @@ export class MapsService {
       property.address.postalCode,
       property.address.country,
     ].filter(Boolean);
-    
+
     return parts.join(', ');
   }
 }

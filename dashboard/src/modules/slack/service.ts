@@ -26,7 +26,7 @@ export class SlackService {
   }
 
   private setupEventListeners(): void {
-    this.client.on('health-check', (health) => {
+    this.client.on('health-check', health => {
       log.debug('Slack health check', health);
     });
   }
@@ -76,16 +76,18 @@ export class SlackService {
       await batch.commit();
 
       // Log sync event
-      await this.db.collection('events').add(
-        createEvent(
-          'sync',
-          'slack',
-          'channels.synced',
-          `Synced ${channels.length} Slack channels`,
-          { source: 'dashboard' },
-          { channelCount: channels.length }
-        )
-      );
+      await this.db
+        .collection('events')
+        .add(
+          createEvent(
+            'sync',
+            'slack',
+            'channels.synced',
+            `Synced ${channels.length} Slack channels`,
+            { source: 'dashboard' },
+            { channelCount: channels.length }
+          )
+        );
 
       log.info(`Synced ${channels.length} channels`);
       return channels;
@@ -100,7 +102,7 @@ export class SlackService {
       const query = includeArchived
         ? this.db.collection('slack_channels')
         : this.db.collection('slack_channels').where('is_archived', '==', false);
-      
+
       const snapshot = await query.get();
       return snapshot.docs.map(doc => doc.data() as SlackChannel);
     } catch (error) {
@@ -122,7 +124,7 @@ export class SlackService {
   ): Promise<SlackMessage> {
     try {
       const response = await this.client.postMessage(channelId, text, options);
-      
+
       if (!response.ok || !response.data) {
         throw new Error(response.error || 'Failed to send message');
       }
@@ -146,7 +148,7 @@ export class SlackService {
           'message.sent',
           `Sent message to channel ${channelId}`,
           { source: 'dashboard' },
-          { 
+          {
             channelId,
             messageTs: message.ts,
             threadTs: options?.thread_ts,
@@ -161,10 +163,7 @@ export class SlackService {
     }
   }
 
-  async getRecentMessages(
-    channelId: string,
-    limit = 20
-  ): Promise<SlackMessage[]> {
+  async getRecentMessages(channelId: string, limit = 20): Promise<SlackMessage[]> {
     try {
       // Try to get from Firestore first
       const snapshot = await this.db
@@ -180,7 +179,7 @@ export class SlackService {
 
       // If not in Firestore, fetch from Slack
       const response = await this.client.getConversationHistory(channelId, { limit });
-      
+
       if (!response.ok || !response.data?.messages) {
         throw new Error(response.error || 'Failed to get messages');
       }
@@ -238,10 +237,13 @@ export class SlackService {
       const response = await this.client.getUserInfo(userId);
       if (response.ok && response.data?.user) {
         // Cache in Firestore
-        await this.db.collection('slack_users').doc(userId).set({
-          ...response.data.user,
-          lastSynced: new Date(),
-        });
+        await this.db
+          .collection('slack_users')
+          .doc(userId)
+          .set({
+            ...response.data.user,
+            lastSynced: new Date(),
+          });
         return response.data.user;
       }
 
@@ -279,7 +281,7 @@ export class SlackService {
       .where('name', '<=', query.toLowerCase() + '\uf8ff')
       .limit(10)
       .get();
-    
+
     return snapshot.docs.map(doc => doc.data() as SlackChannel);
   }
 

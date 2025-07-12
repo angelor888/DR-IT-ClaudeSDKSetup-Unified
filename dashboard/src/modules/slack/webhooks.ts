@@ -37,7 +37,7 @@ export class SlackWebhookHandler {
   private verifySlackRequest(req: Request): boolean {
     const timestamp = req.headers['x-slack-request-timestamp'] as string;
     const signature = req.headers['x-slack-signature'] as string;
-    
+
     if (!timestamp || !signature) {
       return false;
     }
@@ -50,18 +50,13 @@ export class SlackWebhookHandler {
 
     // Create signature base string
     const sigBasestring = `v0:${timestamp}:${JSON.stringify(req.body)}`;
-    
+
     // Create HMAC
-    const mySignature = 'v0=' + crypto
-      .createHmac('sha256', this.signingSecret)
-      .update(sigBasestring)
-      .digest('hex');
+    const mySignature =
+      'v0=' + crypto.createHmac('sha256', this.signingSecret).update(sigBasestring).digest('hex');
 
     // Compare signatures
-    return crypto.timingSafeEqual(
-      Buffer.from(mySignature),
-      Buffer.from(signature)
-    );
+    return crypto.timingSafeEqual(Buffer.from(mySignature), Buffer.from(signature));
   }
 
   // Main webhook handler
@@ -99,11 +94,13 @@ export class SlackWebhookHandler {
     const { event } = webhookEvent;
 
     // Store raw event in Firestore
-    await this.getDb().collection('slack_events').add({
-      ...webhookEvent,
-      receivedAt: new Date(),
-      processed: false,
-    });
+    await this.getDb()
+      .collection('slack_events')
+      .add({
+        ...webhookEvent,
+        receivedAt: new Date(),
+        processed: false,
+      });
 
     switch (event.type) {
       case 'message':
@@ -142,38 +139,39 @@ export class SlackWebhookHandler {
   }
 
   // Handle message events
-  private async handleMessage(
-    event: any,
-    _webhookEvent: SlackWebhookEvent
-  ): Promise<void> {
+  private async handleMessage(event: any, _webhookEvent: SlackWebhookEvent): Promise<void> {
     // Skip bot messages to prevent loops
     if (event.bot_id || event.subtype === 'bot_message') {
       return;
     }
 
     // Store message in Firestore
-    await this.getDb().collection('slack_messages').add({
-      ...event,
-      receivedAt: new Date(),
-      source: 'webhook',
-    });
+    await this.getDb()
+      .collection('slack_messages')
+      .add({
+        ...event,
+        receivedAt: new Date(),
+        source: 'webhook',
+      });
 
     // Log message event
-    await this.getDb().collection('events').add(
-      createEvent(
-        'message',
-        'slack',
-        'message.received',
-        `Received message in channel ${event.channel}`,
-        { source: 'webhook' },
-        {
-          data: { channelId: event.channel },
-          userId: event.user,
-          ts: event.ts,
-          threadTs: event.thread_ts,
-        }
-      )
-    );
+    await this.getDb()
+      .collection('events')
+      .add(
+        createEvent(
+          'message',
+          'slack',
+          'message.received',
+          `Received message in channel ${event.channel}`,
+          { source: 'webhook' },
+          {
+            data: { channelId: event.channel },
+            userId: event.user,
+            ts: event.ts,
+            threadTs: event.thread_ts,
+          }
+        )
+      );
 
     // Check if bot was mentioned or it's a DM
     const botInfo = await this.getSlackService().getBotInfo();
@@ -189,29 +187,25 @@ export class SlackWebhookHandler {
   }
 
   // Handle channel created
-  private async handleChannelCreated(
-    event: any,
-    _webhookEvent: SlackWebhookEvent
-  ): Promise<void> {
+  private async handleChannelCreated(event: any, _webhookEvent: SlackWebhookEvent): Promise<void> {
     await this.getSlackService().syncChannels();
-    
-    await this.getDb().collection('events').add(
-      createEvent(
-        'channel',
-        'slack',
-        'channel.created',
-        `New channel created: ${event.channel.name}`,
-        { source: 'webhook' },
-        { data: { channelId: event.channel.id, channelName: event.channel.name } }
-      )
-    );
+
+    await this.getDb()
+      .collection('events')
+      .add(
+        createEvent(
+          'channel',
+          'slack',
+          'channel.created',
+          `New channel created: ${event.channel.name}`,
+          { source: 'webhook' },
+          { data: { channelId: event.channel.id, channelName: event.channel.name } }
+        )
+      );
   }
 
   // Handle channel deleted
-  private async handleChannelDeleted(
-    event: any,
-    _webhookEvent: SlackWebhookEvent
-  ): Promise<void> {
+  private async handleChannelDeleted(event: any, _webhookEvent: SlackWebhookEvent): Promise<void> {
     await this.getDb().collection('slack_channels').doc(event.channel).update({
       is_deleted: true,
       deletedAt: new Date(),
@@ -219,10 +213,7 @@ export class SlackWebhookHandler {
   }
 
   // Handle channel archive
-  private async handleChannelArchive(
-    event: any,
-    _webhookEvent: SlackWebhookEvent
-  ): Promise<void> {
+  private async handleChannelArchive(event: any, _webhookEvent: SlackWebhookEvent): Promise<void> {
     await this.getDb().collection('slack_channels').doc(event.channel).update({
       is_archived: true,
       archivedAt: new Date(),
@@ -241,62 +232,59 @@ export class SlackWebhookHandler {
   }
 
   // Handle member joined
-  private async handleMemberJoined(
-    event: any,
-    _webhookEvent: SlackWebhookEvent
-  ): Promise<void> {
-    await this.getDb().collection('events').add(
-      createEvent(
-        'user_action',
-        'slack',
-        'member.joined',
-        `User joined channel`,
-        { source: 'webhook' },
-        { 
-          userId: event.user,
-          data: { channelId: event.channel }
-        }
-      )
-    );
+  private async handleMemberJoined(event: any, _webhookEvent: SlackWebhookEvent): Promise<void> {
+    await this.getDb()
+      .collection('events')
+      .add(
+        createEvent(
+          'user_action',
+          'slack',
+          'member.joined',
+          `User joined channel`,
+          { source: 'webhook' },
+          {
+            userId: event.user,
+            data: { channelId: event.channel },
+          }
+        )
+      );
   }
 
   // Handle member left
-  private async handleMemberLeft(
-    event: any,
-    _webhookEvent: SlackWebhookEvent
-  ): Promise<void> {
-    await this.getDb().collection('events').add(
-      createEvent(
-        'user_action',
-        'slack',
-        'member.left',
-        `User left channel`,
-        { source: 'webhook' },
-        { 
-          userId: event.user,
-          data: { channelId: event.channel }
-        }
-      )
-    );
+  private async handleMemberLeft(event: any, _webhookEvent: SlackWebhookEvent): Promise<void> {
+    await this.getDb()
+      .collection('events')
+      .add(
+        createEvent(
+          'user_action',
+          'slack',
+          'member.left',
+          `User left channel`,
+          { source: 'webhook' },
+          {
+            userId: event.user,
+            data: { channelId: event.channel },
+          }
+        )
+      );
   }
 
   // Handle app mentions
-  private async handleAppMention(
-    event: any,
-    _webhookEvent: SlackWebhookEvent
-  ): Promise<void> {
-    log.info('Bot was mentioned', { 
-      channel: event.channel, 
+  private async handleAppMention(event: any, _webhookEvent: SlackWebhookEvent): Promise<void> {
+    log.info('Bot was mentioned', {
+      channel: event.channel,
       user: event.user,
       text: event.text,
     });
 
     // Store mention
-    await this.getDb().collection('slack_mentions').add({
-      ...event,
-      receivedAt: new Date(),
-      responded: false,
-    });
+    await this.getDb()
+      .collection('slack_mentions')
+      .add({
+        ...event,
+        receivedAt: new Date(),
+        responded: false,
+      });
 
     // Auto-respond if configured
     if (process.env.SLACK_AUTO_RESPOND === 'true') {
@@ -308,15 +296,11 @@ export class SlackWebhookHandler {
   private async autoRespond(event: any): Promise<void> {
     try {
       const responseText = `Hi <@${event.user}>! I received your message. The dashboard is processing your request.`;
-      
-      await this.getSlackService().sendMessage(
-        event.channel,
-        responseText,
-        {
-          thread_ts: event.thread_ts || event.ts,
-          saveToDb: true,
-        }
-      );
+
+      await this.getSlackService().sendMessage(event.channel, responseText, {
+        thread_ts: event.thread_ts || event.ts,
+        saveToDb: true,
+      });
 
       // Mark mention as responded
       if (event.type === 'app_mention') {

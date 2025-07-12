@@ -72,7 +72,7 @@ export function validateConfig(config: DeepPartial<AppConfig>): AppConfig {
     if (!config.security?.jwtSecret && !config.firebase?.apiKey) {
       errors.push('Production requires either JWT_SECRET or Firebase Auth configuration');
     }
-    
+
     if (!config.monitoring?.sentryDsn) {
       warnings.push('Production environment should have Sentry configured for error tracking');
     }

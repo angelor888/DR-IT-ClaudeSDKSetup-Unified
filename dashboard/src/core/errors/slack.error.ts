@@ -19,34 +19,19 @@ export class SlackAuthError extends SlackError {
 
 export class SlackRateLimitError extends SlackError {
   constructor(retryAfter?: number) {
-    super(
-      'Slack API rate limit exceeded',
-      'SLACK_RATE_LIMIT',
-      429,
-      { retryAfter }
-    );
+    super('Slack API rate limit exceeded', 'SLACK_RATE_LIMIT', 429, { retryAfter });
   }
 }
 
 export class SlackChannelNotFoundError extends SlackError {
   constructor(channelId: string) {
-    super(
-      `Slack channel ${channelId} not found`,
-      'SLACK_CHANNEL_NOT_FOUND',
-      404,
-      { channelId }
-    );
+    super(`Slack channel ${channelId} not found`, 'SLACK_CHANNEL_NOT_FOUND', 404, { channelId });
   }
 }
 
 export class SlackUserNotFoundError extends SlackError {
   constructor(userId: string) {
-    super(
-      `Slack user ${userId} not found`,
-      'SLACK_USER_NOT_FOUND',
-      404,
-      { userId }
-    );
+    super(`Slack user ${userId} not found`, 'SLACK_USER_NOT_FOUND', 404, { userId });
   }
 }
 

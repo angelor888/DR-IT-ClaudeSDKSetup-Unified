@@ -147,9 +147,7 @@ describe('Auth Endpoints Integration Tests', () => {
 
   describe('GET /api/auth/user', () => {
     it('should require authentication', async () => {
-      const response = await request(app)
-        .get('/api/auth/user')
-        .expect(401);
+      const response = await request(app).get('/api/auth/user').expect(401);
 
       expect(response.body).toMatchObject({
         success: false,
@@ -215,9 +213,7 @@ describe('Auth Endpoints Integration Tests', () => {
 
   describe('GET /api/auth/health', () => {
     it('should return health status without auth', async () => {
-      const response = await request(app)
-        .get('/api/auth/health')
-        .expect(200);
+      const response = await request(app).get('/api/auth/health').expect(200);
 
       expect(response.body).toMatchObject({
         success: true,

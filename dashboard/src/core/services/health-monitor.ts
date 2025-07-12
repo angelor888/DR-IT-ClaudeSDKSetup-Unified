@@ -51,17 +51,13 @@ export class HealthMonitor extends EventEmitter {
     }
 
     log.info('Starting health monitoring');
-    
+
     // Initial check
-    this.checkSystem().catch(err => 
-      log.error('Initial health check failed', err)
-    );
+    this.checkSystem().catch(err => log.error('Initial health check failed', err));
 
     // Periodic checks
     this.healthCheckInterval = setInterval(() => {
-      this.checkSystem().catch(err => 
-        log.error('Periodic health check failed', err)
-      );
+      this.checkSystem().catch(err => log.error('Periodic health check failed', err));
     }, this.checkIntervalMs);
   }
 
@@ -75,14 +71,15 @@ export class HealthMonitor extends EventEmitter {
 
   async checkSystem(): Promise<SystemHealth> {
     const startTime = Date.now();
-    
+
     // Check all registered services
     const serviceChecks: Record<string, ServiceHealthCheck> = {};
     const servicePromises: Promise<void>[] = [];
 
     for (const [name, service] of this.services) {
       servicePromises.push(
-        service.checkHealth()
+        service
+          .checkHealth()
           .then(health => {
             serviceChecks[name] = health;
           })
@@ -114,7 +111,7 @@ export class HealthMonitor extends EventEmitter {
     ).length;
 
     let overallStatus: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
-    
+
     if (!databaseHealth.connected || unhealthyServices > 0) {
       overallStatus = 'unhealthy';
     } else if (degradedServices > 0) {
@@ -130,7 +127,7 @@ export class HealthMonitor extends EventEmitter {
     };
 
     this.lastSystemHealth = systemHealth;
-    
+
     const checkDuration = Date.now() - startTime;
     log.info('System health check completed', {
       status: overallStatus,
@@ -139,21 +136,21 @@ export class HealthMonitor extends EventEmitter {
     });
 
     this.emit('health-check', systemHealth);
-    
+
     return systemHealth;
   }
 
   private async checkDatabase(): Promise<SystemHealth['database']> {
     try {
       const startTime = Date.now();
-      
+
       // Import here to avoid circular dependency
       const { getFirestore } = await import('../../config/firebase');
       const db = getFirestore();
-      
+
       // Simple read operation to check connectivity
       await db.collection('_health').doc('check').get();
-      
+
       return {
         connected: true,
         responseTime: Date.now() - startTime,
@@ -169,7 +166,7 @@ export class HealthMonitor extends EventEmitter {
   private getSystemMetrics(): SystemHealth['system'] {
     const used = process.memoryUsage();
     const total = require('os').totalmem();
-    
+
     return {
       uptime: process.uptime(),
       memory: {
@@ -185,12 +182,11 @@ export class HealthMonitor extends EventEmitter {
   }
 
   async getHealth(): Promise<SystemHealth> {
-    if (this.lastSystemHealth && 
-        Date.now() - this.lastSystemHealth.timestamp.getTime() < 5000) {
+    if (this.lastSystemHealth && Date.now() - this.lastSystemHealth.timestamp.getTime() < 5000) {
       // Return cached result if less than 5 seconds old
       return this.lastSystemHealth;
     }
-    
+
     return this.checkSystem();
   }
 
@@ -206,9 +202,9 @@ export class HealthMonitor extends EventEmitter {
   async handleHealthRequest(_req: any, res: any): Promise<void> {
     try {
       const health = await this.getHealth();
-      const statusCode = health.status === 'healthy' ? 200 : 
-                        health.status === 'degraded' ? 200 : 503;
-      
+      const statusCode =
+        health.status === 'healthy' ? 200 : health.status === 'degraded' ? 200 : 503;
+
       res.status(statusCode).json(health);
     } catch (error) {
       res.status(503).json({

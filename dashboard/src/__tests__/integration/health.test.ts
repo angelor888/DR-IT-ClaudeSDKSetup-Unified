@@ -18,9 +18,7 @@ describe('Health Endpoints Integration Tests', () => {
 
   describe('GET /api/health', () => {
     it('should return basic health status', async () => {
-      const response = await request(app)
-        .get('/api/health')
-        .expect(200);
+      const response = await request(app).get('/api/health').expect(200);
 
       expect(response.body).toMatchObject({
         status: 'healthy',
@@ -35,9 +33,7 @@ describe('Health Endpoints Integration Tests', () => {
 
   describe('GET /api/health/live', () => {
     it('should return liveness status', async () => {
-      const response = await request(app)
-        .get('/api/health/live')
-        .expect(200);
+      const response = await request(app).get('/api/health/live').expect(200);
 
       expect(response.body).toEqual({ status: 'ok' });
     });
@@ -45,9 +41,7 @@ describe('Health Endpoints Integration Tests', () => {
 
   describe('GET /api/health/ready', () => {
     it('should return readiness status', async () => {
-      const response = await request(app)
-        .get('/api/health/ready')
-        .expect(200);
+      const response = await request(app).get('/api/health/ready').expect(200);
 
       expect(response.body).toEqual({ status: 'ready' });
     });
@@ -55,9 +49,7 @@ describe('Health Endpoints Integration Tests', () => {
 
   describe('GET /api/health/detailed', () => {
     it('should return detailed health information', async () => {
-      const response = await request(app)
-        .get('/api/health/detailed')
-        .expect(200);
+      const response = await request(app).get('/api/health/detailed').expect(200);
 
       expect(response.body).toMatchObject({
         status: expect.stringMatching(/^(healthy|degraded|unhealthy)$/),
@@ -81,9 +73,7 @@ describe('Health Endpoints Integration Tests', () => {
 
   describe('GET /api/health/services', () => {
     it('should return all service statuses', async () => {
-      const response = await request(app)
-        .get('/api/health/services')
-        .expect(200);
+      const response = await request(app).get('/api/health/services').expect(200);
 
       expect(response.body).toMatchObject({
         timestamp: expect.any(String),
@@ -95,9 +85,7 @@ describe('Health Endpoints Integration Tests', () => {
 
   describe('GET /api/health/services/:service', () => {
     it('should return 404 for unknown service', async () => {
-      const response = await request(app)
-        .get('/api/health/services/unknown-service')
-        .expect(404);
+      const response = await request(app).get('/api/health/services/unknown-service').expect(404);
 
       expect(response.body).toMatchObject({
         error: 'Service not found',

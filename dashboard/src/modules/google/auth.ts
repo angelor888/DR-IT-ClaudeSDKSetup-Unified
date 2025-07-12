@@ -23,7 +23,7 @@ export class GoogleAuth {
     this.clientId = clientId;
     this.clientSecret = clientSecret;
     this.redirectUri = redirectUri;
-    
+
     // Define scopes for all Google services
     this.scopes = [
       'https://www.googleapis.com/auth/gmail.readonly',
@@ -37,17 +37,13 @@ export class GoogleAuth {
       'profile',
     ];
 
-    this.oauth2Client = new google.auth.OAuth2(
-      this.clientId,
-      this.clientSecret,
-      this.redirectUri
-    );
+    this.oauth2Client = new google.auth.OAuth2(this.clientId, this.clientSecret, this.redirectUri);
   }
 
   // Get OAuth2 client with current tokens
   async getAuthClient(userId?: string): Promise<OAuth2Client> {
     const tokens = await this.getTokens(userId);
-    
+
     if (tokens) {
       this.oauth2Client.setCredentials({
         access_token: tokens.access_token,
@@ -57,7 +53,7 @@ export class GoogleAuth {
       });
 
       // Check if token needs refresh
-      if (tokens.expires_at <= Date.now() + (5 * 60 * 1000)) {
+      if (tokens.expires_at <= Date.now() + 5 * 60 * 1000) {
         await this.refreshAccessToken(userId);
       }
     }
@@ -70,7 +66,7 @@ export class GoogleAuth {
     try {
       const docId = userId || 'default';
       const doc = await this.db.collection('service_tokens').doc(`google_${docId}`).get();
-      
+
       if (!doc.exists) {
         // Try to use refresh token from environment for default user
         if (!userId && process.env.GOOGLE_DRIVE_REFRESH_TOKEN) {
@@ -97,10 +93,13 @@ export class GoogleAuth {
   // Store tokens in Firestore
   private async storeTokens(tokens: GoogleTokens, userId?: string): Promise<void> {
     const docId = userId || 'default';
-    await this.db.collection('service_tokens').doc(`google_${docId}`).set({
-      ...tokens,
-      updatedAt: new Date(),
-    });
+    await this.db
+      .collection('service_tokens')
+      .doc(`google_${docId}`)
+      .set({
+        ...tokens,
+        updatedAt: new Date(),
+      });
   }
 
   // Refresh access token
@@ -116,17 +115,17 @@ export class GoogleAuth {
       });
 
       const { credentials } = await this.oauth2Client.refreshAccessToken();
-      
+
       const newTokens: GoogleTokens = {
         access_token: credentials.access_token!,
         refresh_token: credentials.refresh_token || tokens.refresh_token,
-        expires_at: credentials.expiry_date || (Date.now() + 3600 * 1000),
+        expires_at: credentials.expiry_date || Date.now() + 3600 * 1000,
         token_type: credentials.token_type || 'Bearer',
         scope: credentials.scope || tokens.scope,
       };
 
       await this.storeTokens(newTokens, userId);
-      
+
       log.info('Successfully refreshed access token');
       return newTokens.access_token;
     } catch (error) {
@@ -151,17 +150,17 @@ export class GoogleAuth {
   async exchangeAuthCode(code: string, userId?: string): Promise<GoogleTokens> {
     try {
       const { tokens } = await this.oauth2Client.getToken(code);
-      
+
       const googleTokens: GoogleTokens = {
         access_token: tokens.access_token!,
         refresh_token: tokens.refresh_token!,
-        expires_at: tokens.expiry_date || (Date.now() + 3600 * 1000),
+        expires_at: tokens.expiry_date || Date.now() + 3600 * 1000,
         token_type: tokens.token_type || 'Bearer',
         scope: tokens.scope || this.scopes.join(' '),
       };
 
       await this.storeTokens(googleTokens, userId);
-      
+
       log.info('Successfully exchanged auth code for tokens');
       return googleTokens;
     } catch (error: any) {

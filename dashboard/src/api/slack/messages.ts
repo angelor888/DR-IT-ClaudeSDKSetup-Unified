@@ -4,12 +4,12 @@ import { verifyToken } from '../../middleware/auth';
 import { getSlackService } from '../../modules/slack';
 import { validate } from '../../middleware/validation';
 import { apiLimiter } from '../../middleware/rateLimiter';
-import { 
+import {
   postMessageValidation,
   updateMessageValidation,
   deleteMessageValidation,
   userIdValidation,
-  paginationValidation 
+  paginationValidation,
 } from './validation';
 import { body } from 'express-validator';
 
@@ -25,7 +25,8 @@ const getSlackServiceInstance = () => getSlackService();
  * POST /api/slack/messages
  * Send a message to a Slack channel
  */
-router.post('/messages', 
+router.post(
+  '/messages',
   verifyToken,
   postMessageValidation,
   validate,
@@ -33,13 +34,13 @@ router.post('/messages',
     try {
       const { channel, text, thread_ts, blocks, attachments } = req.body;
       const slackService = getSlackServiceInstance();
-      
+
       const message = await slackService.sendMessage(channel, text, {
         thread_ts,
         blocks,
         attachments,
       });
-      
+
       res.json({
         success: true,
         data: message,
@@ -56,7 +57,8 @@ router.post('/messages',
  * PUT /api/slack/messages/:channelId/:ts
  * Update a message
  */
-router.put('/messages/:channelId/:ts',
+router.put(
+  '/messages/:channelId/:ts',
   verifyToken,
   updateMessageValidation,
   validate,
@@ -65,13 +67,13 @@ router.put('/messages/:channelId/:ts',
       const { channelId, ts } = req.params;
       const { text, blocks, attachments } = req.body;
       const slackService = getSlackServiceInstance();
-      
+
       const client = (slackService as any).client;
       const message = await client.updateMessage(channelId, ts, text, {
         blocks,
         attachments,
       });
-      
+
       res.json({
         success: true,
         data: message,
@@ -88,7 +90,8 @@ router.put('/messages/:channelId/:ts',
  * DELETE /api/slack/messages/:channelId/:ts
  * Delete a message
  */
-router.delete('/messages/:channelId/:ts',
+router.delete(
+  '/messages/:channelId/:ts',
   verifyToken,
   deleteMessageValidation,
   validate,
@@ -96,10 +99,10 @@ router.delete('/messages/:channelId/:ts',
     try {
       const { channelId, ts } = req.params;
       const slackService = getSlackServiceInstance();
-      
+
       const client = (slackService as any).client;
       await client.deleteMessage(channelId, ts);
-      
+
       res.json({
         success: true,
         message: 'Message deleted successfully',
@@ -115,7 +118,8 @@ router.delete('/messages/:channelId/:ts',
  * POST /api/slack/messages/bulk
  * Send messages to multiple channels
  */
-router.post('/messages/bulk', 
+router.post(
+  '/messages/bulk',
   verifyToken,
   [
     body('messages')
@@ -136,9 +140,9 @@ router.post('/messages/bulk',
     try {
       const { messages } = req.body;
       const slackService = getSlackServiceInstance();
-      
+
       const results = await Promise.allSettled(
-        messages.map((msg: any) => 
+        messages.map((msg: any) =>
           slackService.sendMessage(msg.channel, msg.text, {
             thread_ts: msg.thread_ts,
             blocks: msg.blocks,
@@ -146,10 +150,10 @@ router.post('/messages/bulk',
           })
         )
       );
-      
+
       const successful = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
-      
+
       res.json({
         success: true,
         summary: {
@@ -161,7 +165,9 @@ router.post('/messages/bulk',
           index,
           channel: messages[index].channel,
           status: result.status,
-          ...(result.status === 'fulfilled' ? { data: result.value } : { error: (result as any).reason?.message }),
+          ...(result.status === 'fulfilled'
+            ? { data: result.value }
+            : { error: (result as any).reason?.message }),
         })),
         requestId: req.id,
       });
@@ -175,7 +181,8 @@ router.post('/messages/bulk',
  * GET /api/slack/users
  * List Slack users
  */
-router.get('/users', 
+router.get(
+  '/users',
   verifyToken,
   paginationValidation,
   validate,
@@ -183,7 +190,7 @@ router.get('/users',
     try {
       const slackService = getSlackServiceInstance();
       const users = await slackService.syncUsers();
-      
+
       res.json({
         success: true,
         data: users,
@@ -200,7 +207,8 @@ router.get('/users',
  * GET /api/slack/users/:userId
  * Get user by ID
  */
-router.get('/users/:userId', 
+router.get(
+  '/users/:userId',
   verifyToken,
   userIdValidation,
   validate,
@@ -209,7 +217,7 @@ router.get('/users/:userId',
       const { userId } = req.params;
       const slackService = getSlackServiceInstance();
       const user = await slackService.getUserById(userId);
-      
+
       if (!user) {
         res.status(404).json({
           success: false,
@@ -219,7 +227,7 @@ router.get('/users/:userId',
         });
         return;
       }
-      
+
       res.json({
         success: true,
         data: user,
@@ -235,29 +243,27 @@ router.get('/users/:userId',
  * GET /api/slack/bot
  * Get bot information
  */
-router.get('/bot', 
-  verifyToken,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const slackService = getSlackServiceInstance();
-      const botInfo = await slackService.getBotInfo();
-      
-      res.json({
-        success: true,
-        data: botInfo,
-        requestId: req.id,
-      });
-    } catch (error: any) {
-      next(error);
-    }
+router.get('/bot', verifyToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const slackService = getSlackServiceInstance();
+    const botInfo = await slackService.getBotInfo();
+
+    res.json({
+      success: true,
+      data: botInfo,
+      requestId: req.id,
+    });
+  } catch (error: any) {
+    next(error);
   }
-);
+});
 
 /**
  * POST /api/slack/messages/:channelId/:timestamp/reactions
  * Add a reaction to a message
  */
-router.post('/messages/:channelId/:timestamp/reactions',
+router.post(
+  '/messages/:channelId/:timestamp/reactions',
   verifyToken,
   [
     body('name')
@@ -271,10 +277,10 @@ router.post('/messages/:channelId/:timestamp/reactions',
       const { channelId, timestamp } = req.params;
       const { name } = req.body;
       const slackService = getSlackServiceInstance();
-      
+
       const client = (slackService as any).client;
       await client.addReaction(channelId, timestamp, name);
-      
+
       res.json({
         success: true,
         message: 'Reaction added successfully',
@@ -290,17 +296,18 @@ router.post('/messages/:channelId/:timestamp/reactions',
  * DELETE /api/slack/messages/:channelId/:timestamp/reactions/:name
  * Remove a reaction from a message
  */
-router.delete('/messages/:channelId/:timestamp/reactions/:name',
+router.delete(
+  '/messages/:channelId/:timestamp/reactions/:name',
   verifyToken,
   validate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { channelId, timestamp, name } = req.params;
       const slackService = getSlackServiceInstance();
-      
+
       const client = (slackService as any).client;
       await client.removeReaction(channelId, timestamp, name);
-      
+
       res.json({
         success: true,
         message: 'Reaction removed successfully',

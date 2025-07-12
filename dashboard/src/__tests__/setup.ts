@@ -2,8 +2,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 // Load test environment variables
-dotenv.config({ 
-  path: path.join(__dirname, '../../../.env.test') 
+dotenv.config({
+  path: path.join(__dirname, '../../../.env.test'),
 });
 
 // Set test environment
@@ -17,36 +17,39 @@ jest.mock('firebase-admin', () => {
         set: jest.fn(),
         get: jest.fn(),
         update: jest.fn(),
-        delete: jest.fn()
+        delete: jest.fn(),
       })),
       add: jest.fn(),
-      where: jest.fn()
+      where: jest.fn(),
     })),
     FieldValue: {
-      serverTimestamp: jest.fn(() => new Date())
-    }
+      serverTimestamp: jest.fn(() => new Date()),
+    },
   };
-  
+
   const mockAuth = {
     createUser: jest.fn(),
     getUser: jest.fn(),
     updateUser: jest.fn(),
     deleteUser: jest.fn(),
     verifyIdToken: jest.fn(),
-    generatePasswordResetLink: jest.fn()
+    generatePasswordResetLink: jest.fn(),
   };
-  
+
   return {
     initializeApp: jest.fn(),
     credential: {
-      cert: jest.fn(() => ({}))
+      cert: jest.fn(() => ({})),
     },
-    firestore: Object.assign(jest.fn(() => mockFirestore), {
-      FieldValue: {
-        serverTimestamp: jest.fn(() => new Date())
+    firestore: Object.assign(
+      jest.fn(() => mockFirestore),
+      {
+        FieldValue: {
+          serverTimestamp: jest.fn(() => new Date()),
+        },
       }
-    }),
-    auth: jest.fn(() => mockAuth)
+    ),
+    auth: jest.fn(() => mockAuth),
   };
 });
 

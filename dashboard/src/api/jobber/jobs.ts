@@ -18,7 +18,7 @@ router.get('/jobs', verifyToken, async (req: Request, res: Response) => {
   try {
     const status = req.query.status as 'active' | 'completed' | 'cancelled' | undefined;
     const jobs = await jobberService.getJobs(status);
-    
+
     res.json({
       success: true,
       data: jobs,
@@ -42,7 +42,7 @@ router.get('/requests', verifyToken, async (req: Request, res: Response) => {
   try {
     const status = req.query.status as 'new' | 'converted' | 'closed' | undefined;
     const requests = await jobberService.getRequests(status);
-    
+
     res.json({
       success: true,
       data: requests,
@@ -64,9 +64,14 @@ router.get('/requests', verifyToken, async (req: Request, res: Response) => {
  */
 router.get('/quotes', verifyToken, async (req: Request, res: Response) => {
   try {
-    const status = req.query.status as 'draft' | 'awaiting_response' | 'approved' | 'rejected' | undefined;
+    const status = req.query.status as
+      | 'draft'
+      | 'awaiting_response'
+      | 'approved'
+      | 'rejected'
+      | undefined;
     const quotes = await jobberService.getQuotes(status);
-    
+
     res.json({
       success: true,
       data: quotes,
@@ -88,9 +93,14 @@ router.get('/quotes', verifyToken, async (req: Request, res: Response) => {
  */
 router.get('/invoices', verifyToken, async (req: Request, res: Response) => {
   try {
-    const status = req.query.status as 'draft' | 'awaiting_payment' | 'paid' | 'past_due' | undefined;
+    const status = req.query.status as
+      | 'draft'
+      | 'awaiting_payment'
+      | 'paid'
+      | 'past_due'
+      | undefined;
     const invoices = await jobberService.getInvoices(status);
-    
+
     res.json({
       success: true,
       data: invoices,
@@ -113,7 +123,7 @@ router.get('/invoices', verifyToken, async (req: Request, res: Response) => {
 router.get('/dashboard/stats', verifyToken, async (_req: Request, res: Response) => {
   try {
     const stats = await jobberService.getDashboardStats();
-    
+
     res.json({
       success: true,
       data: stats,

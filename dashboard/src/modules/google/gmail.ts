@@ -23,19 +23,21 @@ export class GmailService {
   }
 
   // List messages
-  async listMessages(options: {
-    userId?: string;
-    q?: string;
-    labelIds?: string[];
-    maxResults?: number;
-    pageToken?: string;
-  } = {}): Promise<{
+  async listMessages(
+    options: {
+      userId?: string;
+      q?: string;
+      labelIds?: string[];
+      maxResults?: number;
+      pageToken?: string;
+    } = {}
+  ): Promise<{
     messages: GmailMessage[];
     nextPageToken?: string;
   }> {
     try {
       const gmail = await this.getGmailClient(options.userId);
-      
+
       const response = await gmail.users.messages.list({
         userId: 'me',
         q: options.q,
@@ -45,7 +47,7 @@ export class GmailService {
       });
 
       const messages: GmailMessage[] = [];
-      
+
       if (response.data.messages) {
         // Fetch full message details
         const messagePromises = response.data.messages.map(msg =>
@@ -54,7 +56,7 @@ export class GmailService {
             id: msg.id!,
           })
         );
-        
+
         const fullMessages = await Promise.all(messagePromises);
         messages.push(...fullMessages.map(res => res.data as GmailMessage));
       }
@@ -77,7 +79,7 @@ export class GmailService {
         userId: 'me',
         id: messageId,
       });
-      
+
       return response.data as GmailMessage;
     } catch (error: any) {
       if (error.code === 404) {
@@ -105,12 +107,16 @@ export class GmailService {
   }): Promise<GmailMessage> {
     try {
       const gmail = await this.getGmailClient(options.userId);
-      
+
       // Create email content
       const to = Array.isArray(options.to) ? options.to.join(', ') : options.to;
       const cc = options.cc ? (Array.isArray(options.cc) ? options.cc.join(', ') : options.cc) : '';
-      const bcc = options.bcc ? (Array.isArray(options.bcc) ? options.bcc.join(', ') : options.bcc) : '';
-      
+      const bcc = options.bcc
+        ? Array.isArray(options.bcc)
+          ? options.bcc.join(', ')
+          : options.bcc
+        : '';
+
       let email = [
         'Content-Type: text/html; charset=utf-8',
         'MIME-Version: 1.0',
@@ -120,7 +126,9 @@ export class GmailService {
         `Subject: ${options.subject}`,
         '',
         options.html ? options.body : options.body.replace(/\n/g, '<br>'),
-      ].filter(line => line).join('\n');
+      ]
+        .filter(line => line)
+        .join('\n');
 
       // TODO: Handle attachments if provided
 
@@ -147,7 +155,7 @@ export class GmailService {
           'email.sent',
           `Sent email to ${to}`,
           { source: 'dashboard' },
-          { 
+          {
             messageId: response.data.id,
             to,
             subject: options.subject,
@@ -170,7 +178,7 @@ export class GmailService {
         userId: 'me',
       });
 
-      return response.data.labels as GmailLabel[] || [];
+      return (response.data.labels as GmailLabel[]) || [];
     } catch (error) {
       log.error('Failed to get labels', error);
       throw error;
@@ -261,7 +269,7 @@ export class GmailService {
   async deleteMessages(messageIds: string[], userId?: string): Promise<void> {
     try {
       const gmail = await this.getGmailClient(userId);
-      
+
       // Delete each message
       await Promise.all(
         messageIds.map(id =>

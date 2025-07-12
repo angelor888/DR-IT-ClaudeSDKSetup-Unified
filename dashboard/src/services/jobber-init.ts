@@ -22,10 +22,12 @@ export async function initializeJobberService(): Promise<void> {
       healthMonitor.registerService(client);
       log.info('Jobber service initialized and registered with health monitor');
     } catch (authError) {
-      log.warn('Jobber service initialized but no valid OAuth token available for health monitoring', { error: authError });
+      log.warn(
+        'Jobber service initialized but no valid OAuth token available for health monitoring',
+        { error: authError }
+      );
       log.info('Health monitoring will be registered when first OAuth token is obtained');
     }
-
   } catch (error) {
     log.error('Failed to initialize Jobber service', error);
     // Don't throw - service should still start even if Jobber fails

@@ -11,14 +11,9 @@ const log = logger.child('FirestoreTest');
 router.post('/write', async (_req: Request, res: Response) => {
   try {
     // Create a test task
-    const testTask = createTask(
-      'custom',
-      'Test Task - ' + new Date().toLocaleString(),
-      'system',
-      {
-        description: 'This is a test task created to verify Firestore write functionality'
-      }
-    );
+    const testTask = createTask('custom', 'Test Task - ' + new Date().toLocaleString(), 'system', {
+      description: 'This is a test task created to verify Firestore write functionality',
+    });
 
     // Write to Firestore
     const docRef = await getCollection('tasks').add(testTask);
@@ -42,15 +37,15 @@ router.post('/write', async (_req: Request, res: Response) => {
       taskId: docRef.id,
       data: {
         ...testTask,
-        id: docRef.id
-      }
+        id: docRef.id,
+      },
     });
   } catch (error) {
     log.error('Firestore write test failed', error);
     res.status(500).json({
       success: false,
       error: 'Failed to write to Firestore',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -59,7 +54,7 @@ router.post('/write', async (_req: Request, res: Response) => {
 router.get('/read', async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
-    
+
     // Read recent tasks
     const tasksSnapshot = await getCollection('tasks')
       .orderBy('metadata.createdAt', 'desc')
@@ -69,8 +64,8 @@ router.get('/read', async (req: Request, res: Response) => {
     const tasks: (Task & { id: string })[] = [];
     tasksSnapshot.forEach(doc => {
       tasks.push({
-        ...doc.data() as Task,
-        id: doc.id
+        ...(doc.data() as Task),
+        id: doc.id,
       });
     });
 
@@ -83,14 +78,14 @@ router.get('/read', async (req: Request, res: Response) => {
     const events: (Event & { id: string })[] = [];
     eventsSnapshot.forEach(doc => {
       events.push({
-        ...doc.data() as Event,
-        id: doc.id
+        ...(doc.data() as Event),
+        id: doc.id,
       });
     });
 
-    log.info('Firestore read test completed', { 
-      tasksCount: tasks.length, 
-      eventsCount: events.length 
+    log.info('Firestore read test completed', {
+      tasksCount: tasks.length,
+      eventsCount: events.length,
     });
 
     res.json({
@@ -101,16 +96,16 @@ router.get('/read', async (req: Request, res: Response) => {
         events,
         counts: {
           tasks: tasks.length,
-          events: events.length
-        }
-      }
+          events: events.length,
+        },
+      },
     });
   } catch (error) {
     log.error('Firestore read test failed', error);
     res.status(500).json({
       success: false,
       error: 'Failed to read from Firestore',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -122,23 +117,23 @@ router.get('/status', async (_req: Request, res: Response) => {
     const db = getFirestore();
     const testDoc = await db.collection('_test').add({
       timestamp: timestamp(),
-      test: true
+      test: true,
     });
-    
+
     // Clean up test document
     await testDoc.delete();
-    
+
     res.json({
       success: true,
       message: 'Firestore connection is healthy',
-      projectId: process.env.FIREBASE_PROJECT_ID
+      projectId: process.env.FIREBASE_PROJECT_ID,
     });
   } catch (error) {
     log.error('Firestore connection test failed', error);
     res.status(500).json({
       success: false,
       error: 'Firestore connection failed',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });

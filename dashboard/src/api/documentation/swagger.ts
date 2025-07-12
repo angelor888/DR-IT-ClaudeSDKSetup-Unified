@@ -6,7 +6,8 @@ const swaggerDefinition = {
   info: {
     title: 'DuetRight Dashboard API',
     version: config.server.apiVersion,
-    description: 'Integrated business automation dashboard API connecting Jobber, Slack, QuickBooks, and Google services.',
+    description:
+      'Integrated business automation dashboard API connecting Jobber, Slack, QuickBooks, and Google services.',
     contact: {
       name: 'DuetRight Support',
       email: 'support@duetright.com',
@@ -251,10 +252,7 @@ const swaggerDefinition = {
 
 const options = {
   definition: swaggerDefinition,
-  apis: [
-    './src/api/**/*.ts',
-    './src/api/**/*.js',
-  ],
+  apis: ['./src/api/**/*.ts', './src/api/**/*.js'],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

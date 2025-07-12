@@ -118,7 +118,14 @@ export interface MatterportShare {
 export interface MatterportWebhook {
   id: string;
   url: string;
-  events: Array<'model.created' | 'model.processed' | 'model.deleted' | 'annotation.created' | 'annotation.updated' | 'annotation.deleted'>;
+  events: Array<
+    | 'model.created'
+    | 'model.processed'
+    | 'model.deleted'
+    | 'annotation.created'
+    | 'annotation.updated'
+    | 'annotation.deleted'
+  >;
   active: boolean;
   secret?: string;
   created: string;

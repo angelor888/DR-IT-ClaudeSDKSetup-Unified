@@ -19,27 +19,27 @@ async function startServer() {
       environment: config.server.nodeEnv,
       servicesEnabled: Object.entries(config.services)
         .filter(([_, service]) => service.enabled)
-        .map(([name]) => name)
+        .map(([name]) => name),
     });
-    
+
     // Initialize Firebase
     initializeFirebase();
     log.info('Firebase initialized successfully');
-    
+
     // Start health monitoring
     const healthMonitor = getHealthMonitor();
     healthMonitor.start();
     log.info('Health monitoring started');
-    
+
     // Initialize enabled services
     if (config.services.slack.enabled) {
       await initializeSlackService();
     }
-    
+
     if (config.services.jobber.enabled) {
       await initializeJobberService();
     }
-    
+
     // Create Express app
     const app = createApp();
 
@@ -50,10 +50,12 @@ async function startServer() {
       console.log(`🏥 Health check: http://localhost:${PORT}/health`);
       console.log(`📚 Environment: ${config.server.nodeEnv}`);
       console.log(`🔥 Firebase: Connected to ${config.firebase.projectId}`);
-      console.log(`✅ Services enabled: ${Object.entries(config.services)
-        .filter(([_, service]) => service.enabled)
-        .map(([name]) => name)
-        .join(', ')}`);
+      console.log(
+        `✅ Services enabled: ${Object.entries(config.services)
+          .filter(([_, service]) => service.enabled)
+          .map(([name]) => name)
+          .join(', ')}`
+      );
       console.log(`🧪 Test endpoints:`);
       console.log(`   POST http://localhost:${PORT}/api/test/firestore/write`);
       console.log(`   GET  http://localhost:${PORT}/api/test/firestore/read`);
@@ -63,7 +65,7 @@ async function startServer() {
       console.log(`   GET  http://localhost:${PORT}/api/auth/user`);
       console.log(`   PATCH http://localhost:${PORT}/api/auth/user`);
       console.log(`   POST http://localhost:${PORT}/api/auth/reset-password`);
-      
+
       if (config.services.slack.enabled) {
         console.log(`💬 Slack endpoints:`);
         console.log(`   GET  http://localhost:${PORT}/api/slack/channels`);
@@ -71,7 +73,7 @@ async function startServer() {
         console.log(`   GET  http://localhost:${PORT}/api/slack/users`);
         console.log(`   POST http://localhost:${PORT}/api/slack/webhooks/*`);
       }
-      
+
       if (config.services.jobber.enabled) {
         console.log(`🔧 Jobber endpoints:`);
         console.log(`   GET  http://localhost:${PORT}/api/jobber/jobs`);
@@ -79,27 +81,27 @@ async function startServer() {
         console.log(`   POST http://localhost:${PORT}/api/jobber/auth/*`);
       }
     });
-    
+
     // Graceful shutdown
     process.on('SIGTERM', async () => {
       log.info('SIGTERM received, shutting down gracefully');
-      
+
       server.close(() => {
         log.info('HTTP server closed');
       });
-      
+
       // Stop health monitoring
       healthMonitor.stop();
-      
+
       // Shutdown services
       if (config.services.slack.enabled) {
         shutdownSlackService();
       }
-      
+
       if (config.services.jobber.enabled) {
         shutdownJobberService();
       }
-      
+
       process.exit(0);
     });
   } catch (error) {
