@@ -75,6 +75,15 @@ export interface TwilioConfig {
   webhookSecret?: string;
 }
 
+export interface CalendlyConfig {
+  enabled: boolean;
+  apiKey?: string;
+  webhookSecret?: string;
+  organizationUri?: string;
+  personalAccessToken?: string;
+  baseUrl?: string;
+}
+
 export interface SecurityConfig {
   jwtSecret?: string;
   jwtExpiresIn?: string;
@@ -114,6 +123,7 @@ export interface FeatureFlags {
   matterportEnabled: boolean;
   emailEnabled: boolean;
   twilioEnabled: boolean;
+  calendlyEnabled: boolean;
   websocket?: {
     enabled?: boolean;
   };
@@ -139,6 +149,7 @@ export interface AppConfig {
     matterport: MatterportConfig;
     email: EmailConfig;
     twilio: TwilioConfig;
+    calendly: CalendlyConfig;
   };
   security: SecurityConfig;
   cache: CacheConfig;
