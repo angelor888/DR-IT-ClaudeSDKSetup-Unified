@@ -14,7 +14,7 @@ import { Dashboard } from '@features/dashboard/Dashboard'
 
 // Import Customer and Job Management components
 import { CustomerList, CustomerForm, CustomerDetail } from '@features/customers'
-import { JobList, JobForm, JobDetail } from '@features/jobs'
+import { JobList, JobForm, JobDetail, JobCalendar } from '@features/jobs'
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -80,8 +80,8 @@ function AppContent() {
             <Route path="jobs/:id" element={<JobDetail />} />
             <Route path="jobs/:id/edit" element={<JobForm />} />
             
-            {/* Future routes for additional features */}
-            <Route path="calendar" element={<div>Calendar - Coming Soon</div>} />
+            {/* Calendar Route */}
+            <Route path="calendar" element={<JobCalendar />} />
             <Route path="communications" element={<div>Communications - Coming Soon</div>} />
             <Route path="reports" element={<div>Reports - Coming Soon</div>} />
             <Route path="settings" element={<div>Settings - Coming Soon</div>} />
