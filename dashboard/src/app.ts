@@ -1,9 +1,11 @@
-import express, { Application, Request, Response, NextFunction } from 'express';
+import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import { apiLimiter } from './middleware/rateLimiter';
+import { requestIdMiddleware, errorHandler, notFoundHandler } from './core/middleware';
+import { config } from './core/config';
 
 // API routes
 import firestoreTestRoutes from './api/test/firestore';
@@ -12,14 +14,21 @@ import authRoutes from './api/auth/routes';
 export function createApp(): Application {
   const app: Application = express();
   
-  // Middleware
+  // Request ID should be first
+  app.use(requestIdMiddleware);
+  
+  // Security middleware
   app.use(helmet());
-  app.use(cors());
+  app.use(cors({
+    origin: config.server.corsOrigin,
+    credentials: config.server.corsCredentials,
+  }));
   app.use(compression());
   
-  // Only use morgan in non-test environments
-  if (process.env.NODE_ENV !== 'test') {
-    app.use(morgan('combined'));
+  // Request logging with request ID
+  if (config.server.nodeEnv !== 'test' && config.development.logRequests) {
+    morgan.token('request-id', (req: Request) => req.id);
+    app.use(morgan(':request-id :method :url :status :response-time ms'));
   }
   
   app.use(express.json());
@@ -29,24 +38,28 @@ export function createApp(): Application {
   app.use('/api/', apiLimiter);
   
   // Health check endpoint
-  app.get('/health', (_req: Request, res: Response) => {
+  app.get('/health', (req: Request, res: Response) => {
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      uptime: process.uptime()
+      environment: config.server.nodeEnv,
+      uptime: process.uptime(),
+      requestId: req.id,
+      version: config.server.apiVersion,
     });
   });
   
   // Root endpoint
-  app.get('/', (_req: Request, res: Response) => {
+  app.get('/', (req: Request, res: Response) => {
     res.json({
       message: 'DuetRight Dashboard API',
-      version: '1.0.0',
+      version: config.server.apiVersion,
       endpoints: {
         health: '/health',
-        api: '/api/*'
-      }
+        api: `/api/${config.server.apiVersion}/*`,
+        documentation: `/api/${config.server.apiVersion}/docs`,
+      },
+      requestId: req.id,
     });
   });
   
@@ -55,21 +68,10 @@ export function createApp(): Application {
   app.use('/api/auth', authRoutes);
   
   // 404 handler
-  app.use((req: Request, res: Response) => {
-    res.status(404).json({
-      error: 'Not Found',
-      message: `Route ${req.originalUrl} not found`
-    });
-  });
+  app.use(notFoundHandler);
   
-  // Error handler
-  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('Error:', err.stack);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
-    });
-  });
+  // Global error handler (must be last)
+  app.use(errorHandler);
   
   return app;
 }

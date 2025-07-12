@@ -22,7 +22,7 @@ module.exports = {
     },
   },
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
-  testPathIgnorePatterns: ['/node_modules/', '/dist/', 'setup.ts'],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/', 'setup.ts', '/environments/'],
   testTimeout: 10000,
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

@@ -1,24 +1,23 @@
-import dotenv from 'dotenv';
-import path from 'path';
-
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '../../.env') });
-
-// Initialize Firebase
+// Initialize configuration first
+import { getConfig } from './core/config';
 import { initializeFirebase } from './config/firebase';
 import { logger } from './utils/logger';
-import { validateEnvironment } from './config/env';
 import { createApp } from './app';
 
+const config = getConfig();
 const log = logger.child('Server');
-const PORT = process.env.PORT || 8080;
+const PORT = config.server.port;
 
 // Initialize services and start server
 async function startServer() {
   try {
-    // Validate environment variables first
-    validateEnvironment();
-    log.info('Environment validation passed');
+    // Configuration is already loaded and validated
+    log.info('Configuration loaded successfully', {
+      environment: config.server.nodeEnv,
+      servicesEnabled: Object.entries(config.services)
+        .filter(([_, service]) => service.enabled)
+        .map(([name]) => name)
+    });
     
     // Initialize Firebase
     initializeFirebase();
@@ -32,8 +31,12 @@ async function startServer() {
       log.info(`Server running on port ${PORT}`);
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-      console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🔥 Firebase: Connected to ${process.env.FIREBASE_PROJECT_ID}`);
+      console.log(`📚 Environment: ${config.server.nodeEnv}`);
+      console.log(`🔥 Firebase: Connected to ${config.firebase.projectId}`);
+      console.log(`✅ Services enabled: ${Object.entries(config.services)
+        .filter(([_, service]) => service.enabled)
+        .map(([name]) => name)
+        .join(', ')}`);
       console.log(`🧪 Test endpoints:`);
       console.log(`   POST http://localhost:${PORT}/api/test/firestore/write`);
       console.log(`   GET  http://localhost:${PORT}/api/test/firestore/read`);

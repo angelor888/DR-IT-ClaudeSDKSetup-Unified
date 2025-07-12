@@ -133,7 +133,7 @@ export async function optionalAuth(
     };
   } catch (error) {
     // Invalid token, continue without user
-    log.debug('Optional auth: Invalid token provided', error);
+    log.debug('Optional auth: Invalid token provided', { error: error instanceof Error ? error.message : String(error) });
   }
   
   next();
