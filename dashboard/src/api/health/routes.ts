@@ -7,8 +7,37 @@ const router = Router();
 const healthMonitor = getHealthMonitor();
 
 /**
- * GET /health
- * Basic health check endpoint
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Basic health check
+ *     description: Returns basic health status of the API
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: API is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: healthy
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 environment:
+ *                   type: string
+ *                   example: development
+ *                 uptime:
+ *                   type: number
+ *                   example: 3600
+ *                 requestId:
+ *                   type: string
+ *                 version:
+ *                   type: string
+ *                   example: v1
  */
 router.get('/', (req: Request, res: Response) => {
   res.json({
@@ -22,16 +51,58 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 /**
- * GET /health/live
- * Kubernetes liveness probe endpoint
+ * @swagger
+ * /health/live:
+ *   get:
+ *     summary: Liveness probe
+ *     description: Kubernetes liveness probe endpoint - checks if the service is alive
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Service is alive
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: ok
  */
 router.get('/live', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
 /**
- * GET /health/ready
- * Kubernetes readiness probe endpoint
+ * @swagger
+ * /health/ready:
+ *   get:
+ *     summary: Readiness probe
+ *     description: Kubernetes readiness probe endpoint - checks if the service is ready to accept traffic
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Service is ready
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: ready
+ *       503:
+ *         description: Service is not ready
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: not ready
+ *                 reason:
+ *                   type: string
  */
 router.get('/ready', asyncHandler(async (_req: Request, res: Response) => {
   const health = await healthMonitor.getHealth();
@@ -47,8 +118,70 @@ router.get('/ready', asyncHandler(async (_req: Request, res: Response) => {
 }));
 
 /**
- * GET /health/detailed
- * Detailed system health information
+ * @swagger
+ * /health/detailed:
+ *   get:
+ *     summary: Detailed health check
+ *     description: Returns detailed system health information including all services and dependencies
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: System health information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [healthy, degraded, unhealthy]
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 services:
+ *                   type: object
+ *                   additionalProperties:
+ *                     type: object
+ *                     properties:
+ *                       name:
+ *                         type: string
+ *                       status:
+ *                         type: string
+ *                         enum: [healthy, unhealthy, degraded]
+ *                       lastCheck:
+ *                         type: string
+ *                         format: date-time
+ *                       responseTime:
+ *                         type: number
+ *                       message:
+ *                         type: string
+ *                 database:
+ *                   type: object
+ *                   properties:
+ *                     connected:
+ *                       type: boolean
+ *                     responseTime:
+ *                       type: number
+ *                     error:
+ *                       type: string
+ *                 system:
+ *                   type: object
+ *                   properties:
+ *                     uptime:
+ *                       type: number
+ *                     memory:
+ *                       type: object
+ *                       properties:
+ *                         used:
+ *                           type: number
+ *                         total:
+ *                           type: number
+ *                         percentage:
+ *                           type: number
+ *                 requestId:
+ *                   type: string
+ *       503:
+ *         $ref: '#/components/responses/ServerError'
  */
 router.get('/detailed', asyncHandler(async (req: Request, res: Response) => {
   const health = await healthMonitor.getHealth();

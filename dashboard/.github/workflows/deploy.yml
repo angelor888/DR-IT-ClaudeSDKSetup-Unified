@@ -1,0 +1,96 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'dashboard/**'
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: dashboard
+
+jobs:
+  deploy:
+    name: Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+        service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+    
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+    
+    - name: Configure Docker for GCR
+      run: gcloud auth configure-docker
+    
+    - name: Build and push Docker image
+      env:
+        PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        SERVICE_NAME: dashboard
+      run: |
+        IMAGE="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:${GITHUB_SHA}"
+        docker build -t "${IMAGE}" .
+        docker push "${IMAGE}"
+    
+    - name: Deploy to Cloud Run
+      env:
+        PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        SERVICE_NAME: dashboard
+        REGION: us-central1
+      run: |
+        IMAGE="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:${GITHUB_SHA}"
+        
+        gcloud run deploy ${SERVICE_NAME} \
+          --image "${IMAGE}" \
+          --platform managed \
+          --region ${REGION} \
+          --allow-unauthenticated \
+          --memory 512Mi \
+          --min-instances 1 \
+          --max-instances 10 \
+          --port 8080 \
+          --set-env-vars "NODE_ENV=production" \
+          --set-secrets "FIREBASE_PROJECT_ID=firebase-project-id:latest" \
+          --set-secrets "FIREBASE_CLIENT_EMAIL=firebase-client-email:latest" \
+          --set-secrets "FIREBASE_PRIVATE_KEY=firebase-private-key:latest" \
+          --set-secrets "SLACK_BOT_TOKEN=slack-bot-token:latest" \
+          --set-secrets "JOBBER_CLIENT_SECRET=jobber-client-secret:latest" \
+          --set-secrets "GOOGLE_CLIENT_SECRET=google-client-secret:latest" \
+          --set-secrets "SENDGRID_API_KEY=sendgrid-api-key:latest"
+    
+    - name: Get Service URL
+      env:
+        PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        SERVICE_NAME: dashboard
+        REGION: us-central1
+      run: |
+        SERVICE_URL=$(gcloud run services describe ${SERVICE_NAME} \
+          --platform managed \
+          --region ${REGION} \
+          --format 'value(status.url)')
+        echo "Service deployed to: ${SERVICE_URL}"
+        echo "SERVICE_URL=${SERVICE_URL}" >> $GITHUB_ENV
+    
+    - name: Run smoke tests
+      run: |
+        # Wait for service to be ready
+        sleep 30
+        
+        # Test health endpoint
+        curl -f "${SERVICE_URL}/health" || exit 1
+        
+        # Test API documentation
+        curl -f "${SERVICE_URL}/api/v1/docs" || exit 1

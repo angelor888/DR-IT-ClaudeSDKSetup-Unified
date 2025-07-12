@@ -11,6 +11,7 @@ import { config } from './core/config';
 import firestoreTestRoutes from './api/test/firestore';
 import authRoutes from './api/auth/routes';
 import healthRoutes from './api/health/routes';
+import documentationRoutes from './api/documentation/routes';
 
 export function createApp(): Application {
   const app: Application = express();
@@ -63,6 +64,9 @@ export function createApp(): Application {
       requestId: req.id,
     });
   });
+  
+  // Documentation (available in all environments)
+  app.use(`/api/${config.server.apiVersion}/docs`, documentationRoutes);
   
   // API routes
   app.use('/api/health', healthRoutes);

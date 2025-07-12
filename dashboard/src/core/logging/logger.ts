@@ -1,4 +1,4 @@
-import { config } from '../config';
+// Removed config import to avoid circular dependency
 
 export enum LogLevel {
   ERROR = 0,
@@ -27,6 +27,7 @@ interface LogEntry {
 
 export class Logger {
   private level: LogLevel;
+  private logFormat: 'json' | 'pretty' = 'json';
   private context: string;
   private requestId?: string;
 
@@ -34,21 +35,9 @@ export class Logger {
     this.context = context;
     this.requestId = requestId;
     
-    // Set log level based on config
-    const configLevel = config.monitoring.logLevel;
-    switch (configLevel) {
-      case 'error':
-        this.level = LogLevel.ERROR;
-        break;
-      case 'warn':
-        this.level = LogLevel.WARN;
-        break;
-      case 'debug':
-        this.level = LogLevel.DEBUG;
-        break;
-      default:
-        this.level = LogLevel.INFO;
-    }
+    // Default to INFO level
+    // Level will be set via setLogLevel method to avoid circular dependency
+    this.level = LogLevel.INFO;
   }
 
   private formatLog(level: LogLevel, message: string, data?: any): LogEntry | string {
@@ -76,8 +65,8 @@ export class Logger {
       logEntry.data = data;
     }
 
-    // Format based on config
-    if (config.monitoring.logFormat === 'json') {
+    // Format based on logFormat
+    if (this.logFormat === 'json') {
       return JSON.stringify(logEntry);
     } else {
       // Pretty format for development
@@ -137,13 +126,27 @@ export class Logger {
     this.log(LogLevel.DEBUG, message, data);
   }
 
+  setLogLevel(level: LogLevel): void {
+    this.level = level;
+  }
+
+  setLogFormat(format: 'json' | 'pretty'): void {
+    this.logFormat = format;
+  }
+
   child(context: string, requestId?: string): Logger {
     const childContext = `${this.context}:${context}`;
-    return new Logger(childContext, requestId || this.requestId);
+    const child = new Logger(childContext, requestId || this.requestId);
+    child.setLogLevel(this.level);
+    child.setLogFormat(this.logFormat);
+    return child;
   }
 
   withRequestId(requestId: string): Logger {
-    return new Logger(this.context, requestId);
+    const withId = new Logger(this.context, requestId);
+    withId.setLogLevel(this.level);
+    withId.setLogFormat(this.logFormat);
+    return withId;
   }
 }
 
@@ -159,3 +162,25 @@ export function getLogger(): Logger {
 
 // Export convenience instance
 export const logger = getLogger();
+
+// Initialize logger with config
+export function initializeLogger(logLevel: string, logFormat?: 'json' | 'pretty'): void {
+  let level: LogLevel;
+  switch (logLevel) {
+    case 'error':
+      level = LogLevel.ERROR;
+      break;
+    case 'warn':
+      level = LogLevel.WARN;
+      break;
+    case 'debug':
+      level = LogLevel.DEBUG;
+      break;
+    default:
+      level = LogLevel.INFO;
+  }
+  logger.setLogLevel(level);
+  if (logFormat) {
+    logger.setLogFormat(logFormat);
+  }
+}

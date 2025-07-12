@@ -1,14 +1,16 @@
 # DuetRight Dashboard
 
-Integrated business automation dashboard connecting Jobber, Slack, QuickBooks, and Google services.
+Integrated business automation dashboard with enterprise-grade reliability, monitoring, and scalability.
 
-## Architecture
+## 🏗️ Architecture
 
 - **Backend**: Express.js with TypeScript (Modular Monolith)
-- **Database**: Firestore (real-time updates)
-- **Authentication**: Firebase Auth (planned)
-- **Hosting**: Cloud Run via Firebase
-- **Queue**: Cloud Tasks for async jobs
+- **Database**: Firestore with health monitoring
+- **Authentication**: Firebase Auth with JWT tokens
+- **Infrastructure**: Docker, Cloud Run, Redis
+- **Monitoring**: Health checks, circuit breakers, structured logging
+- **API Documentation**: OpenAPI/Swagger
+- **Testing**: Jest with 80%+ coverage
 
 ## Project Structure
 
@@ -28,40 +30,83 @@ dashboard/
 └── public/               # Static assets
 ```
 
-## Development Setup
+## 🚀 Quick Start
 
-1. **Install dependencies**
+### Prerequisites
+- Node.js 20+
+- Firebase project with Admin SDK
+- (Optional) Docker for containerized development
+
+### Development Setup
+
+1. **Clone and install**
    ```bash
+   cd dashboard
    npm install
    ```
 
-2. **Environment variables**
-   - Copy `.env.example` to `.env` in parent directory
-   - Fill in all required API credentials
+2. **Configure environment**
+   ```bash
+   cp .env.example ../.env
+   # Edit ../.env with your credentials
+   ```
 
-3. **Run development server**
+3. **Run locally**
    ```bash
    npm run dev
    ```
 
-4. **Build for production**
+4. **Run with Docker**
    ```bash
-   npm run build
-   npm start
+   npm run docker:build
+   npm run docker:run
    ```
 
-## Available Scripts
+### Production Build
+```bash
+npm run build
+NODE_ENV=production npm start
+```
 
+## 📜 Available Scripts
+
+### Development
 - `npm run dev` - Start development server with hot reload
 - `npm run build` - Build TypeScript to JavaScript
 - `npm start` - Run production server
-- `npm run lint` - Check TypeScript types
 
-## API Endpoints
+### Quality Assurance
+- `npm run typecheck` - TypeScript type checking
+- `npm run lint` - ESLint code analysis
+- `npm run lint:fix` - Auto-fix linting issues
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
+- `npm test` - Run all tests
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:coverage` - Generate coverage report
+- `npm run test:integration` - Run integration tests only
+- `npm run validate` - Run all checks (types, lint, format, tests)
 
-### Public Endpoints
-- `GET /` - API info
-- `GET /health` - Health check
+### Operations
+- `npm run monitor` - Monitor health endpoints
+- `npm run docker:build` - Build Docker image
+- `npm run docker:run` - Run with docker-compose
+- `npm run docker:stop` - Stop containers
+- `npm run docker:logs` - View container logs
+
+## 🔌 API Endpoints
+
+### Documentation
+- `GET /api/v1/docs` - Interactive Swagger UI
+- `GET /api/v1/docs/spec` - OpenAPI specification
+
+### Health & Monitoring
+- `GET /health` - Basic health check
+- `GET /api/health/live` - Kubernetes liveness probe
+- `GET /api/health/ready` - Kubernetes readiness probe
+- `GET /api/health/detailed` - Detailed system health
+- `GET /api/health/services` - All service statuses
+- `GET /api/health/services/:name` - Specific service health
 
 ### Authentication Endpoints
 - `POST /api/auth/register` - Create new user account
@@ -81,19 +126,6 @@ dashboard/
 - `/api/jobber/*` - Jobber integration
 - `/api/quickbooks/*` - QuickBooks integration
 
-## Phase 1 Status
-
-- ✅ TypeScript/Express setup
-- ✅ Basic project structure
-- ✅ Health check endpoint
-- ✅ Firebase project setup & Firestore connected
-- ✅ Basic data models (User, Task, Event)
-- ✅ Firestore test endpoints working
-- ✅ Authentication implementation (Firebase Auth)
-- ✅ Auth middleware for protected routes
-- ⏳ Service module migration
-- ⏳ Frontend development
-- ⏳ Firestore security rules
 
 ## Firebase Setup
 
@@ -114,9 +146,108 @@ curl -H "Authorization: Bearer <token>" http://localhost:8080/api/auth/user
 
 Test authentication with: `npx ts-node src/scripts/test-auth.ts`
 
-## Next Steps
+## 🛡️ Security Features
 
-1. Migrate existing service scripts to modules
-2. Implement Firebase Authentication
-3. Build Vue.js frontend with real-time updates
-4. Deploy to Cloud Run via Firebase
+- **Input Validation**: All endpoints validated with express-validator
+- **Rate Limiting**: Configurable limits per endpoint type
+- **Authentication**: Firebase Auth with JWT verification
+- **Request Sanitization**: Automatic XSS prevention
+- **Environment Validation**: Startup checks for required configs
+- **Error Handling**: No sensitive data in error responses
+
+## 📊 Monitoring & Reliability
+
+- **Circuit Breakers**: Prevent cascading failures
+- **Retry Logic**: Exponential backoff with jitter
+- **Health Checks**: Comprehensive system monitoring
+- **Request IDs**: Full request tracing
+- **Structured Logging**: JSON logs with context
+- **Performance Metrics**: Response times, memory usage
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run with coverage
+npm run test:coverage
+
+# Run integration tests
+npm run test:integration
+
+# Watch mode for development
+npm run test:watch
+```
+
+Current coverage: ~80% (target: 90%)
+
+## 🚢 Deployment
+
+### Docker
+```bash
+# Build image
+docker build -t duetright/dashboard:latest .
+
+# Run locally
+docker-compose up -d
+
+# View logs
+docker-compose logs -f dashboard
+```
+
+### Cloud Run
+Deployment is automated via GitHub Actions on push to main branch.
+
+### Manual deployment
+```bash
+gcloud run deploy dashboard \
+  --image gcr.io/PROJECT_ID/dashboard:latest \
+  --platform managed \
+  --region us-central1
+```
+
+## 🔧 Configuration
+
+See `.env.example` for all configuration options. Key settings:
+
+- **Server**: Port, environment, API version
+- **Firebase**: Project ID, credentials
+- **Services**: Individual service credentials and feature flags
+- **Monitoring**: Log levels, Sentry DSN
+- **Rate Limits**: Request limits and windows
+
+## 🏗️ Project Structure
+
+```
+dashboard/
+├── src/
+│   ├── core/              # Core infrastructure
+│   │   ├── config/        # Configuration management
+│   │   ├── errors/        # Error classes
+│   │   ├── logging/       # Structured logging
+│   │   ├── middleware/    # Express middleware
+│   │   └── services/      # Base service classes
+│   ├── api/               # API endpoints
+│   │   ├── health/        # Health checks
+│   │   ├── auth/          # Authentication
+│   │   └── documentation/ # Swagger docs
+│   ├── services/          # External service integrations
+│   ├── models/            # Data models
+│   └── utils/             # Utilities
+├── tests/                 # Test files
+├── scripts/               # Utility scripts
+├── .github/workflows/     # CI/CD pipelines
+└── docker-compose.yml     # Local development
+```
+
+## 🤝 Contributing
+
+1. Create feature branch from `develop`
+2. Write tests for new functionality
+3. Ensure all checks pass: `npm run validate`
+4. Submit PR with clear description
+
+## 📝 License
+
+Proprietary - DuetRight © 2025

@@ -23,6 +23,7 @@ import { validateConfig } from './validation';
 import { developmentConfig } from './environments/development';
 import { productionConfig } from './environments/production';
 import { testConfig } from './environments/test';
+import { initializeLogger } from '../logging/logger';
 
 // Load environment variables
 const envPath = path.join(__dirname, '../../../../.env');
@@ -204,6 +205,8 @@ let configInstance: AppConfig | null = null;
 export function getConfig(): AppConfig {
   if (!configInstance) {
     configInstance = loadConfig();
+    // Initialize logger with the loaded config
+    initializeLogger(configInstance.monitoring.logLevel, configInstance.monitoring.logFormat);
   }
   return configInstance;
 }
