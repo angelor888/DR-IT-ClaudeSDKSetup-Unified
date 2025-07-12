@@ -102,7 +102,7 @@ router.post('/messages/bulk', verifyToken, async (req: Request, res: Response) =
  * GET /api/slack/users
  * List Slack users
  */
-router.get('/users', verifyToken, async (req: Request, res: Response) => {
+router.get('/users', verifyToken, async (_req: Request, res: Response) => {
   try {
     const users = await slackService.syncUsers();
     
@@ -156,7 +156,7 @@ router.get('/users/:userId', verifyToken, async (req: Request, res: Response) =>
  * GET /api/slack/bot
  * Get bot information
  */
-router.get('/bot', verifyToken, async (req: Request, res: Response) => {
+router.get('/bot', verifyToken, async (_req: Request, res: Response) => {
   try {
     const botInfo = await slackService.getBotInfo();
     

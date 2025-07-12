@@ -130,7 +130,7 @@ export class SlackWebhookHandler {
   // Handle message events
   private async handleMessage(
     event: any,
-    webhookEvent: SlackWebhookEvent
+    _webhookEvent: SlackWebhookEvent
   ): Promise<void> {
     // Skip bot messages to prevent loops
     if (event.bot_id || event.subtype === 'bot_message') {
@@ -153,7 +153,7 @@ export class SlackWebhookHandler {
         `Received message in channel ${event.channel}`,
         { source: 'webhook' },
         {
-          channelId: event.channel,
+          data: { channelId: event.channel },
           userId: event.user,
           ts: event.ts,
           threadTs: event.thread_ts,
@@ -177,7 +177,7 @@ export class SlackWebhookHandler {
   // Handle channel created
   private async handleChannelCreated(
     event: any,
-    webhookEvent: SlackWebhookEvent
+    _webhookEvent: SlackWebhookEvent
   ): Promise<void> {
     await this.slackService.syncChannels();
     
@@ -188,7 +188,7 @@ export class SlackWebhookHandler {
         'channel.created',
         `New channel created: ${event.channel.name}`,
         { source: 'webhook' },
-        { channelId: event.channel.id, channelName: event.channel.name }
+        { data: { channelId: event.channel.id, channelName: event.channel.name } }
       )
     );
   }
@@ -196,7 +196,7 @@ export class SlackWebhookHandler {
   // Handle channel deleted
   private async handleChannelDeleted(
     event: any,
-    webhookEvent: SlackWebhookEvent
+    _webhookEvent: SlackWebhookEvent
   ): Promise<void> {
     await this.db.collection('slack_channels').doc(event.channel).update({
       is_deleted: true,
@@ -207,7 +207,7 @@ export class SlackWebhookHandler {
   // Handle channel archive
   private async handleChannelArchive(
     event: any,
-    webhookEvent: SlackWebhookEvent
+    _webhookEvent: SlackWebhookEvent
   ): Promise<void> {
     await this.db.collection('slack_channels').doc(event.channel).update({
       is_archived: true,
@@ -218,7 +218,7 @@ export class SlackWebhookHandler {
   // Handle channel unarchive
   private async handleChannelUnarchive(
     event: any,
-    webhookEvent: SlackWebhookEvent
+    _webhookEvent: SlackWebhookEvent
   ): Promise<void> {
     await this.db.collection('slack_channels').doc(event.channel).update({
       is_archived: false,
@@ -229,7 +229,7 @@ export class SlackWebhookHandler {
   // Handle member joined
   private async handleMemberJoined(
     event: any,
-    webhookEvent: SlackWebhookEvent
+    _webhookEvent: SlackWebhookEvent
   ): Promise<void> {
     await this.db.collection('events').add(
       createEvent(
@@ -240,7 +240,7 @@ export class SlackWebhookHandler {
         { source: 'webhook' },
         { 
           userId: event.user,
-          channelId: event.channel,
+          data: { channelId: event.channel }
         }
       )
     );
@@ -249,7 +249,7 @@ export class SlackWebhookHandler {
   // Handle member left
   private async handleMemberLeft(
     event: any,
-    webhookEvent: SlackWebhookEvent
+    _webhookEvent: SlackWebhookEvent
   ): Promise<void> {
     await this.db.collection('events').add(
       createEvent(
@@ -260,7 +260,7 @@ export class SlackWebhookHandler {
         { source: 'webhook' },
         { 
           userId: event.user,
-          channelId: event.channel,
+          data: { channelId: event.channel }
         }
       )
     );
@@ -269,7 +269,7 @@ export class SlackWebhookHandler {
   // Handle app mentions
   private async handleAppMention(
     event: any,
-    webhookEvent: SlackWebhookEvent
+    _webhookEvent: SlackWebhookEvent
   ): Promise<void> {
     log.info('Bot was mentioned', { 
       channel: event.channel, 

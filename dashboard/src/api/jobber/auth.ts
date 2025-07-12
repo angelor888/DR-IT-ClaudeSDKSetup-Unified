@@ -43,7 +43,7 @@ router.get('/auth/url', async (req: Request, res: Response) => {
  */
 router.get('/auth/callback', async (req: Request, res: Response) => {
   try {
-    const { code, state } = req.query;
+    const { code, state: _state } = req.query;
     
     if (!code || typeof code !== 'string') {
       res.status(400).json({
@@ -80,7 +80,7 @@ router.get('/auth/callback', async (req: Request, res: Response) => {
  * POST /api/jobber/auth/refresh
  * Refresh access token
  */
-router.post('/auth/refresh', async (req: Request, res: Response) => {
+router.post('/auth/refresh', async (_req: Request, res: Response) => {
   try {
     const accessToken = await jobberAuth.getAccessToken();
     

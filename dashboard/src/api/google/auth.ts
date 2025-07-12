@@ -55,7 +55,7 @@ router.get('/auth/callback', async (req: Request, res: Response) => {
     
     // State contains userId
     const userId = state as string || undefined;
-    const tokens = await googleAuth.exchangeAuthCode(code, userId);
+    await googleAuth.exchangeAuthCode(code, userId);
     
     // Get user info
     const userInfo = await googleAuth.getUserInfo(userId);

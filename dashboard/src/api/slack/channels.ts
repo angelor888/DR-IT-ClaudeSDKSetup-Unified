@@ -38,7 +38,7 @@ router.get('/channels', verifyToken, async (req: Request, res: Response) => {
  * POST /api/slack/channels/sync
  * Sync channels from Slack
  */
-router.post('/channels/sync', verifyToken, async (req: Request, res: Response) => {
+router.post('/channels/sync', verifyToken, async (_req: Request, res: Response) => {
   try {
     const channels = await slackService.syncChannels();
     

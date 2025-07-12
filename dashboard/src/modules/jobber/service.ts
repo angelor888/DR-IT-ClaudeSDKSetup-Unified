@@ -7,8 +7,7 @@ import {
   JobberRequest,
   JobberQuote,
   JobberJob,
-  JobberInvoice,
-  JobberConnection
+  JobberInvoice
 } from './types';
 import { logger } from '../../utils/logger';
 import { createEvent } from '../../models/Event';
@@ -16,17 +15,15 @@ import { createEvent } from '../../models/Event';
 const log = logger.child('JobberService');
 
 export class JobberService {
-  private client: JobberClient;
   private auth: JobberAuth;
   private db = getFirestore();
 
   constructor() {
     this.auth = new JobberAuth();
-    this.client = new JobberClient();
   }
 
   // Initialize client with fresh token
-  private async getClient(): Promise<JobberClient> {
+  private async getAuthenticatedClient(): Promise<JobberClient> {
     const accessToken = await this.auth.getAccessToken();
     return new JobberClient(accessToken);
   }
@@ -34,7 +31,7 @@ export class JobberService {
   // Client operations
   async syncClients(limit = 100): Promise<JobberClientType[]> {
     try {
-      const client = await this.getClient();
+      const client = await this.getAuthenticatedClient();
       const allClients: JobberClientType[] = [];
       let hasNextPage = true;
       let after: string | undefined;
@@ -97,7 +94,7 @@ export class JobberService {
       }
 
       // Fetch from Jobber API
-      const client = await this.getClient();
+      const client = await this.getAuthenticatedClient();
       const jobberClient = await client.getClient(id);
 
       if (jobberClient) {
@@ -124,7 +121,7 @@ export class JobberService {
     address?: any;
   }): Promise<JobberClientType> {
     try {
-      const client = await this.getClient();
+      const client = await this.getAuthenticatedClient();
       const newClient = await client.createClient(input);
 
       if (!newClient) {
@@ -158,7 +155,7 @@ export class JobberService {
 
   async searchClients(searchTerm: string): Promise<JobberClientType[]> {
     try {
-      const client = await this.getClient();
+      const client = await this.getAuthenticatedClient();
       const result = await client.getClients({ searchTerm, first: 10 });
       return result.edges.map(edge => edge.node);
     } catch (error) {
@@ -170,7 +167,7 @@ export class JobberService {
   // Request operations
   async getRequests(status?: 'new' | 'converted' | 'closed'): Promise<JobberRequest[]> {
     try {
-      const client = await this.getClient();
+      const client = await this.getAuthenticatedClient();
       const result = await client.getRequests({ status, first: 50 });
       
       const requests = result.edges.map(edge => edge.node);
@@ -196,7 +193,7 @@ export class JobberService {
   // Quote operations
   async getQuotes(status?: 'draft' | 'awaiting_response' | 'approved' | 'rejected'): Promise<JobberQuote[]> {
     try {
-      const client = await this.getClient();
+      const client = await this.getAuthenticatedClient();
       const result = await client.getQuotes({ status, first: 50 });
       
       const quotes = result.edges.map(edge => edge.node);
@@ -222,7 +219,7 @@ export class JobberService {
   // Job operations
   async getJobs(status?: 'active' | 'completed' | 'cancelled'): Promise<JobberJob[]> {
     try {
-      const client = await this.getClient();
+      const client = await this.getAuthenticatedClient();
       const result = await client.getJobs({ status, first: 50 });
       
       const jobs = result.edges.map(edge => edge.node);
@@ -248,7 +245,7 @@ export class JobberService {
   // Invoice operations
   async getInvoices(status?: 'draft' | 'awaiting_payment' | 'paid' | 'past_due'): Promise<JobberInvoice[]> {
     try {
-      const client = await this.getClient();
+      const client = await this.getAuthenticatedClient();
       const result = await client.getInvoices({ status, first: 50 });
       
       const invoices = result.edges.map(edge => edge.node);

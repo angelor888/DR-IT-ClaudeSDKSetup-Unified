@@ -110,7 +110,7 @@ router.get('/invoices', verifyToken, async (req: Request, res: Response) => {
  * GET /api/jobber/dashboard/stats
  * Get dashboard statistics
  */
-router.get('/dashboard/stats', verifyToken, async (req: Request, res: Response) => {
+router.get('/dashboard/stats', verifyToken, async (_req: Request, res: Response) => {
   try {
     const stats = await jobberService.getDashboardStats();
     

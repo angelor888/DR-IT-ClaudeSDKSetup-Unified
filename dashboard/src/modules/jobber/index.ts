@@ -1,5 +1,5 @@
 // Jobber module exports
 export * from './types';
-export * from './client';
+export { JobberClient as JobberApiClient } from './client';
 export * from './auth';
 export * from './service';

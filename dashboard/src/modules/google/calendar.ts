@@ -283,7 +283,10 @@ export class CalendarService {
 
       return Object.entries(response.data.calendars || {}).map(([calendarId, data]) => ({
         calendar: calendarId,
-        busy: data.busy || [],
+        busy: (data.busy || []).map(period => ({
+          start: period.start || '',
+          end: period.end || ''
+        })),
       }));
     } catch (error) {
       log.error('Failed to check availability', error);

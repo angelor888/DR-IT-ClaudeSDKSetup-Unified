@@ -19,7 +19,7 @@ router.post('/events', (req, res) => {
  * POST /api/slack/webhooks/slash-commands
  * Handle Slack slash commands
  */
-router.post('/slash-commands', (req, res) => {
+router.post('/slash-commands', (_req, res) => {
   // TODO: Implement slash command handling
   res.json({
     response_type: 'in_channel',
@@ -31,7 +31,7 @@ router.post('/slash-commands', (req, res) => {
  * POST /api/slack/webhooks/interactive
  * Handle Slack interactive components (buttons, select menus, etc.)
  */
-router.post('/interactive', (req, res) => {
+router.post('/interactive', (_req, res) => {
   // TODO: Implement interactive component handling
   res.status(200).send();
 });

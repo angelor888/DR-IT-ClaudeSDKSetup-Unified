@@ -76,7 +76,7 @@ export class MatterportService {
     tags?: string[];
   } = {}): Promise<MatterportModel[]> {
     try {
-      let query = this.db.collection('matterport_models');
+      let query = this.db.collection('matterport_models') as FirebaseFirestore.Query;
 
       if (options.status) {
         query = query.where('status', '==', options.status);
@@ -372,7 +372,7 @@ export class MatterportService {
     postalCode?: string;
   }): Promise<MatterportModel[]> {
     try {
-      let query = this.db.collection('matterport_models');
+      let query = this.db.collection('matterport_models') as FirebaseFirestore.Query;
 
       if (address.street) {
         query = query.where('address.street', '==', address.street);

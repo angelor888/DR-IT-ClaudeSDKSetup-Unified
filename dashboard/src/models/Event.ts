@@ -7,7 +7,17 @@ export type EventType =
   | 'api_call'
   | 'error'
   | 'warning'
-  | 'info';
+  | 'info'
+  | 'sync'
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'message'
+  | 'channel'
+  | 'file'
+  | 'calendar'
+  | 'email'
+  | 'share';
 
 export type EventCategory = 
   | 'authentication'
@@ -16,7 +26,10 @@ export type EventCategory =
   | 'slack'
   | 'google'
   | 'system'
-  | 'task';
+  | 'task'
+  | 'matterport'
+  | 'gmail'
+  | 'drive';
 
 export interface Event {
   id: string;
@@ -32,13 +45,14 @@ export interface Event {
     entityType?: string;
     message: string;
     data?: Record<string, any>;
+    [key: string]: any; // Allow additional properties
   };
   
   // Context
   context: {
     ip?: string;
     userAgent?: string;
-    source: 'web' | 'api' | 'webhook' | 'system';
+    source: 'web' | 'api' | 'webhook' | 'system' | 'dashboard';
     traceId?: string; // For tracking related events
   };
   
