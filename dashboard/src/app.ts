@@ -10,6 +10,7 @@ import { config } from './core/config';
 // API routes
 import firestoreTestRoutes from './api/test/firestore';
 import authRoutes from './api/auth/routes';
+import healthRoutes from './api/health/routes';
 
 export function createApp(): Application {
   const app: Application = express();
@@ -64,6 +65,7 @@ export function createApp(): Application {
   });
   
   // API routes
+  app.use('/api/health', healthRoutes);
   app.use('/api/test/firestore', firestoreTestRoutes);
   app.use('/api/auth', authRoutes);
   
