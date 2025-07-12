@@ -12,9 +12,9 @@ import { LoginPage } from '@features/auth/LoginPage'
 import { DashboardLayout } from '@components/layout/DashboardLayout'
 import { Dashboard } from '@features/dashboard/Dashboard'
 
-// Temporary placeholder components for features not yet implemented
-const CustomerList = () => <div>Customer List - Coming Soon</div>
-const JobList = () => <div>Job List - Coming Soon</div>
+// Import Customer and Job Management components
+import { CustomerList, CustomerForm, CustomerDetail } from '@features/customers'
+import { JobList, JobForm, JobDetail } from '@features/jobs'
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -67,9 +67,24 @@ function AppContent() {
             }
           >
             <Route index element={<Dashboard />} />
+            
+            {/* Customer Management Routes */}
             <Route path="customers" element={<CustomerList />} />
+            <Route path="customers/new" element={<CustomerForm />} />
+            <Route path="customers/:id" element={<CustomerDetail />} />
+            <Route path="customers/:id/edit" element={<CustomerForm />} />
+            
+            {/* Job Management Routes */}
             <Route path="jobs" element={<JobList />} />
-            {/* Add more routes as we build features */}
+            <Route path="jobs/new" element={<JobForm />} />
+            <Route path="jobs/:id" element={<JobDetail />} />
+            <Route path="jobs/:id/edit" element={<JobForm />} />
+            
+            {/* Future routes for additional features */}
+            <Route path="calendar" element={<div>Calendar - Coming Soon</div>} />
+            <Route path="communications" element={<div>Communications - Coming Soon</div>} />
+            <Route path="reports" element={<div>Reports - Coming Soon</div>} />
+            <Route path="settings" element={<div>Settings - Coming Soon</div>} />
           </Route>
           
           <Route path="*" element={<Navigate to="/" replace />} />
