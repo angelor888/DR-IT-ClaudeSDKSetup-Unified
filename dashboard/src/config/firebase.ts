@@ -10,6 +10,14 @@ let db: admin.firestore.Firestore;
 
 export function initializeFirebase(): void {
   try {
+    // Skip initialization in test environment (mocked)
+    if (process.env.NODE_ENV === 'test') {
+      app = {} as admin.app.App;
+      db = admin.firestore();
+      log.info('Firebase Admin SDK mocked for testing');
+      return;
+    }
+    
     // Path to service account key
     const serviceAccountPath = path.join(__dirname, '../../firebase-service-account.json');
     

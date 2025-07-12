@@ -3,6 +3,17 @@ import { getAuth, getFirestore, createUser as createUserDoc } from '../../config
 import { verifyToken, optionalAuth } from '../../middleware/auth';
 import { logger } from '../../utils/logger';
 import { createEvent } from '../../models/Event';
+import { validate } from '../../middleware/validation';
+import { 
+  registerValidation, 
+  updateUserValidation, 
+  resetPasswordValidation 
+} from './validation';
+import { 
+  authLimiter, 
+  createAccountLimiter, 
+  passwordResetLimiter 
+} from '../../middleware/rateLimiter';
 
 const router = Router();
 const log = logger.child('AuthRoutes');
@@ -27,18 +38,9 @@ interface AuthResponse {
  * Note: In production, you might want to do this server-side only
  * or use Firebase Auth SDK on client side
  */
-router.post('/register', async (req: Request, res: Response<AuthResponse>) => {
+router.post('/register', createAccountLimiter, registerValidation, validate, async (req: Request, res: Response<AuthResponse>) => {
   try {
     const { email, password, displayName } = req.body;
-    
-    if (!email || !password) {
-      res.status(400).json({
-        success: false,
-        error: 'Email and password are required',
-        code: 'AUTH_MISSING_CREDENTIALS'
-      });
-      return;
-    }
 
     // Create user in Firebase Auth
     const userRecord = await getAuth().createUser({
@@ -120,7 +122,7 @@ router.post('/register', async (req: Request, res: Response<AuthResponse>) => {
  * Get current user profile
  * Requires authentication
  */
-router.get('/user', verifyToken, async (req: Request, res: Response<AuthResponse>) => {
+router.get('/user', authLimiter, verifyToken, async (req: Request, res: Response<AuthResponse>) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -162,7 +164,7 @@ router.get('/user', verifyToken, async (req: Request, res: Response<AuthResponse
 /**
  * Update user profile
  */
-router.patch('/user', verifyToken, async (req: Request, res: Response<AuthResponse>) => {
+router.patch('/user', authLimiter, verifyToken, updateUserValidation, validate, async (req: Request, res: Response<AuthResponse>) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -227,7 +229,7 @@ router.patch('/user', verifyToken, async (req: Request, res: Response<AuthRespon
 /**
  * Delete user account (soft delete)
  */
-router.delete('/user', verifyToken, async (req: Request, res: Response<AuthResponse>) => {
+router.delete('/user', authLimiter, verifyToken, async (req: Request, res: Response<AuthResponse>) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -282,18 +284,9 @@ router.delete('/user', verifyToken, async (req: Request, res: Response<AuthRespo
  * Note: This is typically done client-side with Firebase SDK
  * This endpoint is for server-initiated resets
  */
-router.post('/reset-password', async (req: Request, res: Response<AuthResponse>) => {
+router.post('/reset-password', passwordResetLimiter, resetPasswordValidation, validate, async (req: Request, res: Response<AuthResponse>) => {
   try {
     const { email } = req.body;
-    
-    if (!email) {
-      res.status(400).json({
-        success: false,
-        error: 'Email is required',
-        code: 'AUTH_EMAIL_REQUIRED'
-      });
-      return;
-    }
 
     // Generate password reset link
     const link = await getAuth().generatePasswordResetLink(email);

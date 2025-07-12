@@ -1,0 +1,6 @@
+dist/
+node_modules/
+coverage/
+*.js
+!src/**/*.js
+__tests__/setup.ts
