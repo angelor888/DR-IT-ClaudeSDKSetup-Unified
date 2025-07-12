@@ -1,5 +1,6 @@
 // Jobber service layer - business logic
 import { getFirestore } from '../../config/firebase';
+import * as admin from 'firebase-admin';
 import { JobberClient } from './client';
 import { JobberAuth } from './auth';
 import { 
@@ -16,14 +17,21 @@ const log = logger.child('JobberService');
 
 export class JobberService {
   private auth: JobberAuth;
-  private db = getFirestore();
+  private db: admin.firestore.Firestore | null = null;
 
   constructor() {
     this.auth = new JobberAuth();
   }
 
+  private getDb(): admin.firestore.Firestore {
+    if (!this.db) {
+      this.db = getFirestore();
+    }
+    return this.db;
+  }
+
   // Initialize client with fresh token
-  private async getAuthenticatedClient(): Promise<JobberClient> {
+  async getAuthenticatedClient(): Promise<JobberClient> {
     const accessToken = await this.auth.getAccessToken();
     return new JobberClient(accessToken);
   }
@@ -51,9 +59,9 @@ export class JobberService {
       }
 
       // Store in Firestore
-      const batch = this.db.batch();
+      const batch = this.getDb().batch();
       allClients.forEach(jobberClient => {
-        const docRef = this.db.collection('jobber_clients').doc(jobberClient.id);
+        const docRef = this.getDb().collection('jobber_clients').doc(jobberClient.id);
         batch.set(docRef, {
           ...jobberClient,
           lastSynced: new Date(),
@@ -62,7 +70,7 @@ export class JobberService {
       await batch.commit();
 
       // Log sync event
-      await this.db.collection('events').add(
+      await this.getDb().collection('events').add(
         createEvent(
           'sync',
           'jobber',
@@ -84,7 +92,7 @@ export class JobberService {
   async getClient(id: string): Promise<JobberClientType | null> {
     try {
       // Try Firestore first
-      const doc = await this.db.collection('jobber_clients').doc(id).get();
+      const doc = await this.getDb().collection('jobber_clients').doc(id).get();
       if (doc.exists && doc.data()?.lastSynced) {
         const data = doc.data() as JobberClientType & { lastSynced: any };
         // If data is less than 1 hour old, use it
@@ -99,7 +107,7 @@ export class JobberService {
 
       if (jobberClient) {
         // Cache in Firestore
-        await this.db.collection('jobber_clients').doc(id).set({
+        await this.getDb().collection('jobber_clients').doc(id).set({
           ...jobberClient,
           lastSynced: new Date(),
         });
@@ -129,13 +137,13 @@ export class JobberService {
       }
 
       // Store in Firestore
-      await this.db.collection('jobber_clients').doc(newClient.id).set({
+      await this.getDb().collection('jobber_clients').doc(newClient.id).set({
         ...newClient,
         lastSynced: new Date(),
       });
 
       // Log event
-      await this.db.collection('events').add(
+      await this.getDb().collection('events').add(
         createEvent(
           'create',
           'jobber',
@@ -173,9 +181,9 @@ export class JobberService {
       const requests = result.edges.map(edge => edge.node);
 
       // Update cache
-      const batch = this.db.batch();
+      const batch = this.getDb().batch();
       requests.forEach(request => {
-        const docRef = this.db.collection('jobber_requests').doc(request.id);
+        const docRef = this.getDb().collection('jobber_requests').doc(request.id);
         batch.set(docRef, {
           ...request,
           lastSynced: new Date(),
@@ -199,9 +207,9 @@ export class JobberService {
       const quotes = result.edges.map(edge => edge.node);
 
       // Update cache
-      const batch = this.db.batch();
+      const batch = this.getDb().batch();
       quotes.forEach(quote => {
-        const docRef = this.db.collection('jobber_quotes').doc(quote.id);
+        const docRef = this.getDb().collection('jobber_quotes').doc(quote.id);
         batch.set(docRef, {
           ...quote,
           lastSynced: new Date(),
@@ -225,9 +233,9 @@ export class JobberService {
       const jobs = result.edges.map(edge => edge.node);
 
       // Update cache
-      const batch = this.db.batch();
+      const batch = this.getDb().batch();
       jobs.forEach(job => {
-        const docRef = this.db.collection('jobber_jobs').doc(job.id);
+        const docRef = this.getDb().collection('jobber_jobs').doc(job.id);
         batch.set(docRef, {
           ...job,
           lastSynced: new Date(),
@@ -251,9 +259,9 @@ export class JobberService {
       const invoices = result.edges.map(edge => edge.node);
 
       // Update cache
-      const batch = this.db.batch();
+      const batch = this.getDb().batch();
       invoices.forEach(invoice => {
-        const docRef = this.db.collection('jobber_invoices').doc(invoice.id);
+        const docRef = this.getDb().collection('jobber_invoices').doc(invoice.id);
         batch.set(docRef, {
           ...invoice,
           lastSynced: new Date(),
@@ -287,7 +295,7 @@ export class JobberService {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const paidInvoicesSnapshot = await this.db
+      const paidInvoicesSnapshot = await this.getDb()
         .collection('jobber_invoices')
         .where('status', '==', 'paid')
         .where('paidAt', '>=', thirtyDaysAgo.toISOString())
@@ -298,7 +306,7 @@ export class JobberService {
       }, 0);
 
       // Get total clients count
-      const clientsSnapshot = await this.db
+      const clientsSnapshot = await this.getDb()
         .collection('jobber_clients')
         .where('isArchived', '==', false)
         .count()

@@ -22,7 +22,7 @@ export const testConfig: DeepPartial<AppConfig> = {
   cache: {
     ttl: 0, // No caching in tests
   },
-  // Enable Slack for testing, disable others
+  // Enable Slack and Jobber for testing, disable others
   services: {
     slack: { 
       enabled: true,
@@ -32,7 +32,14 @@ export const testConfig: DeepPartial<AppConfig> = {
       channelId: 'C123456',
       notificationsChannelId: 'C234567',
     },
-    jobber: { enabled: false },
+    jobber: { 
+      enabled: true,
+      clientId: 'test-jobber-client-id',
+      clientSecret: 'test-jobber-client-secret',
+      redirectUri: 'http://localhost:3000/api/jobber/auth/callback',
+      apiUrl: 'https://api.getjobber.com/api/graphql',
+      webhookSecret: 'test-webhook-secret',
+    },
     quickbooks: { enabled: false },
     google: { enabled: false },
     matterport: { enabled: false },
@@ -40,7 +47,7 @@ export const testConfig: DeepPartial<AppConfig> = {
   },
   features: {
     slackEnabled: true,
-    jobberEnabled: false,
+    jobberEnabled: true,
     quickbooksEnabled: false,
     googleEnabled: false,
     matterportEnabled: false,

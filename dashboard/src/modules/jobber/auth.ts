@@ -1,6 +1,7 @@
 // Jobber OAuth token management
 import axios from 'axios';
 import { getFirestore } from '../../config/firebase';
+import * as admin from 'firebase-admin';
 import { logger } from '../../utils/logger';
 
 const log = logger.child('JobberAuth');
@@ -16,7 +17,7 @@ interface JobberTokens {
 export class JobberAuth {
   private clientId: string;
   private clientSecret: string;
-  private db = getFirestore();
+  private db: admin.firestore.Firestore | null = null;
 
   constructor(
     clientId: string = process.env.JOBBER_CLIENT_ID || '',
@@ -26,11 +27,18 @@ export class JobberAuth {
     this.clientSecret = clientSecret;
   }
 
+  private getDb(): admin.firestore.Firestore {
+    if (!this.db) {
+      this.db = getFirestore();
+    }
+    return this.db;
+  }
+
   // Get current access token, refreshing if needed
   async getAccessToken(): Promise<string> {
     try {
       // Get tokens from Firestore
-      const doc = await this.db.collection('service_tokens').doc('jobber').get();
+      const doc = await this.getDb().collection('service_tokens').doc('jobber').get();
       
       if (!doc.exists) {
         // Use token from environment if no stored token
@@ -106,7 +114,7 @@ export class JobberAuth {
 
   // Store tokens in Firestore
   private async storeTokens(tokens: JobberTokens): Promise<void> {
-    await this.db.collection('service_tokens').doc('jobber').set({
+    await this.getDb().collection('service_tokens').doc('jobber').set({
       ...tokens,
       updatedAt: new Date(),
     });

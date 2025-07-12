@@ -78,6 +78,11 @@ export function createApp(): Application {
     const slackRoutes = require('./api/slack').default;
     app.use('/api/slack', slackRoutes);
   }
+
+  if (config.services.jobber.enabled) {
+    const jobberRoutes = require('./api/jobber').default;
+    app.use('/api/jobber', jobberRoutes);
+  }
   
   // 404 handler
   app.use(notFoundHandler);

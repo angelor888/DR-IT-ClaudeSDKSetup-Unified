@@ -1,6 +1,6 @@
 // Slack webhook endpoints
 import { Router, Request, Response, NextFunction } from 'express';
-import { SlackWebhookHandler } from '../../modules/slack';
+import { SlackWebhookHandler } from '../../modules/slack/webhooks';
 import { logger } from '../../utils/logger';
 import { 
   verifySlackRequest, 

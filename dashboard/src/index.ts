@@ -5,6 +5,7 @@ import { logger } from './utils/logger';
 import { createApp } from './app';
 import { getHealthMonitor } from './core/services/health-monitor';
 import { initializeSlackService, shutdownSlackService } from './services/slack-init';
+import { initializeJobberService, shutdownJobberService } from './services/jobber-init';
 
 const config = getConfig();
 const log = logger.child('Server');
@@ -33,6 +34,10 @@ async function startServer() {
     // Initialize enabled services
     if (config.services.slack.enabled) {
       await initializeSlackService();
+    }
+    
+    if (config.services.jobber.enabled) {
+      await initializeJobberService();
     }
     
     // Create Express app
@@ -66,6 +71,13 @@ async function startServer() {
         console.log(`   GET  http://localhost:${PORT}/api/slack/users`);
         console.log(`   POST http://localhost:${PORT}/api/slack/webhooks/*`);
       }
+      
+      if (config.services.jobber.enabled) {
+        console.log(`🔧 Jobber endpoints:`);
+        console.log(`   GET  http://localhost:${PORT}/api/jobber/jobs`);
+        console.log(`   GET  http://localhost:${PORT}/api/jobber/clients`);
+        console.log(`   POST http://localhost:${PORT}/api/jobber/auth/*`);
+      }
     });
     
     // Graceful shutdown
@@ -82,6 +94,10 @@ async function startServer() {
       // Shutdown services
       if (config.services.slack.enabled) {
         shutdownSlackService();
+      }
+      
+      if (config.services.jobber.enabled) {
+        shutdownJobberService();
       }
       
       process.exit(0);

@@ -1,6 +1,5 @@
 // Jobber GraphQL API client wrapper
-import axios, { AxiosInstance } from 'axios';
-import { logger } from '../../utils/logger';
+import { BaseService, BaseServiceOptions } from '../../core/services/base.service';
 import { 
   JobberGraphQLResponse,
   JobberConnection,
@@ -12,36 +11,48 @@ import {
   JobberUser
 } from './types';
 
-const log = logger.child('JobberClient');
+export class JobberClient extends BaseService {
 
-export class JobberClient {
-  private api: AxiosInstance;
-  private accessToken: string;
+  constructor(accessToken: string, options: Partial<BaseServiceOptions> = {}) {
+    if (!accessToken) {
+      throw new Error('Jobber access token is required');
+    }
 
-  constructor(accessToken: string = process.env.JOBBER_ACCESS_TOKEN || '') {
-    this.accessToken = accessToken;
-    this.api = axios.create({
+    super({
+      name: 'jobber',
       baseURL: 'https://api.getjobber.com/api',
+      timeout: 30000,
       headers: {
-        'Authorization': `Bearer ${this.accessToken}`,
+        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         'X-JOBBER-GRAPHQL-VERSION': '2025-01-20',
       },
+      healthCheckEndpoint: '/graphql',
+      auth: {
+        type: 'bearer',
+        credentials: { token: accessToken },
+      },
+      circuitBreaker: {
+        failureThreshold: 3,
+        resetTimeout: 30000,
+      },
+      retry: {
+        maxAttempts: 3,
+        initialDelay: 1000,
+        maxDelay: 10000,
+        factor: 2,
+      },
+      ...options,
     });
   }
 
   // Execute GraphQL query
   private async query<T>(query: string, variables?: any): Promise<JobberGraphQLResponse<T>> {
-    try {
-      const response = await this.api.post('/graphql', {
-        query,
-        variables,
-      });
-      return response.data;
-    } catch (error: any) {
-      log.error('GraphQL query failed', { error: error.response?.data || error.message });
-      throw error;
-    }
+    const response = await this.post('/graphql', {
+      query,
+      variables,
+    });
+    return response.data;
   }
 
   // Current user
@@ -205,7 +216,7 @@ export class JobberClient {
 
     if (response.data?.clientCreate.userErrors.length) {
       const errors = response.data.clientCreate.userErrors;
-      log.error('Failed to create client', { errors });
+      this.log.error('Failed to create client', { errors });
       throw new Error(errors.map(e => e.message).join(', '));
     }
 
