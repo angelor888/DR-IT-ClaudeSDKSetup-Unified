@@ -55,7 +55,7 @@ export const dashboardApi = createApi({
       return headers
     },
   }),
-  tagTypes: ['User', 'Customer', 'Job', 'Analytics', 'CustomerSync', 'CustomerTags'],
+  tagTypes: ['User', 'Customer', 'Job', 'Analytics', 'CustomerSync', 'CustomerTags', 'JobStats', 'JobSync', 'JobCalendar', 'JobTemplate', 'JobTags', 'JobCategories'],
   endpoints: (builder) => ({
     // Auth endpoints
     login: builder.mutation<LoginResponse, LoginRequest>({
