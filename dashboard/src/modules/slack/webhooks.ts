@@ -1,6 +1,6 @@
 // Slack webhook event handlers
 import { Request, Response } from 'express';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { getFirestore } from '../../config/firebase';
 import * as admin from 'firebase-admin';
 import { SlackWebhookEvent } from './types';

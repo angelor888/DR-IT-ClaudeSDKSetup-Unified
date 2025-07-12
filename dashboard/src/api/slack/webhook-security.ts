@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { config } from '../../core/config';
 import { SlackWebhookError } from '../../core/errors/slack.error';
 import { logger } from '../../utils/logger';

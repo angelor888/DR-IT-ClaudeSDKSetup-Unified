@@ -13,6 +13,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  ListItemIcon,
   Stack,
   Tab,
   Tabs,
@@ -24,12 +25,7 @@ import {
   TextField,
   Alert,
   LinearProgress,
-  Timeline,
-  TimelineItem,
-  TimelineSeparator,
-  TimelineConnector,
-  TimelineContent,
-  TimelineDot,
+  Paper,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -456,27 +452,30 @@ export const JobDetail: React.FC = () => {
             <TabPanel value={tabValue} index={1}>
               <CardContent>
                 {job.milestones && job.milestones.length > 0 ? (
-                  <Timeline>
-                    {job.milestones.map((milestone, index) => (
-                      <TimelineItem key={milestone.id}>
-                        <TimelineSeparator>
-                          <TimelineDot 
-                            color={milestone.status === 'completed' ? 'success' : 'grey'}
+                  <List>
+                    {job.milestones.map((milestone) => (
+                      <ListItem key={milestone.id} divider>
+                        <ListItemIcon>
+                          <Chip 
+                            size="small"
+                            color={milestone.status === 'completed' ? 'success' : 'default'}
+                            label={milestone.status === 'completed' ? '✓' : '○'}
                           />
-                          {index < job.milestones!.length - 1 && <TimelineConnector />}
-                        </TimelineSeparator>
-                        <TimelineContent>
-                          <Typography variant="h6" component="span">
-                            {milestone.title}
-                          </Typography>
-                          <Typography>{milestone.description}</Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Status: {milestone.status}
-                          </Typography>
-                        </TimelineContent>
-                      </TimelineItem>
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={milestone.title}
+                          secondary={
+                            <Box>
+                              <Typography variant="body2">{milestone.description}</Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                Status: {milestone.status}
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                      </ListItem>
                     ))}
-                  </Timeline>
+                  </List>
                 ) : (
                   <Typography variant="body2" color="text.secondary">
                     No tasks defined for this job

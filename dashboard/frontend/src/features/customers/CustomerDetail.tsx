@@ -8,7 +8,7 @@ import {
   Chip,
   CircularProgress,
   Divider,
-  Grid2 as Grid,
+  Grid,
   IconButton,
   List,
   ListItem,
@@ -190,8 +190,8 @@ export const CustomerDetail: React.FC = () => {
 
       {getSyncStatusAlert()}
 
-      <Grid container spacing={3}>
-        <Grid xs={12} md={4}>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
+        <Box sx={{ flex: { md: 1 } }}>
           <Card>
             <CardHeader title="Contact Information" />
             <CardContent>
@@ -283,9 +283,9 @@ export const CustomerDetail: React.FC = () => {
               </Stack>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
-        <Grid xs={12} md={8}>
+        <Box sx={{ flex: { md: 2 } }}>
           <Card>
             <Tabs
               value={tabValue}
@@ -336,8 +336,8 @@ export const CustomerDetail: React.FC = () => {
               </CardContent>
             </TabPanel>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Stack>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>

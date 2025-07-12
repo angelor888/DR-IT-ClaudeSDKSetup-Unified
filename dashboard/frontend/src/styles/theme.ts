@@ -1,34 +1,50 @@
 import { createTheme, type ThemeOptions } from '@mui/material/styles'
 
-// Define custom theme colors
+// DuetRight Brand Colors
+const duetRightColors = {
+  primary: '#FFBB2F',      // DuetRight Primary (Golden Yellow)
+  secondary: '#FF8A3D',    // DuetRight Secondary (Orange)
+  accent: '#037887',       // DuetRight Accent (Teal)
+  light: '#FFFDFA',        // DuetRight Light (Off-white)
+  dark: '#424143',         // DuetRight Dark (Charcoal)
+  darkest: '#2C2B2E',      // DuetRight Darkest (Near Black)
+}
+
+// Define DuetRight brand theme
 const lightThemeOptions: ThemeOptions = {
   palette: {
     mode: 'light',
     primary: {
-      main: '#1976d2',
-      light: '#42a5f5',
-      dark: '#1565c0',
+      main: duetRightColors.primary,
+      light: '#FFD073',
+      dark: '#E6A600',
+      contrastText: duetRightColors.darkest,
     },
     secondary: {
-      main: '#dc004e',
-      light: '#f73378',
-      dark: '#9a0036',
+      main: duetRightColors.secondary,
+      light: '#FFAB73',
+      dark: '#E67A2E',
+      contrastText: '#ffffff',
     },
     error: {
       main: '#f44336',
     },
     warning: {
-      main: '#ff9800',
+      main: duetRightColors.secondary, // Use DuetRight orange for warnings
     },
     info: {
-      main: '#2196f3',
+      main: duetRightColors.accent,    // Use DuetRight teal for info
     },
     success: {
       main: '#4caf50',
     },
     background: {
-      default: '#fafafa',
+      default: duetRightColors.light,  // DuetRight light background
       paper: '#ffffff',
+    },
+    text: {
+      primary: duetRightColors.darkest,
+      secondary: duetRightColors.dark,
     },
   },
   typography: {
@@ -101,30 +117,36 @@ const darkThemeOptions: ThemeOptions = {
   palette: {
     mode: 'dark',
     primary: {
-      main: '#42a5f5',
-      light: '#80d6ff',
-      dark: '#0077c2',
+      main: duetRightColors.primary,
+      light: '#FFD073',
+      dark: '#E6A600',
+      contrastText: duetRightColors.darkest,
     },
     secondary: {
-      main: '#f73378',
-      light: '#ff6ba6',
-      dark: '#bf004d',
+      main: duetRightColors.secondary,
+      light: '#FFAB73',
+      dark: '#E67A2E',
+      contrastText: '#ffffff',
     },
     error: {
       main: '#f44336',
     },
     warning: {
-      main: '#ff9800',
+      main: duetRightColors.secondary,
     },
     info: {
-      main: '#2196f3',
+      main: duetRightColors.accent,
     },
     success: {
       main: '#4caf50',
     },
     background: {
-      default: '#121212',
-      paper: '#1e1e1e',
+      default: duetRightColors.darkest,    // Dark DuetRight background
+      paper: duetRightColors.dark,         // Charcoal for papers
+    },
+    text: {
+      primary: duetRightColors.light,      // Light text on dark
+      secondary: '#CCCCCC',                // Secondary light text
     },
   },
 }

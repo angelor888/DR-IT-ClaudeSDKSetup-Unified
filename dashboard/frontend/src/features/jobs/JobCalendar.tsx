@@ -23,7 +23,7 @@ import {
   Add as AddIcon,
   ViewWeek as WeekIcon,
   ViewDay as DayIcon,
-  ViewMonth as MonthIcon,
+  CalendarViewMonth as MonthIcon,
   Today as TodayIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,

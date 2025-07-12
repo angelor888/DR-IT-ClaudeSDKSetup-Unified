@@ -117,9 +117,9 @@ export const JobList: React.FC = () => {
 
   const getPriorityChip = (priority: Job['priority']) => {
     const priorityConfig = {
-      low: { label: 'Low', color: 'success' as const },
-      medium: { label: 'Medium', color: 'warning' as const },
-      high: { label: 'High', color: 'error' as const },
+      low: { label: 'Low', color: 'success' as const, variant: 'outlined' as const },
+      medium: { label: 'Medium', color: 'warning' as const, variant: 'outlined' as const },
+      high: { label: 'High', color: 'error' as const, variant: 'outlined' as const },
       urgent: { label: 'Urgent', color: 'error' as const, variant: 'filled' as const },
     };
 
@@ -129,7 +129,7 @@ export const JobList: React.FC = () => {
         label={config.label} 
         color={config.color} 
         size="small"
-        variant={config.variant || 'outlined'}
+        variant={config.variant}
       />
     );
   };

@@ -19,7 +19,7 @@ import {
   CalendlyJobEvent,
   CalendlySchedulingPreferences,
 } from './types';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 const log = logger.child('CalendlyService');
 
