@@ -4,6 +4,7 @@ export * from './validation.error';
 export * from './auth.error';
 export * from './service.error';
 export * from './business.error';
+export * from './slack.error';
 
 import { BaseError } from './base.error';
 

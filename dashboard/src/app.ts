@@ -73,6 +73,12 @@ export function createApp(): Application {
   app.use('/api/test/firestore', firestoreTestRoutes);
   app.use('/api/auth', authRoutes);
   
+  // Service routes (only if enabled)
+  if (config.services.slack.enabled) {
+    const slackRoutes = require('./api/slack').default;
+    app.use('/api/slack', slackRoutes);
+  }
+  
   // 404 handler
   app.use(notFoundHandler);
   

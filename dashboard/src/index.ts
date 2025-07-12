@@ -3,6 +3,8 @@ import { getConfig } from './core/config';
 import { initializeFirebase } from './config/firebase';
 import { logger } from './utils/logger';
 import { createApp } from './app';
+import { getHealthMonitor } from './core/services/health-monitor';
+import { initializeSlackService, shutdownSlackService } from './services/slack-init';
 
 const config = getConfig();
 const log = logger.child('Server');
@@ -23,11 +25,21 @@ async function startServer() {
     initializeFirebase();
     log.info('Firebase initialized successfully');
     
+    // Start health monitoring
+    const healthMonitor = getHealthMonitor();
+    healthMonitor.start();
+    log.info('Health monitoring started');
+    
+    // Initialize enabled services
+    if (config.services.slack.enabled) {
+      await initializeSlackService();
+    }
+    
     // Create Express app
     const app = createApp();
 
     // Start Express server
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       log.info(`Server running on port ${PORT}`);
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`🏥 Health check: http://localhost:${PORT}/health`);
@@ -46,6 +58,33 @@ async function startServer() {
       console.log(`   GET  http://localhost:${PORT}/api/auth/user`);
       console.log(`   PATCH http://localhost:${PORT}/api/auth/user`);
       console.log(`   POST http://localhost:${PORT}/api/auth/reset-password`);
+      
+      if (config.services.slack.enabled) {
+        console.log(`💬 Slack endpoints:`);
+        console.log(`   GET  http://localhost:${PORT}/api/slack/channels`);
+        console.log(`   POST http://localhost:${PORT}/api/slack/messages`);
+        console.log(`   GET  http://localhost:${PORT}/api/slack/users`);
+        console.log(`   POST http://localhost:${PORT}/api/slack/webhooks/*`);
+      }
+    });
+    
+    // Graceful shutdown
+    process.on('SIGTERM', async () => {
+      log.info('SIGTERM received, shutting down gracefully');
+      
+      server.close(() => {
+        log.info('HTTP server closed');
+      });
+      
+      // Stop health monitoring
+      healthMonitor.stop();
+      
+      // Shutdown services
+      if (config.services.slack.enabled) {
+        shutdownSlackService();
+      }
+      
+      process.exit(0);
     });
   } catch (error) {
     log.error('Failed to start server', error);

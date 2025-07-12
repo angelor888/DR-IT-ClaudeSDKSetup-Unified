@@ -1,6 +1,6 @@
 // Slack service layer - business logic
 import { getFirestore } from '../../config/firebase';
-import { SlackClient } from './client';
+import { SlackClient, SlackClientOptions } from './client';
 import { SlackChannel, SlackMessage, SlackUser } from './types';
 import { logger } from '../../utils/logger';
 import { createEvent } from '../../models/Event';
@@ -8,11 +8,45 @@ import { createEvent } from '../../models/Event';
 const log = logger.child('SlackService');
 
 export class SlackService {
+  private static instance: SlackService;
   private client: SlackClient;
   private db = getFirestore();
+  private isInitialized = false;
 
-  constructor(token?: string) {
-    this.client = new SlackClient(token);
+  constructor(options?: SlackClientOptions) {
+    this.client = new SlackClient(options);
+    this.setupEventListeners();
+  }
+
+  static getInstance(options?: SlackClientOptions): SlackService {
+    if (!SlackService.instance) {
+      SlackService.instance = new SlackService(options);
+    }
+    return SlackService.instance;
+  }
+
+  private setupEventListeners(): void {
+    this.client.on('health-check', (health) => {
+      log.debug('Slack health check', health);
+    });
+  }
+
+  async initialize(): Promise<void> {
+    if (this.isInitialized) return;
+
+    try {
+      // Test authentication
+      const authInfo = await this.getBotInfo();
+      log.info('Slack service initialized', {
+        team: authInfo.team,
+        userId: authInfo.userId,
+        botId: authInfo.botId,
+      });
+      this.isInitialized = true;
+    } catch (error) {
+      log.error('Failed to initialize Slack service', error);
+      throw error;
+    }
   }
 
   // Channel management
@@ -82,6 +116,7 @@ export class SlackService {
     options?: {
       thread_ts?: string;
       blocks?: any[];
+      attachments?: any[];
       saveToDb?: boolean;
     }
   ): Promise<SlackMessage> {
@@ -246,5 +281,23 @@ export class SlackService {
       .get();
     
     return snapshot.docs.map(doc => doc.data() as SlackChannel);
+  }
+
+  // Health and status
+  async checkHealth() {
+    return this.client.checkHealth();
+  }
+
+  getLastHealthCheck() {
+    return this.client.getLastHealthCheck();
+  }
+
+  isHealthy() {
+    return this.client.isHealthy();
+  }
+
+  // Cleanup
+  destroy() {
+    this.client.destroy();
   }
 }

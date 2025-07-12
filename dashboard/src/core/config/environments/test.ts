@@ -22,9 +22,16 @@ export const testConfig: DeepPartial<AppConfig> = {
   cache: {
     ttl: 0, // No caching in tests
   },
-  // Disable all services in tests
+  // Enable Slack for testing, disable others
   services: {
-    slack: { enabled: false },
+    slack: { 
+      enabled: true,
+      botToken: 'xoxb-test-token',
+      signingSecret: 'test-signing-secret',
+      appToken: 'xapp-test-token',
+      channelId: 'C123456',
+      notificationsChannelId: 'C234567',
+    },
     jobber: { enabled: false },
     quickbooks: { enabled: false },
     google: { enabled: false },
@@ -32,7 +39,7 @@ export const testConfig: DeepPartial<AppConfig> = {
     email: { enabled: false },
   },
   features: {
-    slackEnabled: false,
+    slackEnabled: true,
     jobberEnabled: false,
     quickbooksEnabled: false,
     googleEnabled: false,

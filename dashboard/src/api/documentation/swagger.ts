@@ -33,15 +33,15 @@ const swaggerDefinition = {
     },
     {
       name: 'Slack',
-      description: 'Slack integration endpoints',
+      description: 'Slack workspace communication and automation',
     },
     {
       name: 'Jobber',
-      description: 'Jobber integration endpoints',
+      description: 'Jobber field service management integration',
     },
     {
       name: 'Google',
-      description: 'Google services integration',
+      description: 'Google services integration (Calendar, Drive, Gmail)',
     },
     {
       name: 'Test',
