@@ -14,4 +14,12 @@ export const developmentConfig: DeepPartial<AppConfig> = {
   cache: {
     ttl: 300, // 5 minutes in development
   },
+  services: {
+    twilio: {
+      enabled: true, // Enable Twilio in development
+    },
+  },
+  features: {
+    twilioEnabled: true,
+  },
 };

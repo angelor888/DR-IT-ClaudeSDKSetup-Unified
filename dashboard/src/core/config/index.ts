@@ -11,6 +11,7 @@ import {
   GoogleConfig,
   MatterportConfig,
   EmailConfig,
+  TwilioConfig,
   SecurityConfig,
   CacheConfig,
   MonitoringConfig,
@@ -25,7 +26,7 @@ import { productionConfig } from './environments/production';
 import { testConfig } from './environments/test';
 import { initializeLogger } from '../logging/logger';
 
-// Load environment variables  
+// Load environment variables
 const envPath = path.join(__dirname, '../../../.env');
 const result = dotenv.config({ path: envPath });
 
@@ -67,7 +68,8 @@ function loadConfigFromEnv(): DeepPartial<AppConfig> {
   // If Firebase env vars are missing, try to load from service account JSON
   if (!firebaseConfig.projectId || !firebaseConfig.clientEmail || !firebaseConfig.privateKey) {
     try {
-      const serviceAccountPath = env.FIREBASE_SERVICE_ACCOUNT_PATH || './firebase-service-account.json';
+      const serviceAccountPath =
+        env.FIREBASE_SERVICE_ACCOUNT_PATH || './firebase-service-account.json';
       const serviceAccount = require(path.resolve(serviceAccountPath));
       firebaseConfig = {
         ...firebaseConfig,
@@ -133,6 +135,13 @@ function loadConfigFromEnv(): DeepPartial<AppConfig> {
         fromEmail: env.SENDGRID_FROM_EMAIL,
         fromName: env.SENDGRID_FROM_NAME || 'DuetRight Dashboard',
       },
+      twilio: {
+        enabled: parseBoolean(env.FEATURE_TWILIO_ENABLED, true),
+        accountSid: env.TWILIO_ACCOUNT_SID,
+        authToken: env.TWILIO_AUTH_TOKEN,
+        phoneNumber: env.TWILIO_PHONE_NUMBER,
+        webhookSecret: env.TWILIO_WEBHOOK_SECRET,
+      },
     },
     security: {
       jwtSecret: env.JWT_SECRET,
@@ -167,6 +176,7 @@ function loadConfigFromEnv(): DeepPartial<AppConfig> {
       googleEnabled: parseBoolean(env.FEATURE_GOOGLE_ENABLED, true),
       matterportEnabled: parseBoolean(env.FEATURE_MATTERPORT_ENABLED, false),
       emailEnabled: parseBoolean(env.FEATURE_EMAIL_ENABLED, true),
+      twilioEnabled: parseBoolean(env.FEATURE_TWILIO_ENABLED, true),
     },
     production: {
       url: env.PRODUCTION_URL,
@@ -192,6 +202,7 @@ function mergeConfigs(base: DeepPartial<AppConfig>, override: DeepPartial<AppCon
         ...override.services?.matterport,
       } as MatterportConfig,
       email: { ...base.services?.email!, ...override.services?.email } as EmailConfig,
+      twilio: { ...base.services?.twilio!, ...override.services?.twilio } as TwilioConfig,
     },
     security: { ...base.security!, ...override.security } as SecurityConfig,
     cache: { ...base.cache!, ...override.cache } as CacheConfig,

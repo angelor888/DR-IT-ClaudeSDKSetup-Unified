@@ -66,6 +66,14 @@ export interface EmailConfig {
   fromName?: string;
 }
 
+export interface TwilioConfig {
+  enabled: boolean;
+  accountSid?: string;
+  authToken?: string;
+  phoneNumber?: string;
+  webhookSecret?: string;
+}
+
 export interface SecurityConfig {
   jwtSecret?: string;
   jwtExpiresIn?: string;
@@ -104,6 +112,7 @@ export interface FeatureFlags {
   googleEnabled: boolean;
   matterportEnabled: boolean;
   emailEnabled: boolean;
+  twilioEnabled: boolean;
 }
 
 export interface AppConfig {
@@ -116,6 +125,7 @@ export interface AppConfig {
     google: GoogleConfig;
     matterport: MatterportConfig;
     email: EmailConfig;
+    twilio: TwilioConfig;
   };
   security: SecurityConfig;
   cache: CacheConfig;

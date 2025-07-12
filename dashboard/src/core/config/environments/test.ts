@@ -44,6 +44,13 @@ export const testConfig: DeepPartial<AppConfig> = {
     google: { enabled: false },
     matterport: { enabled: false },
     email: { enabled: false },
+    twilio: {
+      enabled: true,
+      accountSid: 'test-twilio-account-sid',
+      authToken: 'test-twilio-auth-token',
+      phoneNumber: '+15551234567',
+      webhookSecret: 'test-twilio-webhook-secret',
+    },
   },
   features: {
     slackEnabled: true,
@@ -52,5 +59,6 @@ export const testConfig: DeepPartial<AppConfig> = {
     googleEnabled: false,
     matterportEnabled: false,
     emailEnabled: false,
+    twilioEnabled: true,
   },
 };

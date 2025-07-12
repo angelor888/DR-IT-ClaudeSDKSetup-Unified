@@ -67,6 +67,18 @@ export function validateConfig(config: DeepPartial<AppConfig>): AppConfig {
     }
   }
 
+  if (config.services?.twilio?.enabled) {
+    if (!config.services.twilio.accountSid) {
+      warnings.push('Twilio enabled but TWILIO_ACCOUNT_SID not provided');
+    }
+    if (!config.services.twilio.authToken) {
+      warnings.push('Twilio enabled but TWILIO_AUTH_TOKEN not provided');
+    }
+    if (!config.services.twilio.phoneNumber) {
+      warnings.push('Twilio enabled but TWILIO_PHONE_NUMBER not provided');
+    }
+  }
+
   // Production-specific validations
   if (config.server?.nodeEnv === 'production') {
     if (!config.security?.jwtSecret && !config.firebase?.apiKey) {
@@ -133,6 +145,7 @@ export function validateConfig(config: DeepPartial<AppConfig>): AppConfig {
       google: config.services?.google?.enabled,
       matterport: config.services?.matterport?.enabled,
       email: config.services?.email?.enabled,
+      twilio: config.services?.twilio?.enabled,
     },
   });
 

@@ -86,6 +86,11 @@ export function createApp(): Application {
     app.use('/api/jobber', jobberRoutes);
   }
 
+  if (config.services.twilio.enabled) {
+    const twilioRoutes = require('./api/twilio').default;
+    app.use('/api/twilio', twilioRoutes);
+  }
+
   // 404 handler
   app.use(notFoundHandler);
 
