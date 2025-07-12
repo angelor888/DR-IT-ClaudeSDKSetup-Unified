@@ -16,6 +16,9 @@ import { Dashboard } from '@features/dashboard/Dashboard'
 import { CustomerList, CustomerForm, CustomerDetail } from '@features/customers'
 import { JobList, JobForm, JobDetail, JobCalendar } from '@features/jobs'
 
+// Import Communications component
+import { Communications } from '@features/communications'
+
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated)
@@ -82,7 +85,10 @@ function AppContent() {
             
             {/* Calendar Route */}
             <Route path="calendar" element={<JobCalendar />} />
-            <Route path="communications" element={<div>Communications - Coming Soon</div>} />
+            
+            {/* Communications Route */}
+            <Route path="communications" element={<Communications />} />
+            
             <Route path="reports" element={<div>Reports - Coming Soon</div>} />
             <Route path="settings" element={<div>Settings - Coming Soon</div>} />
           </Route>

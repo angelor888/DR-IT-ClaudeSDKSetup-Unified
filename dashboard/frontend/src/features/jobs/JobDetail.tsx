@@ -8,7 +8,7 @@ import {
   Chip,
   CircularProgress,
   Divider,
-  Grid2 as Grid,
+  Grid,
   IconButton,
   List,
   ListItem,
