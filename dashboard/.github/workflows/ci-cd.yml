@@ -1,0 +1,313 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  release:
+    types: [created]
+
+env:
+  NODE_VERSION: '20.x'
+  DOCKER_REGISTRY: docker.io
+  DOCKER_IMAGE: duetright/dashboard
+
+jobs:
+  # Code Quality Checks
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ESLint
+        run: npm run lint
+      
+      - name: TypeScript Check
+        run: npm run type-check
+      
+      - name: Security Audit
+        run: |
+          npm audit --audit-level=high
+          npx snyk test --severity-threshold=high || true
+
+  # Test Suite
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    needs: quality
+    services:
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd frontend && npm ci
+      
+      - name: Run Backend Tests
+        env:
+          NODE_ENV: test
+          REDIS_URL: redis://localhost:6379
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID_TEST }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL_TEST }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY_TEST }}
+        run: |
+          npm test -- --coverage --ci
+          npm run test:integration || true
+      
+      - name: Run Frontend Tests
+        run: |
+          cd frontend
+          npm test -- --coverage --watchAll=false
+      
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info,./frontend/coverage/lcov.info
+          fail_ci_if_error: false
+
+  # Build Application
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd frontend && npm ci
+      
+      - name: Build Backend
+        run: npm run build
+      
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+      
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: |
+            dist/
+            frontend/dist/
+          retention-days: 7
+
+  # Build Docker Image
+  docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' || github.event_name == 'release'
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ steps.meta.outputs.version }}
+
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.dashboard.duetright.com
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to Staging
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_KEY: ${{ secrets.STAGING_KEY }}
+        run: |
+          echo "$STAGING_KEY" > staging_key
+          chmod 600 staging_key
+          
+          ssh -o StrictHostKeyChecking=no -i staging_key ubuntu@$STAGING_HOST << 'EOF'
+            cd /opt/duetright-dashboard
+            git pull origin develop
+            docker-compose pull
+            docker-compose up -d
+            docker-compose exec -T dashboard npm run migrate || true
+            curl -f http://localhost:5001/api/health || exit 1
+          EOF
+
+  # Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.event_name == 'release'
+    environment:
+      name: production
+      url: https://dashboard.duetright.com
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to Production
+        env:
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_KEY: ${{ secrets.PROD_KEY }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          # Notify deployment start
+          curl -X POST $SLACK_WEBHOOK \
+            -H 'Content-Type: application/json' \
+            -d "{\"text\":\"🚀 Starting production deployment of version ${{ github.event.release.tag_name }}\"}"
+          
+          echo "$PROD_KEY" > prod_key
+          chmod 600 prod_key
+          
+          # Deploy to production
+          ssh -o StrictHostKeyChecking=no -i prod_key ubuntu@$PROD_HOST << 'EOF'
+            cd /opt/duetright-dashboard
+            
+            # Backup current version
+            ./scripts/backup.sh
+            
+            # Pull new version
+            git fetch --tags
+            git checkout ${{ github.event.release.tag_name }}
+            
+            # Update and restart
+            docker-compose pull
+            docker-compose up -d --no-deps --scale dashboard=2 dashboard
+            
+            # Wait for health check
+            sleep 30
+            curl -f http://localhost:5001/api/health || exit 1
+            
+            # Remove old containers
+            docker-compose up -d --no-deps --remove-orphans dashboard
+          EOF
+          
+          # Notify deployment complete
+          curl -X POST $SLACK_WEBHOOK \
+            -H 'Content-Type: application/json' \
+            -d "{\"text\":\"✅ Production deployment completed successfully!\"}"
+
+  # Performance Tests
+  performance:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v9
+        with:
+          urls: |
+            https://staging.dashboard.duetright.com
+            https://staging.dashboard.duetright.com/login
+            https://staging.dashboard.duetright.com/customers
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+      
+      - name: Run Load Tests
+        run: |
+          npm install -g k6
+          k6 run tests/performance/load-test.js \
+            --out json=load-test-results.json \
+            --vus 100 \
+            --duration 5m
+      
+      - name: Upload Performance Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: |
+            .lighthouseci/
+            load-test-results.json
+
+  # Security Scan
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run OWASP ZAP Scan
+        uses: zaproxy/action-baseline@v0.7.0
+        with:
+          target: 'https://staging.dashboard.duetright.com'
+          allow_issue_writing: false
+          
+      - name: Upload Security Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-report
+          path: report_html.html
