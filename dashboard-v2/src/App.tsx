@@ -10,11 +10,9 @@ import LoginPage from './features/auth/LoginPage';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Dashboard from './features/dashboard/Dashboard';
 import ProtectedRoute from './components/common/ProtectedRoute';
-
-// Placeholder components for routes
-const Customers: React.FC = () => <div>Customers Page</div>;
-const Jobs: React.FC = () => <div>Jobs Page</div>;
-const Communications: React.FC = () => <div>Communications Page</div>;
+import CustomerList from './features/customers/CustomerList';
+import JobList from './features/jobs/JobList';
+import UnifiedInbox from './features/communications/UnifiedInbox';
 
 function App() {
   return (
@@ -33,9 +31,9 @@ function App() {
               }
             >
               <Route index element={<Dashboard />} />
-              <Route path="customers" element={<Customers />} />
-              <Route path="jobs" element={<Jobs />} />
-              <Route path="communications" element={<Communications />} />
+              <Route path="customers" element={<CustomerList />} />
+              <Route path="jobs" element={<JobList />} />
+              <Route path="communications" element={<UnifiedInbox />} />
             </Route>
           </Routes>
         </Router>

@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { loginStart, loginSuccess, loginFailure } from '../../store/authSlice';
-import apiClient from '../../services/api/config';
+// import apiClient from '../../services/api/config'; // Not needed in demo mode
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -26,15 +26,19 @@ const LoginPage: React.FC = () => {
     
     dispatch(loginStart());
     
-    try {
-      const response = await apiClient.post('/auth/login', { email, password });
-      const { user, token } = response.data;
+    // Demo mode - accept any credentials
+    setTimeout(() => {
+      const mockUser = {
+        id: '1',
+        email: email,
+        name: email.split('@')[0],
+        role: 'admin'
+      };
+      const mockToken = 'demo-token-' + Date.now();
       
-      dispatch(loginSuccess({ user, token }));
+      dispatch(loginSuccess({ user: mockUser, token: mockToken }));
       navigate('/');
-    } catch (err: any) {
-      dispatch(loginFailure(err.response?.data?.message || 'Login failed'));
-    }
+    }, 1000);
   };
 
   return (
@@ -53,7 +57,7 @@ const LoginPage: React.FC = () => {
           </Typography>
           
           <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
-            Sign in to continue
+            Demo Mode: Use any email/password
           </Typography>
 
           {error && (
