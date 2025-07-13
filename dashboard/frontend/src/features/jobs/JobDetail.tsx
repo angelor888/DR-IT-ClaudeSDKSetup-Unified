@@ -265,7 +265,7 @@ export const JobDetail: React.FC = () => {
       )}
 
       <Grid container spacing={3}>
-        <Grid xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card>
             <CardHeader title="Job Information" />
             <CardContent>
@@ -396,7 +396,7 @@ export const JobDetail: React.FC = () => {
           )}
         </Grid>
 
-        <Grid xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Card>
             <Tabs
               value={tabValue}

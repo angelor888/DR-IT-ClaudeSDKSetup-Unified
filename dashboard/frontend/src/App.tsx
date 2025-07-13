@@ -1,23 +1,35 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, Suspense, lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Provider } from 'react-redux'
-import { ThemeProvider, CssBaseline } from '@mui/material'
+import { ThemeProvider, CssBaseline, CircularProgress, Box } from '@mui/material'
 import { store } from '@app/store'
 import { getTheme } from '@styles/theme'
 import { websocketService } from '@services/websocket/websocket'
 import { useAppSelector } from '@app/hooks'
 
-// Import feature components
+// Import essential components directly (not lazy-loaded)
 import { LoginPage } from '@features/auth/LoginPage'
 import { DashboardLayout } from '@components/layout/DashboardLayout'
-import { Dashboard } from '@features/dashboard/Dashboard'
+import { PageLoader, ComponentLoader, CommunicationsLoader } from '@components/common/LoadingSpinner'
+import { ChunkErrorBoundary, RouteErrorBoundary } from '@components/common/ErrorBoundary'
 
-// Import Customer and Job Management components
-import { CustomerList, CustomerForm, CustomerDetail } from '@features/customers'
-import { JobList, JobForm, JobDetail, JobCalendar } from '@features/jobs'
+// Lazy load feature components for code splitting
+const Dashboard = lazy(() => import('@features/dashboard/Dashboard').then(module => ({ default: module.Dashboard })))
 
-// Import Communications component
-import { Communications } from '@features/communications'
+// Customer Management components (lazy)
+const CustomerList = lazy(() => import('@features/customers').then(module => ({ default: module.CustomerList })))
+const CustomerForm = lazy(() => import('@features/customers').then(module => ({ default: module.CustomerForm })))
+const CustomerDetail = lazy(() => import('@features/customers').then(module => ({ default: module.CustomerDetail })))
+
+// Job Management components (lazy)
+const JobList = lazy(() => import('@features/jobs').then(module => ({ default: module.JobList })))
+const JobForm = lazy(() => import('@features/jobs').then(module => ({ default: module.JobForm })))
+const JobDetail = lazy(() => import('@features/jobs').then(module => ({ default: module.JobDetail })))
+const JobCalendar = lazy(() => import('@features/jobs').then(module => ({ default: module.JobCalendar })))
+
+// Communications component (lazy)
+const Communications = lazy(() => import('@features/communications').then(module => ({ default: module.Communications })))
+
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -27,7 +39,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />
   }
   
-  return <>{children}</>
+  return (
+    <RouteErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        {children}
+      </Suspense>
+    </RouteErrorBoundary>
+  )
 }
 
 // Main App component
@@ -69,25 +87,69 @@ function AppContent() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Dashboard />} />
+            <Route index element={
+              <Suspense fallback={<PageLoader />}>
+                <Dashboard />
+              </Suspense>
+            } />
             
             {/* Customer Management Routes */}
-            <Route path="customers" element={<CustomerList />} />
-            <Route path="customers/new" element={<CustomerForm />} />
-            <Route path="customers/:id" element={<CustomerDetail />} />
-            <Route path="customers/:id/edit" element={<CustomerForm />} />
+            <Route path="customers" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <CustomerList />
+              </Suspense>
+            } />
+            <Route path="customers/new" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <CustomerForm />
+              </Suspense>
+            } />
+            <Route path="customers/:id" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <CustomerDetail />
+              </Suspense>
+            } />
+            <Route path="customers/:id/edit" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <CustomerForm />
+              </Suspense>
+            } />
             
             {/* Job Management Routes */}
-            <Route path="jobs" element={<JobList />} />
-            <Route path="jobs/new" element={<JobForm />} />
-            <Route path="jobs/:id" element={<JobDetail />} />
-            <Route path="jobs/:id/edit" element={<JobForm />} />
+            <Route path="jobs" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <JobList />
+              </Suspense>
+            } />
+            <Route path="jobs/new" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <JobForm />
+              </Suspense>
+            } />
+            <Route path="jobs/:id" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <JobDetail />
+              </Suspense>
+            } />
+            <Route path="jobs/:id/edit" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <JobForm />
+              </Suspense>
+            } />
             
             {/* Calendar Route */}
-            <Route path="calendar" element={<JobCalendar />} />
+            <Route path="calendar" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <JobCalendar />
+              </Suspense>
+            } />
             
             {/* Communications Route */}
-            <Route path="communications" element={<Communications />} />
+            <Route path="communications" element={
+              <Suspense fallback={<CommunicationsLoader />}>
+                <Communications />
+              </Suspense>
+            } />
             
             <Route path="reports" element={<div>Reports - Coming Soon</div>} />
             <Route path="settings" element={<div>Settings - Coming Soon</div>} />
@@ -103,7 +165,9 @@ function AppContent() {
 function App() {
   return (
     <Provider store={store}>
-      <AppContent />
+      <ChunkErrorBoundary>
+        <AppContent />
+      </ChunkErrorBoundary>
     </Provider>
   )
 }

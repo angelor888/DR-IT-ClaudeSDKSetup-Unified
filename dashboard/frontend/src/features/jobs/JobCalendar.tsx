@@ -29,7 +29,8 @@ import {
   ChevronRight as ChevronRightIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import { Calendar, momentLocalizer, View, Views } from 'react-big-calendar';
+import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
+import type { View } from 'react-big-calendar';
 import moment from 'moment';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -84,25 +85,8 @@ export const JobCalendar: React.FC = () => {
   const [rescheduleJob] = useRescheduleJobMutation();
   const [updateJobStatus] = useUpdateJobStatusMutation();
 
-  // Convert jobs to calendar events
-  const events: JobCalendarEvent[] = useMemo(() => {
-    if (!jobs) return [];
-    
-    return jobs.map(job => ({
-      id: job.id,
-      title: job.title,
-      start: new Date(job.startAt || job.createdAt),
-      end: new Date(job.endAt || job.startAt || job.createdAt),
-      allDay: job.allDay || false,
-      resource: {
-        jobId: job.id,
-        customerId: job.customerId,
-        status: job.status,
-        priority: job.priority,
-        customer: job.customer,
-      },
-    }));
-  }, [jobs]);
+  // Jobs are already in calendar event format
+  const events: JobCalendarEvent[] = jobs || [];
 
   const handleSelectEvent = useCallback((event: JobCalendarEvent) => {
     setSelectedEvent(event);
@@ -115,18 +99,6 @@ export const JobCalendar: React.FC = () => {
     navigate(`/jobs/new?startDate=${startDate}`);
   }, [navigate]);
 
-  const handleEventDrop = useCallback(async ({ event, start, end }: { event: JobCalendarEvent; start: Date; end: Date }) => {
-    try {
-      await rescheduleJob({
-        id: event.resource.jobId,
-        startAt: start.toISOString(),
-        endAt: end.toISOString(),
-      }).unwrap();
-      refetch();
-    } catch (error) {
-      console.error('Failed to reschedule job:', error);
-    }
-  }, [rescheduleJob, refetch]);
 
   const handleNavigate = useCallback((date: Date, view: View, action: string) => {
     setCurrentDate(date);
@@ -312,11 +284,8 @@ export const JobCalendar: React.FC = () => {
           onNavigate={handleNavigate}
           onSelectEvent={handleSelectEvent}
           onSelectSlot={handleSelectSlot}
-          onEventDrop={handleEventDrop}
           eventPropGetter={eventStyleGetter}
           selectable
-          resizable
-          dragAndDrop
           popup
           showMultiDayTimes
           step={30}

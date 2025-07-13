@@ -258,7 +258,7 @@ export const JobForm: React.FC = () => {
             <CardHeader title="Basic Information" />
             <CardContent>
               <Grid container spacing={3}>
-                <Grid xs={12}>
+                <Grid size={12}>
                   <Controller
                     name="title"
                     control={control}
@@ -273,7 +273,7 @@ export const JobForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12}>
+                <Grid size={12}>
                   <Controller
                     name="description"
                     control={control}
@@ -290,7 +290,7 @@ export const JobForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller
                     name="customerId"
                     control={control}
@@ -315,7 +315,7 @@ export const JobForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={3}>
+                <Grid size={{ xs: 12, sm: 3 }}>
                   <Controller
                     name="priority"
                     control={control}
@@ -335,7 +335,7 @@ export const JobForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={3}>
+                <Grid size={{ xs: 12, sm: 3 }}>
                   <Controller
                     name="category"
                     control={control}
@@ -365,7 +365,7 @@ export const JobForm: React.FC = () => {
             <CardHeader title="Scheduling" />
             <CardContent>
               <Grid container spacing={3}>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller
                     name="startAt"
                     control={control}
@@ -386,7 +386,7 @@ export const JobForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller
                     name="endAt"
                     control={control}
@@ -407,7 +407,7 @@ export const JobForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller
                     name="estimatedDuration"
                     control={control}
@@ -426,7 +426,7 @@ export const JobForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller
                     name="allDay"
                     control={control}
@@ -462,7 +462,7 @@ export const JobForm: React.FC = () => {
                   <Card key={field.id} variant="outlined">
                     <CardContent>
                       <Grid container spacing={2} alignItems="center">
-                        <Grid xs={12} sm={3}>
+                        <Grid size={{ xs: 12, sm: 3 }}>
                           <Controller
                             name={`lineItems.${index}.name`}
                             control={control}
@@ -478,7 +478,7 @@ export const JobForm: React.FC = () => {
                             )}
                           />
                         </Grid>
-                        <Grid xs={12} sm={2}>
+                        <Grid size={{ xs: 12, sm: 2 }}>
                           <Controller
                             name={`lineItems.${index}.quantity`}
                             control={control}
@@ -495,7 +495,7 @@ export const JobForm: React.FC = () => {
                             )}
                           />
                         </Grid>
-                        <Grid xs={12} sm={2}>
+                        <Grid size={{ xs: 12, sm: 2 }}>
                           <Controller
                             name={`lineItems.${index}.unitPrice`}
                             control={control}
@@ -515,7 +515,7 @@ export const JobForm: React.FC = () => {
                             )}
                           />
                         </Grid>
-                        <Grid xs={12} sm={2}>
+                        <Grid size={{ xs: 12, sm: 2 }}>
                           <TextField
                             fullWidth
                             label="Total"
@@ -526,7 +526,7 @@ export const JobForm: React.FC = () => {
                             }}
                           />
                         </Grid>
-                        <Grid xs={12} sm={3}>
+                        <Grid size={{ xs: 12, sm: 3 }}>
                           <Stack direction="row" spacing={1} alignItems="center">
                             <Controller
                               name={`lineItems.${index}.description`}
@@ -559,7 +559,7 @@ export const JobForm: React.FC = () => {
                   <>
                     <Divider />
                     <Grid container spacing={2}>
-                      <Grid xs={12} sm={6}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
                         <Controller
                           name="taxRate"
                           control={control}
@@ -576,7 +576,7 @@ export const JobForm: React.FC = () => {
                           )}
                         />
                       </Grid>
-                      <Grid xs={12} sm={6}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
                         <Stack spacing={1}>
                           <Box display="flex" justifyContent="space-between">
                             <Typography variant="body2">Subtotal:</Typography>
@@ -603,7 +603,7 @@ export const JobForm: React.FC = () => {
             <CardHeader title="Additional Information" />
             <CardContent>
               <Grid container spacing={3}>
-                <Grid xs={12}>
+                <Grid size={12}>
                   <Controller
                     name="tags"
                     control={control}
@@ -636,7 +636,7 @@ export const JobForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller
                     name="notes"
                     control={control}
@@ -653,7 +653,7 @@ export const JobForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller
                     name="internalNotes"
                     control={control}
@@ -670,7 +670,7 @@ export const JobForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller
                     name="source"
                     control={control}

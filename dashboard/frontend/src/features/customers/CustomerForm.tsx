@@ -165,7 +165,7 @@ export const CustomerForm: React.FC = () => {
             <CardHeader title="Basic Information" />
             <CardContent>
               <Grid container spacing={3}>
-                <Grid xs={12}>
+                <Grid size={12}>
                   <Controller
                     name="companyName"
                     control={control}
@@ -180,7 +180,7 @@ export const CustomerForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller
                     name="firstName"
                     control={control}
@@ -195,7 +195,7 @@ export const CustomerForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller
                     name="lastName"
                     control={control}
@@ -218,7 +218,7 @@ export const CustomerForm: React.FC = () => {
             <CardHeader title="Contact Information" />
             <CardContent>
               <Grid container spacing={3}>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller
                     name="email"
                     control={control}
@@ -234,7 +234,7 @@ export const CustomerForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller
                     name="phone"
                     control={control}
@@ -249,7 +249,7 @@ export const CustomerForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12}>
+                <Grid size={12}>
                   <Controller
                     name="preferredContactMethod"
                     control={control}
@@ -273,7 +273,7 @@ export const CustomerForm: React.FC = () => {
             <CardHeader title="Address" />
             <CardContent>
               <Grid container spacing={3}>
-                <Grid xs={12}>
+                <Grid size={12}>
                   <Controller
                     name="address.street1"
                     control={control}
@@ -288,7 +288,7 @@ export const CustomerForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12}>
+                <Grid size={12}>
                   <Controller
                     name="address.street2"
                     control={control}
@@ -301,7 +301,7 @@ export const CustomerForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller
                     name="address.city"
                     control={control}
@@ -316,7 +316,7 @@ export const CustomerForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={3}>
+                <Grid size={{ xs: 12, sm: 3 }}>
                   <Controller
                     name="address.province"
                     control={control}
@@ -338,7 +338,7 @@ export const CustomerForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12} sm={3}>
+                <Grid size={{ xs: 12, sm: 3 }}>
                   <Controller
                     name="address.postalCode"
                     control={control}
@@ -361,7 +361,7 @@ export const CustomerForm: React.FC = () => {
             <CardHeader title="Additional Information" />
             <CardContent>
               <Grid container spacing={3}>
-                <Grid xs={12}>
+                <Grid size={12}>
                   <Controller
                     name="tags"
                     control={control}
@@ -394,7 +394,7 @@ export const CustomerForm: React.FC = () => {
                     )}
                   />
                 </Grid>
-                <Grid xs={12}>
+                <Grid size={12}>
                   <Controller
                     name="notes"
                     control={control}
