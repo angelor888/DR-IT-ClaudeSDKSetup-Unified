@@ -29,10 +29,10 @@ export class UnifiedSlackWebhookHandler {
       try {
         const userResponse = await this.slackService.getClient().getUserInfo(event.user);
         senderInfo = {
-          id: userResponse.user.id,
-          name: userResponse.user.real_name || userResponse.user.name,
-          email: userResponse.user.profile?.email,
-          avatar: userResponse.user.profile?.image_48,
+          id: userResponse.data?.user.id,
+          name: userResponse.data?.user.real_name || userResponse.data?.user.name,
+          email: userResponse.data?.user.profile?.email,
+          avatar: userResponse.data?.user.profile?.image_48,
         };
       } catch (error) {
         log.warn('Failed to get user info', { userId: event.user, error });
@@ -49,7 +49,7 @@ export class UnifiedSlackWebhookHandler {
       let channelInfo = null;
       try {
         const channelResponse = await this.slackService.getClient().getChannel(event.channel);
-        channelInfo = channelResponse.channel;
+        channelInfo = channelResponse.data?.channel;
       } catch (error) {
         log.warn('Failed to get channel info', { channelId: event.channel, error });
       }
@@ -191,10 +191,10 @@ export class UnifiedSlackWebhookHandler {
     try {
       const userResponse = await this.slackService.getClient().getUserInfo(event.user);
       userInfo = {
-        id: userResponse.user.id,
-        name: userResponse.user.real_name || userResponse.user.name,
-        email: userResponse.user.profile?.email,
-        avatar: userResponse.user.profile?.image_48,
+        id: userResponse.data?.user.id,
+        name: userResponse.data?.user.real_name || userResponse.data?.user.name,
+        email: userResponse.data?.user.profile?.email,
+        avatar: userResponse.data?.user.profile?.image_48,
       };
     } catch (error) {
       log.warn('Failed to get user info for membership update', { userId: event.user, error });

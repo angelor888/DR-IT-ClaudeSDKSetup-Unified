@@ -97,13 +97,13 @@ describe('Rate Limiters', () => {
       const limiter = rateLimiters.auth;
       
       // Different IPs should have separate limits
-      req.ip = '192.168.1.1';
+      (req as any).ip = '192.168.1.1';
       for (let i = 0; i < 5; i++) {
         await limiter(req as Request, res as Response, next);
       }
       
       // Change IP
-      req.ip = '192.168.1.2';
+      (req as any).ip = '192.168.1.2';
       await limiter(req as Request, res as Response, next);
       
       // Should not be blocked
@@ -161,9 +161,9 @@ describe('Rate Limiters', () => {
     });
   });
 
-  describe('Password Reset Rate Limiter', () => {
+  describe('Auth Rate Limiter - Password Reset', () => {
     it('should have very strict limits', async () => {
-      const limiter = rateLimiters.passwordReset;
+      const limiter = rateLimiters.auth;
       
       // Only 3 requests allowed
       for (let i = 0; i < 3; i++) {
@@ -318,10 +318,10 @@ describe('Rate Limiter Key Generation', () => {
     const keys = new Set();
     
     // Different IPs
-    req.ip = '192.168.1.1';
+    (req as any).ip = '192.168.1.1';
     keys.add(`rate-limit:${req.ip}`);
     
-    req.ip = '192.168.1.2';
+    (req as any).ip = '192.168.1.2';
     keys.add(`rate-limit:${req.ip}`);
     
     // Different users

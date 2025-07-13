@@ -1,6 +1,6 @@
 import { createServer } from 'http';
 import { AddressInfo } from 'net';
-import { io, Socket } from 'socket.io-client';
+const io = require('socket.io-client');
 import { WebSocketServer } from '../realtime/websocket';
 import { getAuth } from '../config/firebase';
 import { EventTypes } from '../realtime/types';
@@ -12,7 +12,7 @@ describe('WebSocket Server', () => {
   let httpServer: any;
   let wsServer: WebSocketServer;
   let serverUrl: string;
-  let client: Socket;
+  let client: any;
 
   beforeAll(async () => {
     // Create HTTP server
@@ -144,7 +144,7 @@ describe('WebSocket Server', () => {
   });
 
   describe('Event Broadcasting', () => {
-    let client2: Socket;
+    let client2: any;
 
     beforeEach(() => {
       // Mock successful auth
@@ -201,7 +201,7 @@ describe('WebSocket Server', () => {
       });
 
       // Client 2 - not in team
-      client2 = SocketIOClient(serverUrl, {
+      client2 = io(serverUrl, {
         auth: {
           token: 'valid-token-2',
         },

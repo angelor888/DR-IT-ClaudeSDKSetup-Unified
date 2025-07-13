@@ -6,7 +6,7 @@ import { validateRequest } from '../../middleware/validation';
 import { getFirestore } from '../../config/firebase';
 import { config } from '../../core/config';
 import { logger } from '../../utils/logger';
-import { AppError } from '../../core/errors/base.error';
+import { ApiError } from '../../core/errors/api.error';
 import axios from 'axios';
 
 const router = Router();
@@ -16,7 +16,7 @@ const db = getFirestore();
 // OAuth configuration
 const SLACK_CLIENT_ID = config.services.slack.clientId || process.env.SLACK_CLIENT_ID;
 const SLACK_CLIENT_SECRET = config.services.slack.clientSecret || process.env.SLACK_CLIENT_SECRET;
-const SLACK_REDIRECT_URI = config.services.slack.redirectUri || `${config.server.baseUrl}/api/slack/oauth/callback`;
+const SLACK_REDIRECT_URI = `${config.server.baseUrl}/api/slack/oauth/callback`;
 
 // Scopes needed for Communications Hub
 const SLACK_SCOPES = [
@@ -118,7 +118,7 @@ router.get(
       // Verify state parameter
       const stateDoc = await db.collection('oauth_states').doc(state).get();
       if (!stateDoc.exists) {
-        throw new AppError('Invalid OAuth state', 400);
+        throw new ApiError('Invalid OAuth state', 400);
       }
 
       const stateData = stateDoc.data()!;
@@ -126,7 +126,7 @@ router.get(
       // Check if state is expired
       if (new Date() > stateData.expiresAt.toDate()) {
         await stateDoc.ref.delete();
-        throw new AppError('OAuth state expired', 400);
+        throw new ApiError('OAuth state expired', 400);
       }
 
       // Exchange code for access token
@@ -147,7 +147,7 @@ router.get(
       const { data } = tokenResponse;
 
       if (!data.ok) {
-        throw new AppError(`Slack OAuth failed: ${data.error}`, 400);
+        throw new ApiError(`Slack OAuth failed: ${data.error}`, 400);
       }
 
       // Store tokens in database
@@ -215,7 +215,7 @@ router.post(
       const installationDoc = await db.collection('slack_installations').doc(installationId).get();
 
       if (!installationDoc.exists) {
-        throw new AppError('Slack installation not found', 404);
+        throw new ApiError('Slack installation not found', 404);
       }
 
       const installation = installationDoc.data()!;
@@ -232,7 +232,7 @@ router.post(
           }
         );
       } catch (error) {
-        log.warn('Failed to revoke token with Slack', error);
+        log.warn('Failed to revoke token with Slack', { error: error instanceof Error ? error.message : 'Unknown error' });
       }
 
       // Delete from database

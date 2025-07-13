@@ -139,6 +139,9 @@ export interface TwilioVoiceWebhook {
   RecordingUrl?: string;
   RecordingSid?: string;
   Timestamp?: string;
+  FromCity?: string;
+  FromState?: string;
+  FromCountry?: string;
 }
 
 export interface TwilioSmsWebhook {
@@ -166,6 +169,9 @@ export interface TwilioSmsWebhook {
   SmsStatus?: string;
   ErrorCode?: string;
   ErrorMessage?: string;
+  FromCity?: string;
+  FromState?: string;
+  FromCountry?: string;
 }
 
 // List options

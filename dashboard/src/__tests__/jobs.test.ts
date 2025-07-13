@@ -234,10 +234,10 @@ describe('Job Queues', () => {
   describe('Report Jobs', () => {
     it('should add daily report job', async () => {
       const jobData = {
-        type: 'daily',
+        type: 'daily' as const,
         date: new Date().toISOString(),
         recipients: ['admin@example.com'],
-        userId: 'user123',
+        format: 'pdf' as const,
       };
 
       const job = await jobQueues.addReportJob(jobData);
@@ -247,11 +247,10 @@ describe('Job Queues', () => {
 
     it('should add weekly report job', async () => {
       const jobData = {
-        type: 'weekly',
-        startDate: new Date().toISOString(),
-        endDate: new Date().toISOString(),
+        type: 'weekly' as const,
+        date: new Date().toISOString(),
         recipients: ['admin@example.com'],
-        userId: 'user123',
+        format: 'pdf' as const,
       };
 
       const job = await jobQueues.addReportJob(jobData);
@@ -261,11 +260,10 @@ describe('Job Queues', () => {
 
     it('should add monthly report job', async () => {
       const jobData = {
-        type: 'monthly',
-        month: 7,
-        year: 2025,
+        type: 'monthly' as const,
+        date: new Date().toISOString(),
         recipients: ['admin@example.com'],
-        userId: 'user123',
+        format: 'pdf' as const,
       };
 
       const job = await jobQueues.addReportJob(jobData);
@@ -282,7 +280,7 @@ describe('Job Queues', () => {
         dryRun: true,
       };
 
-      const job = await jobQueues.addMaintenanceJob(jobData);
+      const job = await jobQueues.addMaintenanceJob(JobType.CLEANUP_OLD_DATA, jobData);
 
       expect(job.name).toBe(JobType.CLEANUP_OLD_DATA);
     });
@@ -293,9 +291,9 @@ describe('Job Queues', () => {
         services: ['firebase', 'redis'],
       };
 
-      const job = await jobQueues.addMaintenanceJob(jobData);
+      const job = await jobQueues.addMaintenanceJob(JobType.BACKUP_DATABASE, jobData);
 
-      expect(job.name).toBe(JobType.BACKUP_DATA);
+      expect(job.name).toBe(JobType.BACKUP_DATABASE);
     });
 
     it('should add health check job', async () => {
@@ -304,9 +302,9 @@ describe('Job Queues', () => {
         services: ['slack', 'jobber', 'twilio'],
       };
 
-      const job = await jobQueues.addMaintenanceJob(jobData);
+      const job = await jobQueues.addMaintenanceJob(JobType.SERVICE_HEALTH_CHECK, jobData);
 
-      expect(job.name).toBe(JobType.HEALTH_CHECK);
+      expect(job.name).toBe(JobType.SERVICE_HEALTH_CHECK);
     });
   });
 
@@ -351,7 +349,7 @@ describe('Job Queues', () => {
     });
 
     it('should close all queues', async () => {
-      await jobQueues.close();
+      await jobQueues.closeAll();
 
       const syncQueue = (jobQueues as any).syncQueue;
       const notificationQueue = (jobQueues as any).notificationQueue;

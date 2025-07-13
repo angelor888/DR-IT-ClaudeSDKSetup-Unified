@@ -28,6 +28,7 @@ export interface SlackConfig {
   notificationsChannelId?: string;
   clientId?: string;
   clientSecret?: string;
+  redirectUri?: string;
 }
 
 export interface JobberConfig {

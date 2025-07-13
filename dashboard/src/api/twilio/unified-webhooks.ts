@@ -338,7 +338,6 @@ export class UnifiedTwilioWebhookHandler {
         autoResponseText,
         {
           messageId: `auto_${messageId}`,
-          saveToDb: true,
         }
       );
 

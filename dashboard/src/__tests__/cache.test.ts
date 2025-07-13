@@ -2,6 +2,7 @@ import { RedisCache } from '../cache/redis';
 import { CacheStrategies } from '../cache/strategies';
 import { cacheMiddleware, invalidateCache } from '../cache/middleware';
 import { Request, Response, NextFunction } from 'express';
+import { mockDecodedToken } from './test-setup';
 
 // Mock Redis client
 jest.mock('ioredis', () => {
@@ -220,7 +221,7 @@ describe('Cache Middleware', () => {
       method: 'GET',
       path: '/api/users',
       query: { page: '1' },
-      user: { id: 'user123' },
+      user: { ...mockDecodedToken, id: 'user123', uid: 'user123', sub: 'user123' },
     };
 
     res = {
@@ -345,7 +346,7 @@ describe('Cache Invalidation Middleware', () => {
     jest.clearAllMocks();
     
     req = {
-      user: { id: 'user123' },
+      user: { ...mockDecodedToken, id: 'user123', uid: 'user123', sub: 'user123' },
       params: { id: '456' },
     };
 

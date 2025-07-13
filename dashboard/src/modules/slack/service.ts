@@ -320,6 +320,11 @@ export class SlackService {
     return this.client.isHealthy();
   }
 
+  // Get the underlying Slack client
+  getClient(): SlackClient {
+    return this.client;
+  }
+
   // Cleanup
   destroy() {
     this.client.destroy();

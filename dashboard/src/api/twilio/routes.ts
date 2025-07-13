@@ -44,14 +44,14 @@ router.post(
       if (result.success) {
         res.json({
           success: true,
-          data: result.data,
+          data: result.info,
           message: 'SMS sent successfully',
           requestId: req.id,
         });
       } else {
         res.status(400).json({
           success: false,
-          error: result.error,
+          error: result.info?.error,
           message: 'Failed to send SMS',
           requestId: req.id,
         });
@@ -244,7 +244,7 @@ router.post(
       if (result.success) {
         res.json({
           success: true,
-          data: result.data,
+          data: result.info,
           message: 'Business notification sent successfully',
           priority,
           requestId: req.id,
@@ -252,7 +252,7 @@ router.post(
       } else {
         res.status(400).json({
           success: false,
-          error: result.error,
+          error: result.info?.error,
           message: 'Failed to send business notification',
           requestId: req.id,
         });
@@ -287,7 +287,7 @@ router.post(
       if (result.success) {
         res.json({
           success: true,
-          data: result.data,
+          data: result.info,
           message: 'Auto-response sent successfully',
           type,
           requestId: req.id,
@@ -295,7 +295,7 @@ router.post(
       } else {
         res.status(400).json({
           success: false,
-          error: result.error,
+          error: result.info?.error,
           message: 'Failed to send auto-response',
           requestId: req.id,
         });
