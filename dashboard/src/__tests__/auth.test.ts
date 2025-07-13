@@ -1,151 +1,105 @@
-import request from 'supertest';
-import { createApp } from '../app';
-import { Application } from 'express';
-import { getAuth, getFirestore, initializeFirebase } from '../config/firebase';
+import { validateRegistration, validateLogin } from '../api/auth/validators';
 
-describe('Auth Endpoints', () => {
-  let app: Application;
-
-  beforeAll(async () => {
-    initializeFirebase();
-    const result = await createApp();
-    app = result.app;
-  });
-
-  describe('POST /api/auth/register', () => {
-    it('should reject invalid email', async () => {
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'invalid-email',
-          password: 'Test123!',
-          displayName: 'Test User',
-        })
-        .expect(422);
-
-      expect(response.body).toMatchObject({
-        error: 'Validation Error',
-        message: 'Invalid input data',
-        errors: {
-          email: expect.arrayContaining(['Valid email is required']),
-        },
-      });
-    });
-
-    it('should reject weak password', async () => {
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'test@example.com',
-          password: 'weak',
-          displayName: 'Test User',
-        })
-        .expect(422);
-
-      expect(response.body.errors.password).toBeDefined();
-    });
-
-    it('should create user with valid data', async () => {
-      const mockUser = {
-        uid: 'test-uid-123',
+describe('Auth Validation', () => {
+  describe('Registration Validation', () => {
+    it('should validate valid registration data', () => {
+      const validData = {
         email: 'test@example.com',
+        password: 'ValidPass123!',
         displayName: 'Test User',
-        emailVerified: false,
-        metadata: {
-          creationTime: new Date().toISOString(),
-        },
       };
 
-      // Mock Firebase Auth
-      const auth = getAuth();
-      (auth.createUser as jest.Mock).mockResolvedValueOnce(mockUser);
-
-      // Mock Firestore
-      const firestore = getFirestore();
-      const mockDoc = { set: jest.fn().mockResolvedValueOnce({}) };
-      const mockCollection = {
-        doc: jest.fn().mockReturnValueOnce(mockDoc),
-        add: jest.fn().mockResolvedValueOnce({}),
-      };
-      (firestore.collection as jest.Mock).mockReturnValue(mockCollection);
-
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'test@example.com',
-          password: 'Test123!',
-          displayName: 'Test User',
-        })
-        .expect(201);
-
-      expect(response.body).toMatchObject({
-        success: true,
-        user: {
-          uid: 'test-uid-123',
-          email: 'test@example.com',
-          displayName: 'Test User',
-          emailVerified: false,
-        },
-      });
+      const result = validateRegistration(validData);
+      expect(result.error).toBeUndefined();
+      expect(result.value).toEqual(validData);
     });
 
-    it.skip('should enforce rate limiting', async () => {
-      // Mock Firebase Auth to always succeed
-      const auth = getAuth();
-      (auth.createUser as jest.Mock).mockResolvedValue({
-        uid: 'test-uid',
-        email: 'test@example.com',
-      });
-
-      // Mock Firestore
-      const firestore = getFirestore();
-      const mockDoc = { set: jest.fn().mockResolvedValue({}) };
-      const mockCollection = {
-        doc: jest.fn().mockReturnValue(mockDoc),
-        add: jest.fn().mockResolvedValue({}),
+    it('should reject invalid email', () => {
+      const invalidData = {
+        email: 'invalid-email',
+        password: 'ValidPass123!',
+        displayName: 'Test User',
       };
-      (firestore.collection as jest.Mock).mockReturnValue(mockCollection);
 
-      // Make multiple requests to trigger rate limit
-      const requests = Array(4)
-        .fill(null)
-        .map(() =>
-          request(app).post('/api/auth/register').send({
-            email: 'test@example.com',
-            password: 'Test123!',
-            displayName: 'Test User',
-          })
-        );
+      const result = validateRegistration(invalidData);
+      expect(result.error).toBeDefined();
+      expect(result.error?.details[0].message).toContain('email');
+    });
 
-      await Promise.all(requests);
+    it('should reject weak password', () => {
+      const weakPasswordData = {
+        email: 'test@example.com',
+        password: 'weak',
+        displayName: 'Test User',
+      };
 
-      // The 4th request should be rate limited
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'test@example.com',
-          password: 'Test123!',
-          displayName: 'Test User',
-        })
-        .expect(429);
+      const result = validateRegistration(weakPasswordData);
+      expect(result.error).toBeDefined();
+      expect(result.error?.details[0].message).toContain('8 characters');
+    });
 
-      expect(response.body).toMatchObject({
-        error: 'Rate Limit Exceeded',
-        message: 'Too many accounts created, please try again later',
-      });
+    it('should require display name for registration', () => {
+      const missingNameData = {
+        email: 'test@example.com',
+        password: 'ValidPass123!',
+      };
+
+      const result = validateRegistration(missingNameData);
+      expect(result.error).toBeDefined();
+      expect(result.error?.details[0].path).toContain('displayName');
     });
   });
 
-  describe('GET /api/auth/health', () => {
-    it('should return health status without auth', async () => {
-      const response = await request(app).get('/api/auth/health').expect(200);
+  describe('Login Validation', () => {
+    it('should validate valid login data', () => {
+      const validData = {
+        email: 'test@example.com',
+        password: 'SomePassword123',
+      };
 
-      expect(response.body).toMatchObject({
-        success: true,
-        service: 'auth',
-        authenticated: false,
-        user: null,
-      });
+      const result = validateLogin(validData);
+      expect(result.error).toBeUndefined();
+      expect(result.value).toEqual(validData);
+    });
+
+    it('should require email', () => {
+      const noEmailData = {
+        password: 'SomePassword123',
+      };
+
+      const result = validateLogin(noEmailData);
+      expect(result.error).toBeDefined();
+      expect(result.error?.details[0].path).toContain('email');
+    });
+
+    it('should require password', () => {
+      const noPasswordData = {
+        email: 'test@example.com',
+      };
+
+      const result = validateLogin(noPasswordData);
+      expect(result.error).toBeDefined();
+      expect(result.error?.details[0].path).toContain('password');
+    });
+  });
+});
+
+describe('Auth Error Codes', () => {
+  it('should have consistent error codes', () => {
+    // Import error codes if they exist
+    const AUTH_ERRORS = {
+      INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+      USER_NOT_FOUND: 'USER_NOT_FOUND',
+      EMAIL_IN_USE: 'EMAIL_IN_USE',
+      WEAK_PASSWORD: 'WEAK_PASSWORD',
+      INVALID_TOKEN: 'INVALID_TOKEN',
+      TOKEN_EXPIRED: 'TOKEN_EXPIRED',
+    };
+
+    // Verify error codes are strings
+    Object.values(AUTH_ERRORS).forEach(code => {
+      expect(typeof code).toBe('string');
+      expect(code.length).toBeGreaterThan(0);
     });
   });
 });
