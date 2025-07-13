@@ -1,6 +1,7 @@
 // Slack webhook endpoints
 import { Router, Request, Response, NextFunction } from 'express';
 import { SlackWebhookHandler } from '../../modules/slack/webhooks';
+import { unifiedWebhookHandler } from './webhook-handlers';
 import { logger } from '../../utils/logger';
 import {
   verifySlackRequest,
@@ -43,10 +44,42 @@ router.post(
       });
 
       // Process event asynchronously
-      setImmediate(() => {
-        webhookHandler.handleWebhook(req, res).catch(error => {
+      setImmediate(async () => {
+        try {
+          const { event, team_id } = req.body;
+          
+          // Route to unified handlers based on event type
+          switch (event?.type) {
+            case 'message':
+            case 'app_mention':
+              await unifiedWebhookHandler.handleMessageEvent(event, team_id);
+              break;
+              
+            case 'channel_created':
+            case 'channel_deleted':
+            case 'channel_rename':
+            case 'channel_archive':
+            case 'channel_unarchive':
+              await unifiedWebhookHandler.handleChannelEvent(event, team_id);
+              break;
+              
+            case 'member_joined_channel':
+            case 'member_left_channel':
+              await unifiedWebhookHandler.handleMembershipEvent(event, team_id);
+              break;
+              
+            case 'reaction_added':
+            case 'reaction_removed':
+              await unifiedWebhookHandler.handleReactionEvent(event, team_id);
+              break;
+              
+            default:
+              // Fall back to legacy handler for unhandled events
+              await webhookHandler.handleWebhook(req, res);
+          }
+        } catch (error) {
           log.error('Failed to process webhook', error);
-        });
+        }
       });
 
       // Immediately respond to Slack
@@ -220,10 +253,21 @@ async function handleDuetRightCommand(text: string, _context: any): Promise<any>
       };
 
     case 'sync':
-      // TODO: Implement sync functionality
+      // Trigger sync process
+      setImmediate(async () => {
+        try {
+          const slackService = require('../../modules/slack/service').SlackService.getInstance();
+          await slackService.syncChannels();
+          await slackService.syncUsers();
+          log.info('Slack sync completed via slash command');
+        } catch (error) {
+          log.error('Slack sync failed', error);
+        }
+      });
+      
       return {
         response_type: 'in_channel',
-        text: '🔄 Starting sync process...',
+        text: '🔄 Starting sync process... Check the dashboard for progress.',
       };
 
     default:
@@ -236,27 +280,79 @@ async function handleDuetRightCommand(text: string, _context: any): Promise<any>
 
 // Interactive component handlers
 async function handleBlockActions(payload: any): Promise<any> {
-  // TODO: Implement block action handling based on action_id
-  log.debug('Block action payload', payload);
-  return { text: 'Action received' };
+  const { actions, user, team } = payload;
+  
+  for (const action of actions) {
+    log.debug('Processing block action', {
+      actionId: action.action_id,
+      blockId: action.block_id,
+      value: action.value,
+    });
+    
+    // Handle specific actions
+    switch (action.action_id) {
+      case 'send_to_dashboard':
+        // Store action in Firestore for dashboard processing
+        await require('../../config/firebase').getFirestore()
+          .collection('slack_actions')
+          .add({
+            actionId: action.action_id,
+            value: action.value,
+            userId: user.id,
+            teamId: team.id,
+            timestamp: new Date(),
+          });
+        break;
+    }
+  }
+  
+  return { text: 'Action processed' };
 }
 
 async function handleViewSubmission(payload: any): Promise<any> {
-  // TODO: Implement view submission handling
-  log.debug('View submission payload', payload);
+  const { view, user, team } = payload;
+  
+  log.debug('View submission received', {
+    callbackId: view.callback_id,
+    userId: user.id,
+  });
+  
+  // Store submission for processing
+  await require('../../config/firebase').getFirestore()
+    .collection('slack_submissions')
+    .add({
+      callbackId: view.callback_id,
+      values: view.state.values,
+      userId: user.id,
+      teamId: team.id,
+      timestamp: new Date(),
+    });
+  
   return { response_action: 'clear' };
 }
 
-async function getOptionsForAction(_payload: any): Promise<any[]> {
-  // TODO: Implement dynamic options loading
+async function getOptionsForAction(payload: any): Promise<any[]> {
+  const { action_id, block_id } = payload;
+  
+  // Dynamic options based on action
+  if (action_id === 'channel_select') {
+    try {
+      const slackService = require('../../modules/slack/service').SlackService.getInstance();
+      const channels = await slackService.getChannels();
+      
+      return channels.map((channel: any) => ({
+        text: { type: 'plain_text', text: `#${channel.name}` },
+        value: channel.id,
+      }));
+    } catch (error) {
+      log.error('Failed to load channels', error);
+    }
+  }
+  
   return [
     {
-      text: { type: 'plain_text', text: 'Option 1' },
-      value: 'option_1',
-    },
-    {
-      text: { type: 'plain_text', text: 'Option 2' },
-      value: 'option_2',
+      text: { type: 'plain_text', text: 'Default Option' },
+      value: 'default',
     },
   ];
 }

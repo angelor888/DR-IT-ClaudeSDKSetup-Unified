@@ -7,6 +7,7 @@ import { webhookValidation } from './validation';
 import { TwilioVoiceWebhook, TwilioSmsWebhook } from '../../modules/twilio/types';
 import { logger } from '../../utils/logger';
 import { config } from '../../core/config';
+import { unifiedTwilioHandler } from './unified-webhooks';
 
 const log = logger.child('TwilioWebhooks');
 const router = Router();
@@ -15,22 +16,20 @@ const router = Router();
 router.use(webhookLimiter);
 
 // Webhook signature validation middleware
-const validateTwilioSignature = (req: Request, _res: Response, next: NextFunction) => {
+const validateTwilioSignature = (req: Request, res: Response, next: NextFunction) => {
   // In development, skip signature validation
   if (config.server.nodeEnv === 'development') {
     return next();
   }
 
-  // TODO: Implement Twilio signature validation
-  // For now, we'll log the request and continue
-  log.info('Twilio webhook received', {
-    url: req.originalUrl,
-    method: req.method,
-    headers: {
-      'x-twilio-signature': req.headers['x-twilio-signature'],
-      'content-type': req.headers['content-type'],
-    },
-  });
+  // Validate signature using unified handler
+  if (!unifiedTwilioHandler.validateSignature(req)) {
+    log.error('Invalid Twilio signature', {
+      url: req.originalUrl,
+      headers: req.headers,
+    });
+    return res.status(403).send('Forbidden');
+  }
 
   next();
 };
@@ -59,11 +58,8 @@ router.post(
         direction: webhook.Direction,
       });
 
-      const twilioService = getTwilioServiceInstance();
-      await twilioService.processVoiceWebhook(webhook);
-
-      // Generate TwiML response based on call status and business logic
-      const twimlResponse = generateVoiceTwiML(webhook);
+      // Process with unified handler and get TwiML response
+      const twimlResponse = await unifiedTwilioHandler.handleVoiceWebhook(webhook);
 
       res.set('Content-Type', 'text/xml');
       res.send(twimlResponse);
@@ -107,14 +103,25 @@ router.post(
         status: webhook.MessageStatus,
       });
 
+      // Process with unified handler
+      await unifiedTwilioHandler.handleSmsWebhook(webhook);
+
+      // Check if auto-response is needed
       const twilioService = getTwilioServiceInstance();
-      await twilioService.processSmsWebhook(webhook);
-
-      // Generate TwiML response for SMS
-      const twimlResponse = generateSmsTwiML(webhook);
-
-      res.set('Content-Type', 'text/xml');
-      res.send(twimlResponse);
+      const autoResponse = await twilioService.getAutoResponseForNumber(webhook.From);
+      
+      if (autoResponse) {
+        const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>${autoResponse}</Message>
+</Response>`;
+        res.set('Content-Type', 'text/xml');
+        res.send(twimlResponse);
+      } else {
+        // Send empty response
+        res.set('Content-Type', 'text/xml');
+        res.send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+      }
     } catch (error: any) {
       log.error('Error processing SMS webhook', {
         error: error.message,
@@ -182,12 +189,13 @@ router.post('/transcription', validateTwilioSignature, async (req: Request, res:
       recordingUrl: RecordingUrl,
     });
 
-    // Process transcription
-    await handleVoicemailTranscription({
-      from: From,
-      recordingUrl: RecordingUrl,
-      transcription: TranscriptionText,
-      recordingSid: RecordingSid,
+    // Process transcription with unified handler
+    await unifiedTwilioHandler.handleTranscriptionWebhook({
+      RecordingSid: RecordingSid,
+      TranscriptionText: TranscriptionText,
+      From: From,
+      To: req.body.To,
+      CallSid: req.body.CallSid,
     });
 
     res.sendStatus(200);

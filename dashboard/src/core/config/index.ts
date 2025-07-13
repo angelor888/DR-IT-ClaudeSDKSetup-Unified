@@ -94,6 +94,7 @@ function loadConfigFromEnv(): DeepPartial<AppConfig> {
       corsOrigin: parseCorsOrigin(env.CORS_ORIGIN),
       corsCredentials: parseBoolean(env.CORS_CREDENTIALS, true),
       isProduction: nodeEnv === 'production',
+      baseUrl: env.BASE_URL || (nodeEnv === 'production' ? 'https://dashboard.duetright.com' : 'http://localhost:8080'),
     },
     firebase: firebaseConfig,
     services: {
@@ -104,6 +105,9 @@ function loadConfigFromEnv(): DeepPartial<AppConfig> {
         appToken: env.SLACK_APP_TOKEN,
         channelId: env.SLACK_CHANNEL_ID,
         notificationsChannelId: env.SLACK_NOTIFICATIONS_CHANNEL_ID,
+        clientId: env.SLACK_CLIENT_ID,
+        clientSecret: env.SLACK_CLIENT_SECRET,
+        redirectUri: env.SLACK_REDIRECT_URI,
       },
       jobber: {
         enabled: parseBoolean(env.FEATURE_JOBBER_ENABLED, true),

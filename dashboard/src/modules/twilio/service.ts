@@ -8,6 +8,7 @@ import {
   TwilioSmsWebhook,
 } from './types';
 import { logger } from '../../utils/logger';
+import { getFirestore } from '../../config/firebase';
 
 const log = logger.child('TwilioService');
 
@@ -283,6 +284,40 @@ export class TwilioService {
    */
   async checkHealth() {
     return this.client.checkHealth();
+  }
+
+  /**
+   * Get auto-response message for a phone number
+   */
+  async getAutoResponseForNumber(phoneNumber: string): Promise<string | null> {
+    try {
+      const db = getFirestore();
+      
+      // Check for phone-specific auto-response
+      const phoneConfigDoc = await db.collection('twilio_auto_responses')
+        .doc(phoneNumber.replace(/[^\w]/g, ''))
+        .get();
+      
+      if (phoneConfigDoc.exists && phoneConfigDoc.data()?.enabled) {
+        return phoneConfigDoc.data()!.message;
+      }
+      
+      // Check default auto-response settings
+      const defaultConfigDoc = await db.collection('communication_preferences')
+        .doc('default')
+        .get();
+      
+      if (defaultConfigDoc.exists && 
+          defaultConfigDoc.data()?.autoResponse?.enabled &&
+          defaultConfigDoc.data()?.autoResponse?.customMessage) {
+        return defaultConfigDoc.data()!.autoResponse.customMessage;
+      }
+      
+      return null;
+    } catch (error) {
+      log.error('Error getting auto-response', { phoneNumber, error });
+      return null;
+    }
   }
 
   // Private handler methods
