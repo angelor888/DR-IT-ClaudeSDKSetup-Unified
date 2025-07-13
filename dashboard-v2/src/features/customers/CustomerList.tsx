@@ -26,54 +26,6 @@ import { useGetCustomerListQuery } from '../../services/api/customerApi';
 import { getCustomerName, formatAddress } from '../../types/customer.types';
 import type { Customer, CustomerFilters } from '../../types/customer.types';
 
-// Mock data for demo mode
-const mockCustomers: Customer[] = [
-  {
-    id: '1',
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
-    phone: '(555) 123-4567',
-    address: {
-      street1: '123 Main St',
-      city: 'New York',
-      province: 'NY',
-      postalCode: '10001',
-    },
-    isArchived: false,
-    tags: ['VIP', 'Residential'],
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: '2',
-    companyName: 'ABC Corporation',
-    email: 'contact@abc.com',
-    phone: '(555) 987-6543',
-    address: {
-      street1: '456 Business Ave',
-      city: 'Los Angeles',
-      province: 'CA',
-      postalCode: '90001',
-    },
-    isArchived: false,
-    tags: ['Commercial'],
-    createdAt: '2024-01-10T10:00:00Z',
-    updatedAt: '2024-01-10T10:00:00Z',
-  },
-  {
-    id: '3',
-    firstName: 'Jane',
-    lastName: 'Smith',
-    email: 'jane.smith@example.com',
-    phone: '(555) 456-7890',
-    isArchived: false,
-    tags: ['Residential'],
-    createdAt: '2024-01-05T10:00:00Z',
-    updatedAt: '2024-01-05T10:00:00Z',
-  },
-];
-
 export const CustomerList: React.FC = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<CustomerFilters>({
@@ -84,20 +36,8 @@ export const CustomerList: React.FC = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
 
-  // For demo mode, we'll use mock data
-  const { data, isLoading, error } = useGetCustomerListQuery(filters, {
-    // Skip the actual API call in demo mode
-    skip: true,
-  });
-
-  // Use mock data for demo
-  const mockData = {
-    customers: mockCustomers,
-    total: mockCustomers.length,
-    page: 1,
-    limit: 25,
-    hasMore: false,
-  };
+  // Use real API
+  const { data, isLoading, error } = useGetCustomerListQuery(filters);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -224,7 +164,7 @@ export const CustomerList: React.FC = () => {
 
       <Paper sx={{ height: 600 }}>
         <DataGrid
-          rows={mockData.customers}
+          rows={data?.customers || []}
           columns={columns}
           pageSize={25}
           rowsPerPageOptions={[25, 50, 100]}

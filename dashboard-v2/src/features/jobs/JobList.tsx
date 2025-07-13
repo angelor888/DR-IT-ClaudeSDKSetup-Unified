@@ -129,20 +129,8 @@ export const JobList: React.FC = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
 
-  // For demo mode, we'll use mock data
-  const { data, isLoading, error } = useGetJobListQuery(filters, {
-    // Skip the actual API call in demo mode
-    skip: true,
-  });
-
-  // Use mock data for demo
-  const mockData = {
-    jobs: mockJobs,
-    total: mockJobs.length,
-    page: 1,
-    limit: 25,
-    hasMore: false,
-  };
+  // Use real API
+  const { data, isLoading, error } = useGetJobListQuery(filters);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -332,7 +320,7 @@ export const JobList: React.FC = () => {
 
       <Paper sx={{ height: 600 }}>
         <DataGrid
-          rows={mockData.jobs}
+          rows={data?.jobs || []}
           columns={columns}
           pageSize={25}
           rowsPerPageOptions={[25, 50, 100]}
