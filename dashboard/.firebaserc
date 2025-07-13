@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "duetright-prod",
+    "staging": "duetright-staging"
+  }
+}
