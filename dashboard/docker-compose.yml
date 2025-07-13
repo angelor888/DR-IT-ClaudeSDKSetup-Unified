@@ -5,65 +5,74 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: duetright/dashboard:latest
+    container_name: duetright-dashboard
+    restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "5001:5001"
     environment:
-      NODE_ENV: production
-      PORT: 8080
-      # Firebase configuration (replace with your values)
-      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
-      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
-      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
-      # Optional: Redis for caching
-      REDIS_URL: redis://redis:6379
+      - NODE_ENV=production
+      - PORT=5001
+      - REDIS_URL=redis://redis:6379
+    env_file:
+      - .env.production
+    volumes:
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    networks:
+      - duetright-network
     depends_on:
       - redis
-    networks:
-      - dashboard-network
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5001/api/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"]
       interval: 30s
-      timeout: 10s
+      timeout: 3s
       retries: 3
       start_period: 40s
 
   redis:
     image: redis:7-alpine
+    container_name: duetright-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
     networks:
-      - dashboard-network
-    restart: unless-stopped
+      - duetright-network
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
+      interval: 10s
+      timeout: 3s
       retries: 3
 
-  # Optional: PostgreSQL for future use
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: duetright
-      POSTGRES_USER: duetright
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    networks:
-      - dashboard-network
+  nginx:
+    image: nginx:alpine
+    container_name: duetright-nginx
     restart: unless-stopped
-    profiles:
-      - with-postgres
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./frontend/dist:/usr/share/nginx/html:ro
+    networks:
+      - duetright-network
+    depends_on:
+      - dashboard
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+networks:
+  duetright-network:
+    driver: bridge
 
 volumes:
   redis-data:
-  postgres-data:
-
-networks:
-  dashboard-network:
-    driver: bridge
+    driver: local
