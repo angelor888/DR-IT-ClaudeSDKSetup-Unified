@@ -1,0 +1,95 @@
+{
+  "name": "duetright-dashboard",
+  "version": "1.0.0",
+  "description": "DuetRight IT Dashboard - Desktop Application",
+  "main": "main.js",
+  "scripts": {
+    "electron": "electron .",
+    "electron-dev": "ELECTRON_IS_DEV=true electron .",
+    "build": "electron-builder",
+    "build-mac": "electron-builder --mac",
+    "build-dmg": "electron-builder --mac dmg",
+    "dist": "npm run build",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": [
+    "duetright",
+    "dashboard",
+    "it-services",
+    "crm",
+    "business"
+  ],
+  "author": "DuetRight LLC",
+  "license": "MIT",
+  "dependencies": {
+    "electron-updater": "^6.1.7",
+    "electron-store": "^8.1.0"
+  },
+  "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1"
+  },
+  "homepage": "https://duetright-dashboard.web.app",
+  "build": {
+    "appId": "com.duetright.dashboard",
+    "productName": "DuetRight Dashboard",
+    "copyright": "Copyright © 2025 DuetRight LLC",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.icns",
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "title": "DuetRight Dashboard ${version}",
+      "icon": "assets/icon.icns",
+      "background": "assets/dmg-background.png",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220,
+          "type": "file"
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": {
+      "provider": "generic",
+      "url": "https://duetright-dashboard.web.app/releases/"
+    }
+  }
+}

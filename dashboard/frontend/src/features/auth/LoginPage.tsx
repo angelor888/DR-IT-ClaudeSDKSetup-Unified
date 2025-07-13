@@ -9,11 +9,14 @@ import {
   Alert,
   Container,
   CircularProgress,
+  Divider,
 } from '@mui/material'
 import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import { useLoginMutation } from '@services/api/dashboardApi'
+import { useAppDispatch } from '@app/hooks'
+import { setCredentials } from './authSlice'
 
 // Validation schema
 const schema = yup.object({
@@ -25,6 +28,7 @@ type LoginFormData = yup.InferType<typeof schema>
 
 export const LoginPage = () => {
   const navigate = useNavigate()
+  const dispatch = useAppDispatch()
   const [login, { isLoading, error }] = useLoginMutation()
   const [showError, setShowError] = useState(false)
 
@@ -48,6 +52,22 @@ export const LoginPage = () => {
     } catch (err) {
       setShowError(true)
     }
+  }
+
+  const handleDemoLogin = () => {
+    // Demo mode login
+    dispatch(setCredentials({
+      user: {
+        id: 'demo-user',
+        email: 'demo@duetright.com',
+        name: 'Demo User',
+        role: 'admin',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      token: 'demo-token'
+    }))
+    navigate('/')
   }
 
   return (
@@ -122,6 +142,25 @@ export const LoginPage = () => {
             >
               {isLoading ? <CircularProgress size={24} /> : 'Sign In'}
             </Button>
+
+            <Divider sx={{ my: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                OR
+              </Typography>
+            </Divider>
+
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={handleDemoLogin}
+              sx={{ mb: 2 }}
+            >
+              Try Demo Mode
+            </Button>
+
+            <Typography variant="caption" color="text.secondary" align="center" display="block">
+              Demo mode showcases the AI Learning Framework and dashboard features
+            </Typography>
           </Box>
         </Paper>
       </Box>

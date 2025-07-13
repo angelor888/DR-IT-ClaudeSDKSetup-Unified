@@ -107,11 +107,14 @@ export const PromptLibrary = () => {
           Save and share effective prompts with your team
         </Typography>
       </Box>
-
       {/* Search and Filters */}
       <Box sx={{ mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={8}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 8
+            }}>
             <TextField
               fullWidth
               placeholder="Search prompts..."
@@ -126,7 +129,11 @@ export const PromptLibrary = () => {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 4
+            }}>
             <Button
               fullWidth
               variant="contained"
@@ -148,11 +155,15 @@ export const PromptLibrary = () => {
           ))}
         </Tabs>
       </Box>
-
       {/* Prompt Cards */}
       <Grid container spacing={3}>
         {filteredPrompts.map(prompt => (
-          <Grid item xs={12} md={6} key={prompt.id}>
+          <Grid
+            key={prompt.id}
+            size={{
+              xs: 12,
+              md: 6
+            }}>
             <Card sx={{ height: '100%' }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>

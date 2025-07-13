@@ -169,10 +169,14 @@ export const AIProjects = () => {
           Master AI skills through concrete projects that solve real business problems
         </Typography>
       </Box>
-
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid
+          size={{
+            xs: 12,
+            sm: 6,
+            md: 3
+          }}>
           <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -186,7 +190,12 @@ export const AIProjects = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid
+          size={{
+            xs: 12,
+            sm: 6,
+            md: 3
+          }}>
           <Card sx={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -200,7 +209,12 @@ export const AIProjects = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid
+          size={{
+            xs: 12,
+            sm: 6,
+            md: 3
+          }}>
           <Card sx={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -214,7 +228,12 @@ export const AIProjects = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid
+          size={{
+            xs: 12,
+            sm: 6,
+            md: 3
+          }}>
           <Card sx={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -229,7 +248,6 @@ export const AIProjects = () => {
           </Card>
         </Grid>
       </Grid>
-
       {/* Search and Tabs */}
       <Box sx={{ mb: 3 }}>
         <TextField
@@ -253,11 +271,16 @@ export const AIProjects = () => {
           <Tab label="Shared" />
         </Tabs>
       </Box>
-
       {/* Project Cards */}
       <Grid container spacing={3}>
         {filteredProjects.map((project, index) => (
-          <Grid item xs={12} md={6} lg={4} key={project.id}>
+          <Grid
+            key={project.id}
+            size={{
+              xs: 12,
+              md: 6,
+              lg: 4
+            }}>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -352,7 +375,12 @@ export const AIProjects = () => {
         ))}
 
         {/* Add New Project Card */}
-        <Grid item xs={12} md={6} lg={4}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 6,
+            lg: 4
+          }}>
           <Card 
             sx={{ 
               height: '100%', 
@@ -382,7 +410,6 @@ export const AIProjects = () => {
           </Card>
         </Grid>
       </Grid>
-
       {/* Speed Dial for Quick Actions */}
       <SpeedDial
         ariaLabel="Create new AI project"

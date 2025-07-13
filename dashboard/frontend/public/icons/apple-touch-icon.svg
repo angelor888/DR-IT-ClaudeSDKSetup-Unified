@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <defs>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <rect width="180" height="180" rx="40" fill="#1976d2"/>
+  
+  <!-- Hammer -->
+  <path d="M35 55 L78 98 L72 104 L82 114 L76 120 L70 114 L27 71 L35 55 Z" 
+        fill="#ffffff" filter="url(#shadow)" stroke="#333" stroke-width="2"/>
+  <rect x="25" y="45" width="7" height="35" rx="3" 
+        fill="#8B4513" transform="rotate(-45 28 62)" stroke="#333" stroke-width="1"/>
+  
+  <!-- Wrench -->
+  <path d="M145 55 L102 98 L108 104 L98 114 L104 120 L110 114 L153 71 L145 55 Z" 
+        fill="#ffffff" filter="url(#shadow)" stroke="#333" stroke-width="2"/>
+  <rect x="148" y="45" width="7" height="40" rx="3" 
+        fill="#8B4513" transform="rotate(45 151 65)" stroke="#333" stroke-width="1"/>
+  
+  <!-- Center screw -->
+  <circle cx="90" cy="145" r="11" fill="#ffffff" stroke="#333" stroke-width="2" filter="url(#shadow)"/>
+  <circle cx="90" cy="145" r="7" fill="#333"/>
+  <line x1="83" y1="145" x2="97" y2="145" stroke="#fff" stroke-width="1.5"/>
+  <line x1="90" y1="138" x2="90" y2="152" stroke="#fff" stroke-width="1.5"/>
+</svg>

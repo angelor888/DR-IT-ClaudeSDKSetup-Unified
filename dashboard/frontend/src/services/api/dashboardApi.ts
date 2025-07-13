@@ -8,6 +8,7 @@ export interface User {
   name: string
   role: string
   createdAt: string
+  updatedAt: string
 }
 
 export interface Customer {
@@ -45,7 +46,7 @@ export interface LoginResponse {
 export const dashboardApi = createApi({
   reducerPath: 'dashboardApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api',
+    baseUrl: import.meta.env.VITE_API_URL || '/api',
     prepareHeaders: (headers, { getState }) => {
       // Get token from auth state (we'll create this later)
       const token = (getState() as RootState).auth?.token

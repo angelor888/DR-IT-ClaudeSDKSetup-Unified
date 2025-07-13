@@ -161,10 +161,13 @@ export const KnowledgeSharing = () => {
           Learn from your team's AI implementation experiences
         </Typography>
       </Box>
-
       <Grid container spacing={3}>
         {/* Main Content */}
-        <Grid item xs={12} md={8}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 8
+          }}>
           {/* Search and Filters */}
           <Box sx={{ mb: 3 }}>
             <TextField
@@ -192,7 +195,7 @@ export const KnowledgeSharing = () => {
           {/* Resource Cards */}
           <Grid container spacing={2}>
             {filteredResources.map(resource => (
-              <Grid item xs={12} key={resource.id}>
+              <Grid key={resource.id} size={12}>
                 <Card>
                   {resource.type === 'video' && resource.thumbnail && (
                     <CardMedia
@@ -279,7 +282,11 @@ export const KnowledgeSharing = () => {
         </Grid>
 
         {/* Sidebar */}
-        <Grid item xs={12} md={4}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 4
+          }}>
           {/* Top Contributors */}
           <Card sx={{ mb: 3 }}>
             <CardContent>

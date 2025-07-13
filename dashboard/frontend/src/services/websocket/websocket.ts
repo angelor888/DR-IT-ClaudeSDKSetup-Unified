@@ -14,7 +14,7 @@ class WebSocketService {
     // Get token from store if not provided
     const authToken = token || store.getState().auth.token
 
-    this.socket = io('/', {
+    this.socket = io(import.meta.env.VITE_WS_URL || '/', {
       auth: {
         token: authToken,
       },

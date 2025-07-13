@@ -95,10 +95,13 @@ export const AIProgress = () => {
           Track your growth and celebrate achievements
         </Typography>
       </Box>
-
       {/* Level and Streak */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={8}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 8
+          }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -124,7 +127,11 @@ export const AIProgress = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 4
+          }}>
           <Card sx={{ bgcolor: 'success.50', height: '100%' }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <EmojiEventsIcon sx={{ fontSize: 48, color: 'success.main', mb: 1 }} />
@@ -136,10 +143,13 @@ export const AIProgress = () => {
           </Card>
         </Grid>
       </Grid>
-
       {/* Progress Charts */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 6
+          }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -172,7 +182,11 @@ export const AIProgress = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 6
+          }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -197,10 +211,13 @@ export const AIProgress = () => {
           </Card>
         </Grid>
       </Grid>
-
       {/* Achievements and Milestones */}
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 6
+          }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -208,7 +225,7 @@ export const AIProgress = () => {
               </Typography>
               <Grid container spacing={2}>
                 {achievements.map(achievement => (
-                  <Grid item xs={6} key={achievement.id}>
+                  <Grid key={achievement.id} size={6}>
                     <Paper 
                       sx={{ 
                         p: 2, 
@@ -236,7 +253,11 @@ export const AIProgress = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 6
+          }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -265,7 +286,6 @@ export const AIProgress = () => {
           </Card>
         </Grid>
       </Grid>
-
       {/* Skill Progress */}
       <Box sx={{ mt: 3 }}>
         <Card>

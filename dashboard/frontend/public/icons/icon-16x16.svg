@@ -1,5 +1,7 @@
-
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-  <rect width="16" height="16" fill="#1976d2"/>
-  <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="4.8px" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">DR</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <rect width="16" height="16" rx="2" fill="#1976d2"/>
+  <!-- Simplified crossed tools for 16x16 -->
+  <path d="M3 4 L8 9 L6 11 L1 6 Z" fill="#fff"/>
+  <path d="M13 4 L8 9 L10 11 L15 6 Z" fill="#fff"/>
+  <circle cx="8" cy="13" r="1.5" fill="#fff"/>
 </svg>

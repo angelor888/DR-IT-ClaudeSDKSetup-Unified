@@ -1,5 +1,15 @@
-
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <rect width="32" height="32" fill="#1976d2"/>
-  <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="9.6px" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">DR</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="4" fill="#1976d2"/>
+  <!-- Hammer -->
+  <path d="M6 8 L14 16 L12 18 L4 10 Z" fill="#fff" stroke="#333" stroke-width="0.5"/>
+  <rect x="4" y="6" width="2" height="8" rx="1" fill="#8B4513" transform="rotate(-45 5 10)"/>
+  
+  <!-- Wrench -->
+  <path d="M26 8 L18 16 L20 18 L28 10 Z" fill="#fff" stroke="#333" stroke-width="0.5"/>
+  <rect x="26" y="6" width="2" height="10" rx="1" fill="#8B4513" transform="rotate(45 27 11)"/>
+  
+  <!-- Center screw -->
+  <circle cx="16" cy="26" r="3" fill="#fff" stroke="#333" stroke-width="0.5"/>
+  <circle cx="16" cy="26" r="2" fill="#333"/>
+  <line x1="14" y1="26" x2="18" y2="26" stroke="#fff" stroke-width="0.5"/>
 </svg>

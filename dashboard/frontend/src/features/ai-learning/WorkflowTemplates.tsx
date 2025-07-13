@@ -170,7 +170,6 @@ export const WorkflowTemplates = () => {
           Pre-built automations to jumpstart your AI journey
         </Typography>
       </Box>
-
       {/* Category Tabs */}
       <Tabs 
         value={selectedCategory} 
@@ -181,15 +180,18 @@ export const WorkflowTemplates = () => {
           <Tab key={cat.id} label={cat.label} value={cat.id} />
         ))}
       </Tabs>
-
       {/* Template Cards */}
       <Grid container spacing={3}>
         {filteredTemplates.map(template => (
-          <Grid item xs={12} key={template.id}>
+          <Grid key={template.id} size={12}>
             <Card>
               <CardContent>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={8}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      md: 8
+                    }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
                       <Typography variant="h6">
                         {template.title}
@@ -211,10 +213,14 @@ export const WorkflowTemplates = () => {
                     </Box>
                   </Grid>
                   
-                  <Grid item xs={12} md={4}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      md: 4
+                    }}>
                     <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
                       <Grid container spacing={2}>
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                           <Box sx={{ textAlign: 'center' }}>
                             <ScheduleIcon color="action" />
                             <Typography variant="h6">{template.estimatedTime}m</Typography>
@@ -223,7 +229,7 @@ export const WorkflowTemplates = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                           <Box sx={{ textAlign: 'center' }}>
                             <TrendingUpIcon color="success" />
                             <Typography variant="h6">{template.estimatedSavings}m</Typography>
@@ -232,7 +238,7 @@ export const WorkflowTemplates = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                           <Box sx={{ mt: 1 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                               <Typography variant="caption">Success Rate</Typography>
@@ -306,7 +312,6 @@ export const WorkflowTemplates = () => {
           </Grid>
         ))}
       </Grid>
-
       {/* Coming Soon Card */}
       <Box sx={{ mt: 3 }}>
         <Card sx={{ bgcolor: 'primary.50', borderStyle: 'dashed' }}>

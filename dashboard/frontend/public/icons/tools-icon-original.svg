@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circle for better visibility -->
+  <circle cx="500" cy="500" r="480" fill="#1976d2" stroke="#fff" stroke-width="20"/>
+  
+  <!-- Hammer (left tool) -->
+  <path d="M200 300 L350 450 L330 470 L370 510 L350 530 L320 500 L180 320 L200 300 Z" 
+        fill="#ffffff" filter="url(#glow)" stroke="#333" stroke-width="2"/>
+  
+  <!-- Hammer handle -->
+  <rect x="150" y="280" width="20" height="120" rx="10" 
+        fill="#8B4513" transform="rotate(-45 160 340)" stroke="#333" stroke-width="1"/>
+  
+  <!-- Wrench (right tool) -->
+  <path d="M650 300 L800 450 L780 470 L760 450 L750 460 L770 480 L750 500 L730 480 L720 490 L700 470 L630 320 L650 300 Z" 
+        fill="#ffffff" filter="url(#glow)" stroke="#333" stroke-width="2"/>
+  
+  <!-- Wrench handle -->
+  <rect x="630" y="280" width="20" height="140" rx="10" 
+        fill="#8B4513" transform="rotate(45 640 350)" stroke="#333" stroke-width="1"/>
+  
+  <!-- Center bolt/screw -->
+  <circle cx="500" cy="650" r="25" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <circle cx="500" cy="650" r="15" fill="#333"/>
+  <line x1="485" y1="650" x2="515" y2="650" stroke="#fff" stroke-width="2"/>
+  <line x1="500" y1="635" x2="500" y2="665" stroke="#fff" stroke-width="2"/>
+</svg>

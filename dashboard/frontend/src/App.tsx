@@ -63,9 +63,9 @@ function AppContent() {
   const theme = useMemo(() => getTheme(themeMode), [themeMode])
   const token = useAppSelector((state) => state.auth.token)
 
-  // Connect WebSocket when authenticated
+  // Connect WebSocket when authenticated (if enabled)
   useEffect(() => {
-    if (token) {
+    if (import.meta.env.VITE_ENABLE_WEBSOCKET === 'true' && token) {
       websocketService.connect(token)
     } else {
       websocketService.disconnect()
