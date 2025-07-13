@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="3; url=https://dashboard.duetright.com">
+    <title>DuetRight Dashboard</title>
+    <link rel="icon" type="image/png" href="https://dashboard.duetright.com/icons/icon-192x192.png">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: white;
+        }
+        .container {
+            text-align: center;
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 30px;
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            font-size: 32px;
+            margin: 0 0 10px 0;
+            font-weight: 300;
+        }
+        p {
+            font-size: 18px;
+            opacity: 0.9;
+            margin: 0 0 30px 0;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            margin: 20px auto;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .button {
+            display: inline-block;
+            background: white;
+            color: #1976d2;
+            padding: 12px 32px;
+            border-radius: 24px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .button:hover {
+            transform: scale(1.05);
+        }
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            opacity: 0.7;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <rect x="10" y="10" width="35" height="35" fill="#1976d2" rx="5"/>
+                <rect x="55" y="10" width="35" height="35" fill="#42a5f5" rx="5"/>
+                <rect x="10" y="55" width="35" height="35" fill="#42a5f5" rx="5"/>
+                <rect x="55" y="55" width="35" height="35" fill="#1976d2" rx="5"/>
+            </svg>
+        </div>
+        <h1>DuetRight Dashboard</h1>
+        <p>Launching your dashboard...</p>
+        <div class="spinner"></div>
+        <a href="https://dashboard.duetright.com" class="button">Open Dashboard Now</a>
+    </div>
+    <div class="footer">
+        Save this file to your desktop for quick access
+    </div>
+    <script>
+        // Automatically redirect after 3 seconds
+        setTimeout(() => {
+            window.location.href = 'https://dashboard.duetright.com';
+        }, 3000);
+        
+        // Try to open in standalone mode if supported
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            document.querySelector('p').textContent = 'Opening in app mode...';
+        }
+    </script>
+</body>
+</html>
