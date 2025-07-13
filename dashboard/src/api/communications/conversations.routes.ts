@@ -1,5 +1,7 @@
 // Conversations API routes for unified communications
 
+/// <reference path="../../types/express.d.ts" />
+
 import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import { validateRequest } from '../../middleware/validation';
@@ -26,7 +28,7 @@ router.get(
     query('offset').optional().isInt({ min: 0 }).default(0),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { platform, status, search, limit, offset } = req.query;
@@ -57,13 +59,13 @@ router.get(
       const conversations = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })) as any[];
 
       // Apply search filter in memory if provided
       let filteredConversations = conversations;
       if (search) {
         const searchLower = (search as string).toLowerCase();
-        filteredConversations = conversations.filter(conv => 
+        filteredConversations = conversations.filter((conv: any) => 
           conv.title?.toLowerCase().includes(searchLower) ||
           conv.participants?.some((p: any) => p.name?.toLowerCase().includes(searchLower))
         );
@@ -92,7 +94,7 @@ router.get(
     param('id').isString().notEmpty(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { id } = req.params;
@@ -100,19 +102,21 @@ router.get(
       const doc = await db.collection('conversations').doc(id).get();
       
       if (!doc.exists) {
-        return res.status(404).json({
+        res.status(404).json({
           status: 'error',
           message: 'Conversation not found'
         });
+        return;
       }
 
       const conversation = doc.data();
       
       if (conversation?.userId !== userId) {
-        return res.status(403).json({
+        res.status(403).json({
           status: 'error',
           message: 'Unauthorized'
         });
+        return;
       }
 
       // Get messages for this conversation
@@ -151,7 +155,7 @@ router.post(
     body('metadata').optional().isObject(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { platform, participants, title, metadata } = req.body;
@@ -192,7 +196,7 @@ router.post(
     param('id').isString().notEmpty(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { id } = req.params;
@@ -201,19 +205,21 @@ router.post(
       const doc = await conversationRef.get();
 
       if (!doc.exists) {
-        return res.status(404).json({
+        res.status(404).json({
           status: 'error',
           message: 'Conversation not found'
         });
+        return;
       }
 
       const conversation = doc.data();
       
       if (conversation?.userId !== userId) {
-        return res.status(403).json({
+        res.status(403).json({
           status: 'error',
           message: 'Unauthorized'
         });
+        return;
       }
 
       await conversationRef.update({
@@ -240,7 +246,7 @@ router.post(
     param('id').isString().notEmpty(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { id } = req.params;
@@ -249,19 +255,21 @@ router.post(
       const doc = await conversationRef.get();
 
       if (!doc.exists) {
-        return res.status(404).json({
+        res.status(404).json({
           status: 'error',
           message: 'Conversation not found'
         });
+        return;
       }
 
       const conversation = doc.data();
       
       if (conversation?.userId !== userId) {
-        return res.status(403).json({
+        res.status(403).json({
           status: 'error',
           message: 'Unauthorized'
         });
+        return;
       }
 
       await conversationRef.update({

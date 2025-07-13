@@ -1,5 +1,7 @@
 // Message templates API routes
 
+/// <reference path="../../types/express.d.ts" />
+
 import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import { validateRequest } from '../../middleware/validation';
@@ -26,7 +28,7 @@ router.get(
     query('limit').optional().isInt({ min: 1, max: 100 }).default(50),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { platform, category, aiGenerated, search, limit } = req.query;
@@ -60,9 +62,9 @@ router.get(
       if (search) {
         const searchLower = (search as string).toLowerCase();
         templates = templates.filter(template => 
-          template.name?.toLowerCase().includes(searchLower) ||
-          template.content?.toLowerCase().includes(searchLower) ||
-          template.category?.toLowerCase().includes(searchLower)
+          (template as any).name?.toLowerCase().includes(searchLower) ||
+          (template as any).content?.toLowerCase().includes(searchLower) ||
+          (template as any).category?.toLowerCase().includes(searchLower)
         );
       }
 
@@ -84,7 +86,7 @@ router.get(
     param('id').isString().notEmpty(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { id } = req.params;
@@ -92,19 +94,21 @@ router.get(
       const doc = await db.collection('message_templates').doc(id).get();
       
       if (!doc.exists) {
-        return res.status(404).json({
+        res.status(404).json({
           status: 'error',
           message: 'Template not found'
         });
+        return;
       }
 
       const template = doc.data();
       
       if (template?.userId !== userId) {
-        return res.status(403).json({
+        res.status(403).json({
           status: 'error',
           message: 'Unauthorized'
         });
+        return;
       }
 
       res.json({
@@ -132,7 +136,7 @@ router.post(
     body('aiGenerated').optional().isBoolean(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { name, content, category, platform, aiGenerated } = req.body;
@@ -178,7 +182,7 @@ router.put(
     body('platform').optional().isIn(['slack', 'twilio', 'email', 'all']),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { id } = req.params;
@@ -188,19 +192,21 @@ router.put(
       const doc = await templateRef.get();
 
       if (!doc.exists) {
-        return res.status(404).json({
+        res.status(404).json({
           status: 'error',
           message: 'Template not found'
         });
+        return;
       }
 
       const template = doc.data();
       
       if (template?.userId !== userId) {
-        return res.status(403).json({
+        res.status(403).json({
           status: 'error',
           message: 'Unauthorized'
         });
+        return;
       }
 
       await templateRef.update({
@@ -231,7 +237,7 @@ router.delete(
     param('id').isString().notEmpty(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { id } = req.params;
@@ -240,19 +246,21 @@ router.delete(
       const doc = await templateRef.get();
 
       if (!doc.exists) {
-        return res.status(404).json({
+        res.status(404).json({
           status: 'error',
           message: 'Template not found'
         });
+        return;
       }
 
       const template = doc.data();
       
       if (template?.userId !== userId) {
-        return res.status(403).json({
+        res.status(403).json({
           status: 'error',
           message: 'Unauthorized'
         });
+        return;
       }
 
       await templateRef.update({
@@ -278,7 +286,7 @@ router.post(
     param('id').isString().notEmpty(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { id } = req.params;
@@ -287,19 +295,21 @@ router.post(
       const doc = await templateRef.get();
 
       if (!doc.exists) {
-        return res.status(404).json({
+        res.status(404).json({
           status: 'error',
           message: 'Template not found'
         });
+        return;
       }
 
       const template = doc.data();
       
       if (template?.userId !== userId) {
-        return res.status(403).json({
+        res.status(403).json({
           status: 'error',
           message: 'Unauthorized'
         });
+        return;
       }
 
       await templateRef.update({

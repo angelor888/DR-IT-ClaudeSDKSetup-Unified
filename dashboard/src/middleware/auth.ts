@@ -167,3 +167,6 @@ export function requireVerifiedEmail(req: Request, res: Response, next: NextFunc
 
   next();
 }
+
+// Alias for backward compatibility
+export const requireAuth = verifyToken;

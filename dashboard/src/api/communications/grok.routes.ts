@@ -1,5 +1,7 @@
 // Grok AI API routes for Communications Hub
 
+/// <reference path="../../types/express.d.ts" />
+
 import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import { validateRequest } from '../../middleware/validation';
@@ -23,7 +25,7 @@ router.post(
     body('context').optional().isObject(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { action, content, context } = req.body;
       const userId = req.user!.uid;
@@ -88,7 +90,7 @@ router.post(
     body('tone').optional().isIn(['professional', 'friendly', 'casual']),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { content, tone } = req.body;
       const userId = req.user!.uid;
@@ -114,7 +116,7 @@ router.post(
     body('conversationId').isString().notEmpty().withMessage('Conversation ID is required'),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { conversationId } = req.body;
       const userId = req.user!.uid;
@@ -140,7 +142,7 @@ router.post(
     body('messageId').isString().notEmpty().withMessage('Message ID is required'),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { messageId } = req.body;
       const userId = req.user!.uid;
@@ -167,7 +169,7 @@ router.post(
     body('messageIds.*').isString(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { messageIds } = req.body;
       const userId = req.user!.uid;
@@ -196,7 +198,7 @@ router.post(
     body('examples').optional().isArray(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { category, intent, tone, examples } = req.body;
       const userId = req.user!.uid;
@@ -229,7 +231,7 @@ router.post(
     body('context').optional().isObject(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { message, conversationId, context } = req.body;
       const userId = req.user!.uid;
@@ -269,7 +271,7 @@ router.get(
     query('endDate').optional().isISO8601(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { startDate, endDate } = req.query;

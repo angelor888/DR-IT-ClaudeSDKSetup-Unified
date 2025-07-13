@@ -1,5 +1,7 @@
 // Messages API routes for unified communications
 
+/// <reference path="../../types/express.d.ts" />
+
 import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import { validateRequest } from '../../middleware/validation';
@@ -30,7 +32,7 @@ router.get(
     query('offset').optional().isInt({ min: 0 }).default(0),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { platform, status, search, startDate, endDate, limit, offset } = req.query;
@@ -73,9 +75,9 @@ router.get(
       if (search) {
         const searchLower = (search as string).toLowerCase();
         filteredMessages = messages.filter(msg => 
-          msg.content?.toLowerCase().includes(searchLower) ||
-          msg.sender?.name?.toLowerCase().includes(searchLower) ||
-          msg.recipient?.name?.toLowerCase().includes(searchLower)
+          (msg as any).content?.toLowerCase().includes(searchLower) ||
+          (msg as any).sender?.name?.toLowerCase().includes(searchLower) ||
+          (msg as any).recipient?.name?.toLowerCase().includes(searchLower)
         );
       }
 
@@ -102,7 +104,7 @@ router.get(
     param('id').isString().notEmpty(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { id } = req.params;
@@ -110,19 +112,21 @@ router.get(
       const doc = await db.collection('messages').doc(id).get();
       
       if (!doc.exists) {
-        return res.status(404).json({
+        res.status(404).json({
           status: 'error',
           message: 'Message not found'
         });
+        return;
       }
 
       const message = doc.data();
       
       if (message?.userId !== userId) {
-        return res.status(403).json({
+        res.status(403).json({
           status: 'error',
           message: 'Unauthorized'
         });
+        return;
       }
 
       res.json({
@@ -151,7 +155,7 @@ router.post(
     body('aiContext').optional().isObject(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { platform, recipient, content, attachments, useAI, aiContext } = req.body;
@@ -166,7 +170,7 @@ router.post(
         type: 'outgoing',
         sender: {
           id: userId,
-          name: req.user!.displayName || 'User',
+          name: (req.user as any).displayName || (req.user as any).email || 'User',
         },
         recipient: {
           id: recipient,
@@ -242,7 +246,7 @@ router.post(
     body('messageIds.*').isString(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { messageIds } = req.body;
@@ -281,7 +285,7 @@ router.post(
     body('messageIds.*').isString(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { messageIds } = req.body;

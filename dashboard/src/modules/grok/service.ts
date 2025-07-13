@@ -703,7 +703,7 @@ Provide the improved version and list the key changes made.`;
       return {
         summary: analysisResponse.summary,
         keyPoints: analysisResponse.insights.map(i => i.description || '').filter(Boolean),
-        nextSteps: analysisResponse.recommendations.map(r => r.action || '').filter(Boolean)
+        nextSteps: analysisResponse.recommendations.map(r => r.actions?.[0]?.description || r.description || '').filter(Boolean)
       };
     } catch (error) {
       log.error('Failed to summarize conversation:', error);

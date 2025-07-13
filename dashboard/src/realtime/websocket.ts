@@ -6,6 +6,7 @@ import { authenticateSocket } from './middleware/auth';
 import { EventHandlers } from './handlers';
 import { EventTypes, SocketWithAuth } from './types';
 import { GrokService } from '../modules/grok';
+import { initializeCommunicationsRealtime } from './communications';
 
 export class WebSocketServer {
   private io: SocketIOServer;
@@ -27,6 +28,10 @@ export class WebSocketServer {
     this.handlers = new EventHandlers(this.io);
     this.setupMiddleware();
     this.setupConnectionHandlers();
+    
+    // Initialize Communications namespace
+    initializeCommunicationsRealtime(this.io);
+    this.log.info('Communications namespace initialized');
     
     // Initialize Grok service if enabled
     if (config.features.grokEnabled) {

@@ -1,5 +1,7 @@
 // Communication statistics API routes
 
+/// <reference path="../../types/express.d.ts" />
+
 import { Router } from 'express';
 import { query } from 'express-validator';
 import { validateRequest } from '../../middleware/validation';
@@ -23,7 +25,7 @@ router.get(
     query('endDate').optional().isISO8601(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { startDate, endDate } = req.query;
@@ -54,16 +56,16 @@ router.get(
       // Sentiment analysis (if available)
       const sentimentMessages = messages.filter(m => m.ai?.sentiment);
       const sentiment = {
-        positive: sentimentMessages.filter(m => m.ai.sentiment === 'positive').length,
-        neutral: sentimentMessages.filter(m => m.ai.sentiment === 'neutral').length,
-        negative: sentimentMessages.filter(m => m.ai.sentiment === 'negative').length,
+        positive: sentimentMessages.filter(m => (m as any).ai.sentiment === 'positive').length,
+        neutral: sentimentMessages.filter(m => (m as any).ai.sentiment === 'neutral').length,
+        negative: sentimentMessages.filter(m => (m as any).ai.sentiment === 'negative').length,
       };
 
       // Response time calculation
       const responseTimesMs: number[] = [];
       messages.forEach(msg => {
-        if (msg.type === 'outgoing' && msg.replyToTimestamp && msg.timestamp) {
-          const responseTime = new Date(msg.timestamp).getTime() - new Date(msg.replyToTimestamp).getTime();
+        if ((msg as any).type === 'outgoing' && (msg as any).replyToTimestamp && (msg as any).timestamp) {
+          const responseTime = new Date((msg as any).timestamp).getTime() - new Date((msg as any).replyToTimestamp).getTime();
           responseTimesMs.push(responseTime);
         }
       });
@@ -81,31 +83,31 @@ router.get(
       };
 
       // AI assistance stats
-      const aiMessages = messages.filter(m => m.ai?.enhanced);
+      const aiMessages = messages.filter(m => (m as any).ai?.enhanced);
       const aiAssistance = {
-        suggestionsUsed: aiMessages.filter(m => m.ai.suggestionUsed).length,
-        autoResponsesSent: messages.filter(m => m.ai?.autoResponse).length,
+        suggestionsUsed: aiMessages.filter(m => (m as any).ai.suggestionUsed).length,
+        autoResponsesSent: messages.filter(m => (m as any).ai?.autoResponse).length,
         summariesGenerated: 0, // Would need to query summaries collection
       };
 
       // Top contacts
       const contactMap = new Map<string, { count: number; name: string; lastContact: Date }>();
       messages.forEach(msg => {
-        const contactId = msg.type === 'incoming' ? msg.sender?.id : msg.recipient?.id;
-        const contactName = msg.type === 'incoming' ? msg.sender?.name : msg.recipient?.name;
+        const contactId = (msg as any).type === 'incoming' ? (msg as any).sender?.id : (msg as any).recipient?.id;
+        const contactName = (msg as any).type === 'incoming' ? (msg as any).sender?.name : (msg as any).recipient?.name;
         
         if (contactId) {
           const existing = contactMap.get(contactId);
           if (existing) {
             existing.count++;
-            if (msg.timestamp > existing.lastContact) {
-              existing.lastContact = msg.timestamp;
+            if ((msg as any).timestamp > existing.lastContact) {
+              existing.lastContact = (msg as any).timestamp;
             }
           } else {
             contactMap.set(contactId, {
               count: 1,
               name: contactName || 'Unknown',
-              lastContact: msg.timestamp,
+              lastContact: (msg as any).timestamp,
             });
           }
         }
@@ -119,7 +121,7 @@ router.get(
       // Message volume by day
       const volumeByDay = new Map<string, number>();
       messages.forEach(msg => {
-        const day = new Date(msg.timestamp).toISOString().split('T')[0];
+        const day = new Date((msg as any).timestamp).toISOString().split('T')[0];
         volumeByDay.set(day, (volumeByDay.get(day) || 0) + 1);
       });
 
@@ -158,7 +160,7 @@ router.get(
     query('endDate').optional().isISO8601(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const { startDate, endDate } = req.query;

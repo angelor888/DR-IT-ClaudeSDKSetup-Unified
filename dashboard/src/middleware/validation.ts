@@ -37,6 +37,9 @@ export const validate = (req: Request, res: Response, next: NextFunction): void 
   next();
 };
 
+// Alias for backward compatibility
+export const validateRequest = validate;
+
 // Sanitization helpers
 export const sanitizeInput = (input: string): string => {
   return input

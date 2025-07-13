@@ -1,5 +1,7 @@
 // Communication preferences API routes
 
+/// <reference path="../../types/express.d.ts" />
+
 import { Router } from 'express';
 import { body } from 'express-validator';
 import { validateRequest } from '../../middleware/validation';
@@ -18,7 +20,7 @@ router.use(requireAuth);
 // Get user preferences
 router.get(
   '/',
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
 
@@ -91,7 +93,7 @@ router.put(
     body('ai').optional().isObject(),
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
       const updates = req.body;
@@ -126,7 +128,7 @@ router.put(
 // Reset preferences to defaults
 router.post(
   '/reset',
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user!.uid;
 

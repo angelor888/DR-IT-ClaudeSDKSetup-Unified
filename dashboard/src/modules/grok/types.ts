@@ -96,6 +96,8 @@ export interface GrokInsight {
   description: string;
   severity: 'info' | 'warning' | 'critical';
   data?: Record<string, any>;
+  sentiment?: 'positive' | 'neutral' | 'negative';
+  emotions?: string[];
 }
 
 export interface GrokRecommendation {
