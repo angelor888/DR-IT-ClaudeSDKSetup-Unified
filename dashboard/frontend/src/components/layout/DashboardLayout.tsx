@@ -31,6 +31,7 @@ import {
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   AccountCircle as AccountCircleIcon,
+  Psychology as PsychologyIcon,
 } from '@mui/icons-material'
 import { useAppSelector, useAppDispatch } from '@app/hooks'
 import { logout } from '@features/auth/authSlice'
@@ -48,6 +49,7 @@ const navItems: NavItem[] = [
   { text: 'Customers', icon: <PeopleIcon />, path: '/customers' },
   { text: 'Jobs', icon: <WorkIcon />, path: '/jobs' },
   { text: 'Communications', icon: <MessageIcon />, path: '/communications' },
+  { text: 'AI Learning', icon: <PsychologyIcon />, path: '/ai-learning' },
   { text: 'Calendar', icon: <CalendarIcon />, path: '/calendar' },
   { text: 'Reports', icon: <AssessmentIcon />, path: '/reports' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },

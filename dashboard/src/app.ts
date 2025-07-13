@@ -132,6 +132,10 @@ export async function createApp(): Promise<{ app: Application; server: any }> {
   const { communicationsRoutes } = require('./api/communications');
   app.use('/api/communications', rateLimiters.api, communicationsRoutes);
 
+  // AI Learning routes
+  const aiLearningRoutes = require('./api/ai-learning/aiLearningRoutes').default;
+  app.use('/api/ai-learning', rateLimiters.api, aiLearningRoutes);
+
   // WebSocket info endpoint
   if (config.features?.websocket?.enabled !== false) {
     app.get('/api/websocket/info', rateLimiters.api, (req: Request, res: Response) => {

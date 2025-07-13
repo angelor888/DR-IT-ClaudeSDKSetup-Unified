@@ -31,6 +31,14 @@ const JobCalendar = lazy(() => import('@features/jobs').then(module => ({ defaul
 // Communications component (lazy)
 const Communications = lazy(() => import('@features/communications').then(module => ({ default: module.Communications })))
 
+// AI Learning Hub components (lazy)
+const AIProjects = lazy(() => import('@features/ai-learning/AIProjects').then(module => ({ default: module.AIProjects })))
+const AIProjectDetail = lazy(() => import('@features/ai-learning/AIProjectDetail').then(module => ({ default: module.AIProjectDetail })))
+const PromptLibrary = lazy(() => import('@features/ai-learning/PromptLibrary').then(module => ({ default: module.PromptLibrary })))
+const WorkflowTemplates = lazy(() => import('@features/ai-learning/WorkflowTemplates').then(module => ({ default: module.WorkflowTemplates })))
+const AIProgress = lazy(() => import('@features/ai-learning/AIProgress').then(module => ({ default: module.AIProgress })))
+const KnowledgeSharing = lazy(() => import('@features/ai-learning/KnowledgeSharing').then(module => ({ default: module.KnowledgeSharing })))
+
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -150,6 +158,38 @@ function AppContent() {
             <Route path="communications" element={
               <Suspense fallback={<CommunicationsLoader />}>
                 <Communications />
+              </Suspense>
+            } />
+            
+            {/* AI Learning Hub Routes */}
+            <Route path="ai-learning" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <AIProjects />
+              </Suspense>
+            } />
+            <Route path="ai-learning/projects/:id" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <AIProjectDetail />
+              </Suspense>
+            } />
+            <Route path="ai-learning/prompts" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <PromptLibrary />
+              </Suspense>
+            } />
+            <Route path="ai-learning/workflows" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <WorkflowTemplates />
+              </Suspense>
+            } />
+            <Route path="ai-learning/progress" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <AIProgress />
+              </Suspense>
+            } />
+            <Route path="ai-learning/knowledge" element={
+              <Suspense fallback={<ComponentLoader />}>
+                <KnowledgeSharing />
               </Suspense>
             } />
             
