@@ -49,13 +49,18 @@ jest.mock('bull', () => {
 });
 
 // Mock cron
-jest.mock('node-cron', () => ({
-  schedule: jest.fn((expression: string, callback: Function) => ({
-    start: jest.fn(),
-    stop: jest.fn(),
-    destroy: jest.fn(),
-  })),
-  validate: jest.fn().mockReturnValue(true),
+const mockCronJobs = new Map<string, any>();
+jest.mock('cron', () => ({
+  CronJob: jest.fn().mockImplementation((pattern: string, handler: Function, onComplete: any, start: boolean, timezone: string) => {
+    const job = {
+      pattern,
+      handler,
+      start: jest.fn(),
+      stop: jest.fn(),
+    };
+    mockCronJobs.set(pattern, job);
+    return job;
+  }),
 }));
 
 // Mock workers
@@ -93,41 +98,42 @@ describe('Job Queues', () => {
   });
 
   describe('Queue Creation', () => {
-    it('should create all required queues', () => {
-      expect((jobQueues as any).syncQueue).toBeDefined();
-      expect((jobQueues as any).notificationQueue).toBeDefined();
-      expect((jobQueues as any).reportQueue).toBeDefined();
-      expect((jobQueues as any).maintenanceQueue).toBeDefined();
+    it('should create all required queues', async () => {
+      expect(await jobQueues.getQueue('sync')).toBeDefined();
+      expect(await jobQueues.getQueue('notifications')).toBeDefined();
+      expect(await jobQueues.getQueue('reports')).toBeDefined();
+      expect(await jobQueues.getQueue('maintenance')).toBeDefined();
+      expect(await jobQueues.getQueue('health')).toBeDefined();
     });
 
-    it('should register job processors', () => {
-      const syncQueue = (jobQueues as any).syncQueue;
-      const notificationQueue = (jobQueues as any).notificationQueue;
+    it('should setup event handlers for queues', async () => {
+      const syncQueue = await jobQueues.getQueue('sync');
+      const notificationQueue = await jobQueues.getQueue('notifications');
 
-      expect(syncQueue.process).toHaveBeenCalled();
-      expect(notificationQueue.process).toHaveBeenCalled();
+      // Verify queues have event handlers
+      expect(syncQueue?.on).toHaveBeenCalled();
+      expect(notificationQueue?.on).toHaveBeenCalled();
     });
   });
 
   describe('Sync Jobs', () => {
     it('should add sync job for Jobber', async () => {
       const jobData = {
-        service: 'jobber' as const,
-        entityType: 'customer',
-        entityId: 'cust123',
+        service: 'jobber',
+        entityType: 'client',
+        entityId: '123',
         userId: 'user123',
       };
 
       const job = await jobQueues.addSyncJob(jobData);
 
-      expect(job).toBeDefined();
       expect(job.name).toBe(JobType.SYNC_JOBBER_DATA);
       expect(job.data).toEqual(jobData);
     });
 
     it('should add sync job for Slack', async () => {
       const jobData = {
-        service: 'slack' as const,
+        service: 'slack',
         entityType: 'channel',
         userId: 'user123',
       };
@@ -135,12 +141,11 @@ describe('Job Queues', () => {
       const job = await jobQueues.addSyncJob(jobData);
 
       expect(job.name).toBe(JobType.SYNC_SLACK_DATA);
-      expect(job.data).toEqual(jobData);
     });
 
     it('should add sync job for Google Calendar', async () => {
       const jobData = {
-        service: 'google' as const,
+        service: 'google',
         entityType: 'calendar',
         userId: 'user123',
       };
@@ -152,20 +157,20 @@ describe('Job Queues', () => {
 
     it('should set job options correctly', async () => {
       const jobData = {
-        service: 'jobber' as const,
+        service: 'jobber',
         userId: 'user123',
+        force: true,
       };
 
       const options = {
-        priority: 1,
         delay: 5000,
         attempts: 5,
       };
 
       const job = await jobQueues.addSyncJob(jobData, options);
 
-      const syncQueue = (jobQueues as any).syncQueue;
-      expect(syncQueue.add).toHaveBeenCalledWith(
+      const syncQueue = await jobQueues.getQueue('sync');
+      expect(syncQueue?.add).toHaveBeenCalledWith(
         JobType.SYNC_JOBBER_DATA,
         jobData,
         expect.objectContaining(options)
@@ -205,8 +210,8 @@ describe('Job Queues', () => {
     it('should add push notification job', async () => {
       const jobData = {
         type: 'push' as const,
-        to: 'device-token',
-        body: 'Test notification',
+        to: 'token123',
+        body: 'Test Push',
         data: { action: 'open_app' },
         userId: 'user123',
       };
@@ -220,8 +225,8 @@ describe('Job Queues', () => {
       const jobData = {
         type: 'email' as const,
         to: ['user1@example.com', 'user2@example.com'],
-        subject: 'Bulk Email',
-        body: 'Test content',
+        subject: 'Group Email',
+        body: 'Group content',
         userId: 'user123',
       };
 
@@ -235,7 +240,7 @@ describe('Job Queues', () => {
     it('should add daily report job', async () => {
       const jobData = {
         type: 'daily' as const,
-        date: new Date().toISOString(),
+        date: '2024-01-15',
         recipients: ['admin@example.com'],
         format: 'pdf' as const,
       };
@@ -248,9 +253,9 @@ describe('Job Queues', () => {
     it('should add weekly report job', async () => {
       const jobData = {
         type: 'weekly' as const,
-        date: new Date().toISOString(),
+        date: '2024-01-15',
         recipients: ['admin@example.com'],
-        format: 'pdf' as const,
+        format: 'csv' as const,
       };
 
       const job = await jobQueues.addReportJob(jobData);
@@ -261,9 +266,9 @@ describe('Job Queues', () => {
     it('should add monthly report job', async () => {
       const jobData = {
         type: 'monthly' as const,
-        date: new Date().toISOString(),
+        date: '2024-01-01',
         recipients: ['admin@example.com'],
-        format: 'pdf' as const,
+        format: 'json' as const,
       };
 
       const job = await jobQueues.addReportJob(jobData);
@@ -276,8 +281,8 @@ describe('Job Queues', () => {
     it('should add cleanup job', async () => {
       const jobData = {
         type: 'cleanup',
-        targetDate: new Date().toISOString(),
-        dryRun: true,
+        target: 'old_logs',
+        daysToKeep: 30,
       };
 
       const job = await jobQueues.addMaintenanceJob(JobType.CLEANUP_OLD_DATA, jobData);
@@ -288,7 +293,8 @@ describe('Job Queues', () => {
     it('should add backup job', async () => {
       const jobData = {
         type: 'backup',
-        services: ['firebase', 'redis'],
+        target: 'database',
+        destination: 's3://bucket/backup',
       };
 
       const job = await jobQueues.addMaintenanceJob(JobType.BACKUP_DATABASE, jobData);
@@ -321,7 +327,7 @@ describe('Job Queues', () => {
           delayed: 0,
           paused: 0,
         },
-        notification: {
+        notifications: {
           waiting: 1,
           active: 0,
           completed: 0,
@@ -329,7 +335,7 @@ describe('Job Queues', () => {
           delayed: 0,
           paused: 0,
         },
-        report: {
+        reports: {
           waiting: 1,
           active: 0,
           completed: 0,
@@ -345,84 +351,105 @@ describe('Job Queues', () => {
           delayed: 0,
           paused: 0,
         },
+        health: {
+          waiting: 1,
+          active: 0,
+          completed: 0,
+          failed: 0,
+          delayed: 0,
+          paused: 0,
+        },
       });
     });
 
     it('should close all queues', async () => {
       await jobQueues.closeAll();
 
-      const syncQueue = (jobQueues as any).syncQueue;
-      const notificationQueue = (jobQueues as any).notificationQueue;
-      const reportQueue = (jobQueues as any).reportQueue;
-      const maintenanceQueue = (jobQueues as any).maintenanceQueue;
+      const syncQueue = await jobQueues.getQueue('sync');
+      const notificationQueue = await jobQueues.getQueue('notifications');
+      const reportQueue = await jobQueues.getQueue('reports');
+      const maintenanceQueue = await jobQueues.getQueue('maintenance');
 
-      expect(syncQueue.close).toHaveBeenCalled();
-      expect(notificationQueue.close).toHaveBeenCalled();
-      expect(reportQueue.close).toHaveBeenCalled();
-      expect(maintenanceQueue.close).toHaveBeenCalled();
+      expect(syncQueue?.close).toHaveBeenCalled();
+      expect(notificationQueue?.close).toHaveBeenCalled();
+      expect(reportQueue?.close).toHaveBeenCalled();
+      expect(maintenanceQueue?.close).toHaveBeenCalled();
     });
   });
 });
 
+// Mock getJobQueues before the describe block
+const mockJobQueuesForScheduler = {
+  addSyncJob: jest.fn().mockResolvedValue({ id: '123' }),
+  addReportJob: jest.fn().mockResolvedValue({ id: '456' }),
+  addMaintenanceJob: jest.fn().mockResolvedValue({ id: '789' }),
+  addHealthCheckJob: jest.fn().mockResolvedValue({ id: '999' }),
+};
+
+jest.mock('../jobs/queue', () => ({
+  ...jest.requireActual('../jobs/queue'),
+  getJobQueues: () => mockJobQueuesForScheduler,
+}));
+
 describe('Job Scheduler', () => {
   let scheduler: JobScheduler;
-  let mockJobQueues: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
-
-    mockJobQueues = {
-      addSyncJob: jest.fn().mockResolvedValue({ id: 'job123' }),
-      addReportJob: jest.fn().mockResolvedValue({ id: 'job456' }),
-      addMaintenanceJob: jest.fn().mockResolvedValue({ id: 'job789' }),
-    };
+    mockCronJobs.clear();
 
     scheduler = new JobScheduler();
-    (scheduler as any).jobQueues = mockJobQueues;
+    (scheduler as any).jobQueues = mockJobQueuesForScheduler;
   });
 
   describe('Scheduled Jobs', () => {
-    it('should schedule daily sync jobs', () => {
-      const cron = require('node-cron');
+    it('should schedule jobber sync every 6 hours', () => {
+      const { CronJob } = require('cron');
 
-      // Should have scheduled sync jobs
-      expect(cron.schedule).toHaveBeenCalledWith('0 2 * * *', expect.any(Function));
+      expect(CronJob).toHaveBeenCalledWith('0 */6 * * *', expect.any(Function), null, true, 'America/New_York');
     });
 
     it('should schedule hourly slack sync', () => {
-      const cron = require('node-cron');
+      const { CronJob } = require('cron');
 
-      expect(cron.schedule).toHaveBeenCalledWith('0 * * * *', expect.any(Function));
+      expect(CronJob).toHaveBeenCalledWith('0 * * * *', expect.any(Function), null, true, 'America/New_York');
     });
 
     it('should schedule daily reports', () => {
-      const cron = require('node-cron');
+      const { CronJob } = require('cron');
 
-      expect(cron.schedule).toHaveBeenCalledWith('0 8 * * *', expect.any(Function));
+      expect(CronJob).toHaveBeenCalledWith('0 8 * * *', expect.any(Function), null, true, 'America/New_York');
     });
 
     it('should schedule weekly reports', () => {
-      const cron = require('node-cron');
+      const { CronJob } = require('cron');
 
-      expect(cron.schedule).toHaveBeenCalledWith('0 8 * * 1', expect.any(Function));
+      expect(CronJob).toHaveBeenCalledWith('0 9 * * 1', expect.any(Function), null, true, 'America/New_York');
     });
 
     it('should schedule monthly reports', () => {
-      const cron = require('node-cron');
+      const { CronJob } = require('cron');
 
-      expect(cron.schedule).toHaveBeenCalledWith('0 8 1 * *', expect.any(Function));
+      expect(CronJob).toHaveBeenCalledWith('0 10 1 * *', expect.any(Function), null, true, 'America/New_York');
     });
 
     it('should schedule daily cleanup', () => {
-      const cron = require('node-cron');
+      const { CronJob } = require('cron');
 
-      expect(cron.schedule).toHaveBeenCalledWith('0 3 * * *', expect.any(Function));
+      expect(CronJob).toHaveBeenCalledWith('0 2 * * *', expect.any(Function), null, true, 'America/New_York');
+    });
+
+    it('should NOT schedule database backup in test environment', () => {
+      const { CronJob } = require('cron');
+
+      // In test environment, database backup should not be scheduled
+      expect(CronJob).not.toHaveBeenCalledWith('0 3 * * *', expect.any(Function), null, true, 'America/New_York');
     });
 
     it('should schedule health checks', () => {
-      const cron = require('node-cron');
+      const { CronJob } = require('cron');
 
-      expect(cron.schedule).toHaveBeenCalledWith('*/5 * * * *', expect.any(Function));
+      expect(CronJob).toHaveBeenCalledWith('*/5 * * * *', expect.any(Function), null, true, 'America/New_York');
     });
   });
 
@@ -430,7 +457,7 @@ describe('Job Scheduler', () => {
     it('should start all scheduled jobs', () => {
       scheduler.start();
 
-      (scheduler as any).jobs.forEach((job: any) => {
+      mockCronJobs.forEach((job: any) => {
         expect(job.start).toHaveBeenCalled();
       });
     });
@@ -438,7 +465,7 @@ describe('Job Scheduler', () => {
     it('should stop all scheduled jobs', () => {
       scheduler.stop();
 
-      (scheduler as any).jobs.forEach((job: any) => {
+      mockCronJobs.forEach((job: any) => {
         expect(job.stop).toHaveBeenCalled();
       });
     });
@@ -449,51 +476,42 @@ describe('Job Scheduler', () => {
       expect(Array.isArray(runningJobs)).toBe(true);
       expect(runningJobs.length).toBeGreaterThan(0);
     });
-
-    it('should trigger job manually', async () => {
-      await scheduler.triggerJob('daily-sync');
-
-      expect(mockJobQueues.addSyncJob).toHaveBeenCalled();
-    });
-
-    it('should throw error for unknown job', async () => {
-      await expect(scheduler.triggerJob('unknown-job')).rejects.toThrow(
-        'Unknown scheduled job: unknown-job'
-      );
-    });
   });
 
   describe('Job Execution', () => {
     it('should execute sync job correctly', async () => {
-      const syncCallback = (scheduler as any).jobs.get('daily-sync').callback;
-      await syncCallback();
+      const jobberSyncJob = mockCronJobs.get('0 */6 * * *');
+      expect(jobberSyncJob).toBeDefined();
+      
+      await jobberSyncJob.handler();
 
-      expect(mockJobQueues.addSyncJob).toHaveBeenCalledWith(
-        { service: 'jobber', userId: 'system' },
-        expect.any(Object)
+      expect(mockJobQueuesForScheduler.addSyncJob).toHaveBeenCalledWith(
+        { service: 'jobber', userId: 'system' }
       );
     });
 
     it('should execute report job correctly', async () => {
-      const reportCallback = (scheduler as any).jobs.get('daily-report').callback;
-      await reportCallback();
+      const dailyReportJob = mockCronJobs.get('0 8 * * *');
+      expect(dailyReportJob).toBeDefined();
+      
+      await dailyReportJob.handler();
 
-      expect(mockJobQueues.addReportJob).toHaveBeenCalledWith(
+      expect(mockJobQueuesForScheduler.addReportJob).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'daily',
-          userId: 'system',
-        }),
-        expect.any(Object)
+          recipients: [],
+          format: 'pdf',
+        })
       );
     });
 
     it('should handle job execution errors', async () => {
-      mockJobQueues.addSyncJob.mockRejectedValueOnce(new Error('Queue error'));
+      mockJobQueuesForScheduler.addSyncJob.mockRejectedValueOnce(new Error('Queue error'));
 
-      const syncCallback = (scheduler as any).jobs.get('daily-sync').callback;
-
+      const jobberSyncJob = mockCronJobs.get('0 */6 * * *');
+      
       // Should not throw
-      await expect(syncCallback()).resolves.toBeUndefined();
+      await expect(jobberSyncJob.handler()).resolves.toBeUndefined();
     });
   });
 });

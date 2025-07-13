@@ -67,6 +67,23 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
     return;
   }
 
+  // Handle JSON parse errors
+  if ((err as any).type === 'entity.parse.failed') {
+    const response: ErrorResponse = {
+      error: {
+        code: 'INVALID_JSON',
+        message: 'Invalid JSON in request body',
+        statusCode: 400,
+        timestamp: new Date().toISOString(),
+        path: req.path,
+        method: req.method,
+        requestId: req.id,
+      },
+    };
+    res.status(400).json(response);
+    return;
+  }
+
   // Handle non-operational errors
   const statusCode = res.statusCode !== 200 ? res.statusCode : 500;
   const response: ErrorResponse = {

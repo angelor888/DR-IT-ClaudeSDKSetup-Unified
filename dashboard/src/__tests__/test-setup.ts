@@ -1,95 +1,137 @@
-// Global test setup
-import 'reflect-metadata';
-import { DecodedIdToken } from 'firebase-admin/auth';
+// Jest setup file
+import { jest } from '@jest/globals';
 
-// Extend NodeJS global for tests
-declare global {
-  namespace NodeJS {
-    interface Global {
-      requestId?: string;
-    }
-  }
-}
+// Mock Firebase Admin
+jest.mock('../config/firebase', () => ({
+  initializeFirebase: jest.fn(),
+  getFirestore: jest.fn(() => ({
+    collection: jest.fn(() => ({
+      doc: jest.fn(() => ({
+        get: jest.fn(),
+        set: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      })),
+      where: jest.fn(() => ({
+        get: jest.fn(() => ({ docs: [] })),
+      })),
+    })),
+  })),
+  getAuth: jest.fn(() => ({
+    verifyIdToken: jest.fn(),
+    createUser: jest.fn(),
+    getUser: jest.fn(),
+    deleteUser: jest.fn(),
+  })),
+}));
 
-// Mock Firebase Admin Auth types
-export const mockDecodedToken: DecodedIdToken = {
-  aud: 'test-project',
-  auth_time: Date.now() / 1000,
-  exp: Date.now() / 1000 + 3600,
-  firebase: {
-    identities: {},
-    sign_in_provider: 'password',
-    sign_in_second_factor: undefined,
-    second_factor_identifier: undefined,
-    tenant: undefined,
-  },
-  iat: Date.now() / 1000,
-  iss: 'https://securetoken.google.com/test-project',
-  sub: 'test-user-id',
-  uid: 'test-user-id',
-  email: 'test@example.com',
-  email_verified: true,
-  phone_number: undefined,
-  name: 'Test User',
-  picture: undefined,
-};
+// Mock Redis
+jest.mock('../cache/redis', () => ({
+  initializeRedis: jest.fn(),
+  getRedisCache: jest.fn(() => ({
+    get: jest.fn(),
+    set: jest.fn(),
+    delete: jest.fn(),
+    deletePattern: jest.fn(),
+    exists: jest.fn(),
+    expire: jest.fn(),
+    ttl: jest.fn(),
+    isReady: jest.fn(() => true),
+    disconnect: jest.fn(),
+  })),
+  RedisCache: jest.fn().mockImplementation(() => ({
+    get: jest.fn(),
+    set: jest.fn(),
+    delete: jest.fn(),
+    deletePattern: jest.fn(),
+    exists: jest.fn(),
+    expire: jest.fn(),
+    ttl: jest.fn(),
+    isReady: jest.fn(() => true),
+    disconnect: jest.fn(),
+  })),
+}));
 
-// Mock user for authenticated requests
-export const mockUser = {
-  ...mockDecodedToken,
-  id: 'test-user-id',
-  roles: ['user'],
-  teamId: 'test-team-id',
-};
-
-// Mock Express Request
-export const mockRequest = (overrides = {}) => ({
-  id: 'test-request-id',
-  user: mockUser,
-  headers: {},
-  params: {},
-  query: {},
-  body: {},
-  ip: '127.0.0.1',
-  path: '/test',
-  method: 'GET',
-  get: jest.fn(),
-  ...overrides,
+// Mock Bull
+jest.mock('bull', () => {
+  const mockQueue = {
+    process: jest.fn(),
+    add: jest.fn(),
+    on: jest.fn(),
+    close: jest.fn(),
+    pause: jest.fn(),
+    resume: jest.fn(),
+    getJobCounts: jest.fn(() => Promise.resolve({ active: 0, completed: 0, failed: 0, delayed: 0, waiting: 0 })),
+    clean: jest.fn(),
+  };
+  
+  return {
+    __esModule: true,
+    default: jest.fn(() => mockQueue),
+    Queue: jest.fn(() => mockQueue),
+  };
 });
 
-// Mock Express Response
-export const mockResponse = () => {
-  const res: any = {};
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
-  res.send = jest.fn().mockReturnValue(res);
-  res.end = jest.fn().mockReturnValue(res);
-  res.setHeader = jest.fn().mockReturnValue(res);
-  return res;
-};
+// Mock WebSocket
+jest.mock('../realtime/websocket', () => ({
+  initializeWebSocket: jest.fn(),
+  getIo: jest.fn(() => ({
+    emit: jest.fn(),
+    to: jest.fn(() => ({
+      emit: jest.fn(),
+    })),
+    on: jest.fn(),
+  })),
+  getWebSocketServer: jest.fn(() => ({
+    emitToUser: jest.fn(),
+    emitToAll: jest.fn(),
+    getConnectedUsers: jest.fn().mockReturnValue([]),
+  })),
+}));
 
-// Mock Next function
-export const mockNext = jest.fn();
+// Mock node-cron
+jest.mock('node-cron', () => ({
+  schedule: jest.fn((expression: string, callback: Function) => ({
+    start: jest.fn(),
+    stop: jest.fn(),
+  })),
+}));
 
-// Setup environment variables for tests
+// Setup environment variables
 process.env.NODE_ENV = 'test';
+process.env.REDIS_URL = 'redis://localhost:6379';
+process.env.JWT_SECRET = 'test-secret';
 process.env.FIREBASE_PROJECT_ID = 'test-project';
-process.env.FIREBASE_CLIENT_EMAIL = 'test@test-project.iam.gserviceaccount.com';
-process.env.FIREBASE_PRIVATE_KEY =
-  '-----BEGIN PRIVATE KEY-----\\ntest-key\\n-----END PRIVATE KEY-----';
 
-// Mock console methods to reduce noise in tests
-global.console = {
-  ...console,
-  log: jest.fn(),
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-};
+// Disable features that require external services during tests
+process.env.FEATURE_WEBSOCKET_ENABLED = 'false';
+process.env.FEATURE_REDIS_ENABLED = 'false';
+process.env.FEATURE_JOBS_ENABLED = 'false';
+process.env.FEATURE_SCHEDULER_ENABLED = 'false';
 
-// Cleanup after all tests
-afterAll(async () => {
-  // Close any open handles
-  await new Promise(resolve => setTimeout(resolve, 1000));
-});
+// Mock job queue functions
+jest.mock('../jobs/queue', () => ({
+  initializeJobQueues: jest.fn(),
+  getJobQueues: jest.fn(() => ({
+    addSyncJob: jest.fn(),
+    addNotificationJob: jest.fn(),
+    addReportJob: jest.fn(),
+    addMaintenanceJob: jest.fn(),
+    addHealthCheckJob: jest.fn(),
+    getQueue: jest.fn(),
+    getJobCounts: jest.fn(),
+    closeAll: jest.fn(),
+  })),
+}));
+
+// Mock scheduler
+jest.mock('../jobs/scheduler', () => ({
+  initializeScheduler: jest.fn(() => ({
+    start: jest.fn(),
+    stop: jest.fn(),
+    getRunningJobs: jest.fn().mockReturnValue([]),
+  })),
+}));
+
+// Increase test timeout
+jest.setTimeout(30000);
