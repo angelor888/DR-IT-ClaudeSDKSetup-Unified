@@ -2,11 +2,53 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React + TS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1976d2" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="DuetRight" />
+    <meta name="application-name" content="DuetRight Dashboard" />
+    <meta name="msapplication-TileColor" content="#1976d2" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    
+    <!-- SEO & Description -->
+    <meta name="description" content="DuetRight IT Dashboard - Manage customers, jobs, and communications in one unified platform" />
+    <meta name="keywords" content="duetright, dashboard, crm, job management, communications" />
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.svg" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.svg" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    
+    <title>DuetRight Dashboard</title>
+    
+    <!-- Splash Screens for iOS -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-640x1136.svg" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-750x1334.svg" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1242x2208.svg" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1125x2436.svg" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" />
   </head>
   <body>
+    <noscript>
+      <style>
+        body { font-family: sans-serif; margin: 0; padding: 20px; }
+        .noscript { text-align: center; margin-top: 50px; }
+      </style>
+      <div class="noscript">
+        <h1>JavaScript Required</h1>
+        <p>DuetRight Dashboard requires JavaScript to be enabled. Please enable JavaScript in your browser settings and reload the page.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -12,6 +12,7 @@ import { LoginPage } from '@features/auth/LoginPage'
 import { DashboardLayout } from '@components/layout/DashboardLayout'
 import { PageLoader, ComponentLoader, CommunicationsLoader } from '@components/common/LoadingSpinner'
 import { ChunkErrorBoundary, RouteErrorBoundary } from '@components/common/ErrorBoundary'
+import { PWAInstallPrompt } from '@components/PWAInstallPrompt'
 
 // Lazy load feature components for code splitting
 const Dashboard = lazy(() => import('@features/dashboard/Dashboard').then(module => ({ default: module.Dashboard })))
@@ -75,6 +76,7 @@ function AppContent() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <PWAInstallPrompt />
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
