@@ -29,7 +29,7 @@ class MCPClient {
   }
 
   private async performHealthCheck(): Promise<void> {
-    for (const [serverId, server] of this.servers) {
+    for (const [serverId] of this.servers) {
       try {
         const response = await this.sendRequest(serverId, {
           id: `health-${Date.now()}`,

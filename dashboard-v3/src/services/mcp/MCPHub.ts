@@ -1,6 +1,6 @@
 import MCPClient from './MCPClient';
 import GrokService from '../grok/GrokService';
-import { MCPHubConfig, MCPCommand, MCPServer, AVAILABLE_MCP_SERVERS } from './types';
+import { MCPHubConfig, MCPCommand, MCPServer } from './types';
 
 class MCPHub {
   private mcpClient: MCPClient;

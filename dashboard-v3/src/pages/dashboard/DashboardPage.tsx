@@ -122,18 +122,40 @@ const DashboardPage: React.FC = () => {
         <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: 3, height: 400 }}>
             <Typography variant="h6" gutterBottom>
-              AI Insights
+              AI Insights & Testing
             </Typography>
             <Box sx={{ 
               display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              height: '80%',
-              color: 'text.secondary'
+              flexDirection: 'column',
+              gap: 2,
+              height: '80%'
             }}>
-              <Typography textAlign="center">
-                Grok 4 AI insights will appear here
+              <Typography variant="body2" color="text.secondary">
+                Open browser console and run:
               </Typography>
+              <Box sx={{ 
+                backgroundColor: 'grey.100', 
+                p: 1, 
+                borderRadius: 1,
+                fontFamily: 'monospace',
+                fontSize: '0.8rem'
+              }}>
+                testDashboard.runAllTests()
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Individual tests:
+              </Typography>
+              <Box sx={{ 
+                backgroundColor: 'grey.100', 
+                p: 1, 
+                borderRadius: 1,
+                fontFamily: 'monospace',
+                fontSize: '0.7rem'
+              }}>
+                testDashboard.testMCPHub()<br/>
+                testDashboard.testGrokService()<br/>
+                testDashboard.testWorkflow()
+              </Box>
             </Box>
           </Paper>
         </Grid>

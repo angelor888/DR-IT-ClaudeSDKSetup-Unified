@@ -1,18 +1,18 @@
 import React from 'react';
 import { createTheme, ThemeOptions } from '@mui/material/styles';
 
-// DuetRight brand colors
+// DuetRight Official Brand Colors
 const colors = {
   primary: {
-    main: '#1976d2', // Professional blue
-    light: '#42a5f5',
-    dark: '#1565c0',
-    contrastText: '#ffffff',
+    main: '#FFBB2F', // DuetRight Primary Yellow
+    light: '#FFFDFA', // DuetRight Lightest
+    dark: '#FF8A3D', // DuetRight Secondary Orange
+    contrastText: '#2C2B2E', // DuetRight Darkest
   },
   secondary: {
-    main: '#ff6b35', // Vibrant orange
-    light: '#ff8a65',
-    dark: '#d84315',
+    main: '#037887', // DuetRight Accent Teal
+    light: '#4db6ac',
+    dark: '#00695c',
     contrastText: '#ffffff',
   },
   success: {
@@ -54,12 +54,12 @@ const lightThemeOptions: ThemeOptions = {
     mode: 'light',
     ...colors,
     background: {
-      default: '#f8f9fa',
+      default: '#FFFDFA', // DuetRight Lightest
       paper: '#ffffff',
     },
     text: {
-      primary: 'rgba(0, 0, 0, 0.87)',
-      secondary: 'rgba(0, 0, 0, 0.6)',
+      primary: '#2C2B2E', // DuetRight Darkest
+      secondary: 'rgba(44, 43, 46, 0.7)',
     },
   },
   typography: {
