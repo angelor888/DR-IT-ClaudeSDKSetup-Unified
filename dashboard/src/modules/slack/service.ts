@@ -120,13 +120,18 @@ export class SlackService {
       blocks?: any[];
       attachments?: any[];
       saveToDb?: boolean;
+      messageId?: string; // Reference to unified message ID
     }
-  ): Promise<SlackMessage> {
+  ): Promise<{ success: boolean; messageId: string; info?: any }> {
     try {
       const response = await this.client.postMessage(channelId, text, options);
 
       if (!response.ok || !response.data) {
-        throw new Error(response.error || 'Failed to send message');
+        return {
+          success: false,
+          messageId: options?.messageId || '',
+          info: { error: response.error || 'Failed to send message' }
+        };
       }
 
       const message = response.data;
@@ -137,6 +142,7 @@ export class SlackService {
           ...message,
           sentAt: new Date(),
           sentBy: 'dashboard',
+          unifiedMessageId: options?.messageId,
         });
       }
 
@@ -152,14 +158,27 @@ export class SlackService {
             channelId,
             messageTs: message.ts,
             threadTs: options?.thread_ts,
+            unifiedMessageId: options?.messageId,
           }
         )
       );
 
-      return message;
+      return {
+        success: true,
+        messageId: message.ts || options?.messageId || '',
+        info: {
+          channel: message.channel,
+          timestamp: message.ts,
+          threadTimestamp: options?.thread_ts,
+        }
+      };
     } catch (error) {
       log.error('Failed to send message', error);
-      throw error;
+      return {
+        success: false,
+        messageId: options?.messageId || '',
+        info: { error: (error as Error).message }
+      };
     }
   }
 

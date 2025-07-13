@@ -21,9 +21,9 @@ export class TwilioService {
   /**
    * Send SMS message with error handling and logging
    */
-  async sendSMS(to: string, body: string, options: Partial<SendMessageOptions> = {}) {
+  async sendSMS(to: string, body: string, options: Partial<SendMessageOptions & { messageId?: string }> = {}) {
     try {
-      log.info('Sending SMS message', { to, bodyLength: body.length });
+      log.info('Sending SMS message', { to, bodyLength: body.length, messageId: options.messageId });
 
       const result = await this.client.sendMessage({
         to,
@@ -36,19 +36,39 @@ export class TwilioService {
           messageSid: result.data?.sid,
           to,
           status: result.data?.status,
+          unifiedMessageId: options.messageId,
         });
-        return result;
+        return {
+          success: true,
+          messageId: result.data?.sid || options.messageId || '',
+          info: {
+            sid: result.data?.sid,
+            status: result.data?.status,
+            to: result.data?.to,
+            from: result.data?.from,
+            dateSent: result.data?.dateCreated,
+          }
+        };
       } else {
         log.error('Failed to send SMS', {
           to,
           error: result.error?.message,
           code: result.error?.code,
+          unifiedMessageId: options.messageId,
         });
-        return result;
+        return {
+          success: false,
+          messageId: options.messageId || '',
+          info: { error: result.error?.message, code: result.error?.code }
+        };
       }
     } catch (error) {
-      log.error('Error sending SMS', { error: error instanceof Error ? error.message : error, to });
-      throw error;
+      log.error('Error sending SMS', { error: error instanceof Error ? error.message : error, to, messageId: options.messageId });
+      return {
+        success: false,
+        messageId: options.messageId || '',
+        info: { error: error instanceof Error ? error.message : 'Unknown error' }
+      };
     }
   }
 
@@ -353,5 +373,15 @@ export class TwilioService {
       errorCode: webhook.ErrorCode,
       errorMessage: webhook.ErrorMessage,
     });
+  }
+
+  // Singleton pattern
+  private static instance: TwilioService;
+
+  static getInstance(): TwilioService {
+    if (!TwilioService.instance) {
+      TwilioService.instance = new TwilioService();
+    }
+    return TwilioService.instance;
   }
 }

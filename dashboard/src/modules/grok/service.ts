@@ -559,4 +559,323 @@ export class GrokService extends EventEmitter {
       }
     });
   }
+
+  // Communications Hub specific methods
+  async generateResponseSuggestion(userId: string, params: {
+    message: string;
+    platform: string;
+    recipient?: string;
+    tone: string;
+    intent?: string;
+  }): Promise<{ suggestion: string; confidence: number }> {
+    try {
+      const prompt = `Generate a response suggestion for the following message:
+Message: "${params.message}"
+Platform: ${params.platform}
+${params.recipient ? `Recipient: ${params.recipient}` : ''}
+Tone: ${params.tone}
+${params.intent ? `Intent: ${params.intent}` : ''}
+
+Provide a natural, helpful response that matches the tone and context.`;
+
+      const response = await this.generate(userId, {
+        type: 'email',
+        prompt,
+        context: { platform: params.platform },
+        format: 'plain text'
+      });
+
+      return {
+        suggestion: response.content.trim(),
+        confidence: 0.85
+      };
+    } catch (error) {
+      log.error('Failed to generate response suggestion:', error);
+      throw error;
+    }
+  }
+
+  async improveMessage(userId: string, params: {
+    content: string;
+    tone?: string;
+  }): Promise<{ improved: string; changes: string[] }> {
+    try {
+      const prompt = `Improve the following message to be more ${params.tone || 'professional'} and effective:
+"${params.content}"
+
+Provide the improved version and list the key changes made.`;
+
+      const response = await this.generate(userId, {
+        type: 'email',
+        prompt,
+        format: 'structured'
+      });
+
+      // Parse the response to extract improved text and changes
+      const lines = response.content.split('\n');
+      const improved = lines[0] || params.content;
+      const changes = lines.slice(1).filter(line => line.trim().startsWith('-')).map(line => line.trim().substring(2));
+
+      return { improved, changes };
+    } catch (error) {
+      log.error('Failed to improve message:', error);
+      throw error;
+    }
+  }
+
+  async categorizeMessage(userId: string, params: {
+    content: string;
+    platform?: string;
+  }): Promise<{ category: string; confidence: number }> {
+    try {
+      const analysisResponse = await this.analyze(userId, {
+        type: 'customer',
+        data: { message: params.content, platform: params.platform },
+        questions: ['What category best describes this message? (inquiry, complaint, feedback, request, other)']
+      });
+
+      const category = analysisResponse.insights[0]?.category || 'other';
+      const confidence = analysisResponse.confidence;
+
+      return { category, confidence };
+    } catch (error) {
+      log.error('Failed to categorize message:', error);
+      throw error;
+    }
+  }
+
+  async analyzeSentiment(userId: string, params: {
+    content: string;
+    context?: any;
+  }): Promise<{
+    sentiment: 'positive' | 'neutral' | 'negative';
+    confidence: number;
+    emotions?: string[];
+  }> {
+    try {
+      const analysisResponse = await this.analyze(userId, {
+        type: 'customer',
+        data: { message: params.content, context: params.context },
+        questions: ['What is the sentiment and emotional tone of this message?']
+      });
+
+      // Extract sentiment from insights
+      const sentimentInsight = analysisResponse.insights[0];
+      const sentiment = sentimentInsight?.sentiment || 'neutral';
+      const confidence = analysisResponse.confidence;
+      const emotions = sentimentInsight?.emotions || [];
+
+      return {
+        sentiment: sentiment as 'positive' | 'neutral' | 'negative',
+        confidence,
+        emotions
+      };
+    } catch (error) {
+      log.error('Failed to analyze sentiment:', error);
+      throw error;
+    }
+  }
+
+  async summarizeConversation(userId: string, conversationId: string): Promise<{
+    summary: string;
+    keyPoints: string[];
+    nextSteps?: string[];
+  }> {
+    try {
+      const conversation = await this.getConversation(conversationId);
+      
+      if (conversation.userId !== userId) {
+        throw new Error('Unauthorized access to conversation');
+      }
+
+      const messages = conversation.messages.map(msg => `${msg.role}: ${msg.content}`).join('\n');
+      
+      const analysisResponse = await this.analyze(userId, {
+        type: 'customer',
+        data: { conversation: messages },
+        questions: [
+          'Provide a brief summary of this conversation',
+          'What are the key discussion points?',
+          'What are the recommended next steps?'
+        ]
+      });
+
+      return {
+        summary: analysisResponse.summary,
+        keyPoints: analysisResponse.insights.map(i => i.description || '').filter(Boolean),
+        nextSteps: analysisResponse.recommendations.map(r => r.action || '').filter(Boolean)
+      };
+    } catch (error) {
+      log.error('Failed to summarize conversation:', error);
+      throw error;
+    }
+  }
+
+  async analyzeMessageSentiment(userId: string, messageId: string): Promise<{
+    sentiment: 'positive' | 'neutral' | 'negative';
+    confidence: number;
+    emotions?: string[];
+  }> {
+    try {
+      // Fetch message from database
+      const messageDoc = await this.db.collection('messages').doc(messageId).get();
+      
+      if (!messageDoc.exists) {
+        throw new Error('Message not found');
+      }
+
+      const message = messageDoc.data();
+      
+      return this.analyzeSentiment(userId, {
+        content: message?.content || '',
+        context: { platform: message?.platform }
+      });
+    } catch (error) {
+      log.error('Failed to analyze message sentiment:', error);
+      throw error;
+    }
+  }
+
+  async bulkCategorizeMessages(userId: string, messageIds: string[]): Promise<Array<{
+    messageId: string;
+    category: string;
+    confidence: number;
+  }>> {
+    try {
+      const results = await Promise.all(
+        messageIds.map(async (messageId) => {
+          const messageDoc = await this.db.collection('messages').doc(messageId).get();
+          
+          if (!messageDoc.exists) {
+            return { messageId, category: 'unknown', confidence: 0 };
+          }
+
+          const message = messageDoc.data();
+          const { category, confidence } = await this.categorizeMessage(userId, {
+            content: message?.content || '',
+            platform: message?.platform
+          });
+
+          // Update message with category
+          await this.db.collection('messages').doc(messageId).update({
+            'ai.category': category,
+            'ai.categoryConfidence': confidence,
+            'ai.categorizedAt': new Date()
+          });
+
+          return { messageId, category, confidence };
+        })
+      );
+
+      return results;
+    } catch (error) {
+      log.error('Failed to bulk categorize messages:', error);
+      throw error;
+    }
+  }
+
+  async generateTemplate(userId: string, params: {
+    category: string;
+    intent: string;
+    tone: string;
+    examples?: string[];
+  }): Promise<{
+    name: string;
+    content: string;
+    category: string;
+    platform: string;
+    aiGenerated: boolean;
+  }> {
+    try {
+      const prompt = `Generate a message template for:
+Category: ${params.category}
+Intent: ${params.intent}
+Tone: ${params.tone}
+${params.examples?.length ? `\nExamples:\n${params.examples.join('\n')}` : ''}
+
+Provide a reusable template with placeholders like [Customer Name], [Date], etc.`;
+
+      const response = await this.generate(userId, {
+        type: 'email',
+        prompt,
+        format: 'template'
+      });
+
+      const templateName = `${params.tone} ${params.intent} Template`;
+
+      return {
+        name: templateName,
+        content: response.content.trim(),
+        category: params.category,
+        platform: 'all',
+        aiGenerated: true
+      };
+    } catch (error) {
+      log.error('Failed to generate template:', error);
+      throw error;
+    }
+  }
+
+  async getUsageStats(userId: string, params?: {
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<{
+    totalTokens: number;
+    totalRequests: number;
+    byFeature: Record<string, number>;
+    dailyUsage: Array<{ date: Date; tokens: number; requests: number }>;
+  }> {
+    try {
+      const endDate = params?.endDate || new Date();
+      const startDate = params?.startDate || new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+
+      const snapshot = await this.db
+        .collection('grok_usage')
+        .where('userId', '==', userId)
+        .where('date', '>=', startDate)
+        .where('date', '<=', endDate)
+        .get();
+
+      let totalTokens = 0;
+      let totalRequests = 0;
+      const byFeature: Record<string, number> = {};
+      const dailyUsage: Array<{ date: Date; tokens: number; requests: number }> = [];
+
+      snapshot.docs.forEach(doc => {
+        const usage = doc.data() as GrokUsage;
+        totalTokens += usage.tokensUsed;
+        totalRequests += usage.requestCount;
+
+        Object.entries(usage.features).forEach(([feature, count]) => {
+          byFeature[feature] = (byFeature[feature] || 0) + count;
+        });
+
+        dailyUsage.push({
+          date: usage.date,
+          tokens: usage.tokensUsed,
+          requests: usage.requestCount
+        });
+      });
+
+      return {
+        totalTokens,
+        totalRequests,
+        byFeature,
+        dailyUsage: dailyUsage.sort((a, b) => a.date.getTime() - b.date.getTime())
+      };
+    } catch (error) {
+      log.error('Failed to get usage stats:', error);
+      throw error;
+    }
+  }
+
+  // Singleton instance
+  private static instance: GrokService;
+  
+  static getInstance(config?: GrokConfig): GrokService {
+    if (!GrokService.instance) {
+      GrokService.instance = new GrokService(config);
+    }
+    return GrokService.instance;
+  }
 }

@@ -128,6 +128,10 @@ export async function createApp(): Promise<{ app: Application; server: any }> {
     app.use('/api/jobs', rateLimiters.api, jobRoutes);
   }
 
+  // Communications routes (unified messaging)
+  const { communicationsRoutes } = require('./api/communications');
+  app.use('/api/communications', rateLimiters.api, communicationsRoutes);
+
   // WebSocket info endpoint
   if (config.features?.websocket?.enabled !== false) {
     app.get('/api/websocket/info', rateLimiters.api, (req: Request, res: Response) => {
