@@ -13,26 +13,26 @@ export async function initializeJobberService(): Promise<void> {
 
   try {
     log.info('Initializing Jobber service...');
-    
+
     const jobberService = new JobberService();
     const healthMonitor = getHealthMonitor();
 
     // Check initial health status
     const healthCheck = await jobberService.checkHealth();
-    
+
     if (healthCheck.status === 'healthy' || healthCheck.status === 'degraded') {
       log.info('Jobber service initialized successfully', {
         status: healthCheck.status,
         message: healthCheck.message,
         needsAuth: (healthCheck.details as any)?.needsAuthentication || false,
       });
-      
+
       // Create a health check wrapper that maintains the service interface
       const serviceHealthChecker = {
         name: 'jobber',
         checkHealth: () => jobberService.checkHealth(),
       };
-      
+
       // Register for health monitoring
       healthMonitor.registerService(serviceHealthChecker as any);
     } else {
@@ -45,7 +45,7 @@ export async function initializeJobberService(): Promise<void> {
     log.error('Failed to initialize Jobber service', {
       error: error instanceof Error ? error.message : error,
     });
-    
+
     // Don't throw error to prevent app startup failure
     // Jobber is not critical for core functionality
   }

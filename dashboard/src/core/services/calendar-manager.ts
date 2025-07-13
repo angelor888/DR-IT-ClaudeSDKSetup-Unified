@@ -70,11 +70,26 @@ export interface CalendarAvailability {
 export abstract class CalendarProvider_Base {
   abstract getProviderName(): CalendarProvider;
   abstract isEnabled(): boolean;
-  abstract getEvents(startDate: Date, endDate: Date, userId?: string): Promise<UnifiedCalendarEvent[]>;
-  abstract createEvent(event: Partial<UnifiedCalendarEvent>, userId?: string): Promise<UnifiedCalendarEvent>;
-  abstract updateEvent(eventId: string, updates: Partial<UnifiedCalendarEvent>, userId?: string): Promise<UnifiedCalendarEvent>;
+  abstract getEvents(
+    startDate: Date,
+    endDate: Date,
+    userId?: string
+  ): Promise<UnifiedCalendarEvent[]>;
+  abstract createEvent(
+    event: Partial<UnifiedCalendarEvent>,
+    userId?: string
+  ): Promise<UnifiedCalendarEvent>;
+  abstract updateEvent(
+    eventId: string,
+    updates: Partial<UnifiedCalendarEvent>,
+    userId?: string
+  ): Promise<UnifiedCalendarEvent>;
   abstract deleteEvent(eventId: string, userId?: string): Promise<void>;
-  abstract getAvailability(startDate: Date, endDate: Date, userId?: string): Promise<CalendarAvailability>;
+  abstract getAvailability(
+    startDate: Date,
+    endDate: Date,
+    userId?: string
+  ): Promise<CalendarAvailability>;
 }
 
 export class GoogleCalendarProvider extends CalendarProvider_Base {
@@ -93,7 +108,11 @@ export class GoogleCalendarProvider extends CalendarProvider_Base {
     return this.config.enabled && !!this.config.clientId;
   }
 
-  async getEvents(startDate: Date, endDate: Date, userId?: string): Promise<UnifiedCalendarEvent[]> {
+  async getEvents(
+    startDate: Date,
+    endDate: Date,
+    userId?: string
+  ): Promise<UnifiedCalendarEvent[]> {
     if (!this.isEnabled()) return [];
 
     try {
@@ -111,7 +130,10 @@ export class GoogleCalendarProvider extends CalendarProvider_Base {
     }
   }
 
-  async createEvent(event: Partial<UnifiedCalendarEvent>, userId?: string): Promise<UnifiedCalendarEvent> {
+  async createEvent(
+    event: Partial<UnifiedCalendarEvent>,
+    userId?: string
+  ): Promise<UnifiedCalendarEvent> {
     if (!this.isEnabled()) {
       throw new Error('Google Calendar is not enabled');
     }
@@ -130,7 +152,11 @@ export class GoogleCalendarProvider extends CalendarProvider_Base {
     return this.convertGoogleEvent(googleEvent);
   }
 
-  async updateEvent(eventId: string, updates: Partial<UnifiedCalendarEvent>, userId?: string): Promise<UnifiedCalendarEvent> {
+  async updateEvent(
+    eventId: string,
+    updates: Partial<UnifiedCalendarEvent>,
+    userId?: string
+  ): Promise<UnifiedCalendarEvent> {
     if (!this.isEnabled()) {
       throw new Error('Google Calendar is not enabled');
     }
@@ -160,7 +186,11 @@ export class GoogleCalendarProvider extends CalendarProvider_Base {
     await this.service.deleteEvent(eventId, this.config.calendarId || 'primary', userId);
   }
 
-  async getAvailability(startDate: Date, endDate: Date, userId?: string): Promise<CalendarAvailability> {
+  async getAvailability(
+    startDate: Date,
+    endDate: Date,
+    userId?: string
+  ): Promise<CalendarAvailability> {
     if (!this.isEnabled()) {
       return {
         provider: 'google',
@@ -213,17 +243,20 @@ export class GoogleCalendarProvider extends CalendarProvider_Base {
       startTime: new Date(googleEvent.start?.dateTime || googleEvent.start?.date),
       endTime: new Date(googleEvent.end?.dateTime || googleEvent.end?.date),
       isAllDay: !!googleEvent.start?.date,
-      location: googleEvent.location ? {
-        type: googleEvent.conferenceData ? 'online' : 'physical',
-        details: googleEvent.location,
-        meetingUrl: googleEvent.conferenceData?.entryPoints?.[0]?.uri,
-      } : undefined,
-      attendees: googleEvent.attendees?.map((attendee: any) => ({
-        email: attendee.email,
-        name: attendee.displayName,
-        status: attendee.responseStatus || 'pending',
-        isOrganizer: attendee.organizer,
-      })) || [],
+      location: googleEvent.location
+        ? {
+            type: googleEvent.conferenceData ? 'online' : 'physical',
+            details: googleEvent.location,
+            meetingUrl: googleEvent.conferenceData?.entryPoints?.[0]?.uri,
+          }
+        : undefined,
+      attendees:
+        googleEvent.attendees?.map((attendee: any) => ({
+          email: attendee.email,
+          name: attendee.displayName,
+          status: attendee.responseStatus || 'pending',
+          isOrganizer: attendee.organizer,
+        })) || [],
       status: googleEvent.status === 'cancelled' ? 'cancelled' : 'confirmed',
       visibility: googleEvent.visibility || 'default',
       source: 'google',
@@ -253,7 +286,11 @@ export class CalendlyCalendarProvider extends CalendarProvider_Base {
     return this.config.enabled && !!this.config.personalAccessToken;
   }
 
-  async getEvents(startDate: Date, endDate: Date, userId?: string): Promise<UnifiedCalendarEvent[]> {
+  async getEvents(
+    startDate: Date,
+    endDate: Date,
+    userId?: string
+  ): Promise<UnifiedCalendarEvent[]> {
     if (!this.isEnabled()) return [];
 
     try {
@@ -270,11 +307,20 @@ export class CalendlyCalendarProvider extends CalendarProvider_Base {
     }
   }
 
-  async createEvent(event: Partial<UnifiedCalendarEvent>, userId?: string): Promise<UnifiedCalendarEvent> {
-    throw new Error('Creating events through Calendly API is not supported. Events are created through booking flows.');
+  async createEvent(
+    event: Partial<UnifiedCalendarEvent>,
+    userId?: string
+  ): Promise<UnifiedCalendarEvent> {
+    throw new Error(
+      'Creating events through Calendly API is not supported. Events are created through booking flows.'
+    );
   }
 
-  async updateEvent(eventId: string, updates: Partial<UnifiedCalendarEvent>, userId?: string): Promise<UnifiedCalendarEvent> {
+  async updateEvent(
+    eventId: string,
+    updates: Partial<UnifiedCalendarEvent>,
+    userId?: string
+  ): Promise<UnifiedCalendarEvent> {
     // Calendly events can only be updated through their web interface
     // We can update our local tracking information
     if (updates.metadata?.meetingNotes) {
@@ -294,7 +340,11 @@ export class CalendlyCalendarProvider extends CalendarProvider_Base {
     await this.service.updateEventStatus(`calendly_event_${eventId}`, 'no_show');
   }
 
-  async getAvailability(startDate: Date, endDate: Date, userId?: string): Promise<CalendarAvailability> {
+  async getAvailability(
+    startDate: Date,
+    endDate: Date,
+    userId?: string
+  ): Promise<CalendarAvailability> {
     if (!this.isEnabled()) {
       return {
         provider: 'calendly',
@@ -334,12 +384,18 @@ export class CalendlyCalendarProvider extends CalendarProvider_Base {
       startTime: calendlyEvent.startTime,
       endTime: calendlyEvent.endTime,
       isAllDay: false, // Calendly events are never all-day
-      location: calendlyEvent.location ? {
-        type: calendlyEvent.location.type === 'zoom' ? 'online' : 
-              calendlyEvent.location.type === 'phone' ? 'phone' : 'physical',
-        details: calendlyEvent.location.details || calendlyEvent.location.location || '',
-        meetingUrl: calendlyEvent.location.join_url,
-      } : undefined,
+      location: calendlyEvent.location
+        ? {
+            type:
+              calendlyEvent.location.type === 'zoom'
+                ? 'online'
+                : calendlyEvent.location.type === 'phone'
+                  ? 'phone'
+                  : 'physical',
+            details: calendlyEvent.location.details || calendlyEvent.location.location || '',
+            meetingUrl: calendlyEvent.location.join_url,
+          }
+        : undefined,
       attendees: calendlyEvent.attendees || [],
       status: calendlyEvent.status === 'canceled' ? 'cancelled' : 'confirmed',
       visibility: 'default',
@@ -383,7 +439,11 @@ export class CalendarManager extends EventEmitter {
   }
 
   // Get unified events from all providers
-  async getAllEvents(startDate: Date, endDate: Date, userId?: string): Promise<UnifiedCalendarEvent[]> {
+  async getAllEvents(
+    startDate: Date,
+    endDate: Date,
+    userId?: string
+  ): Promise<UnifiedCalendarEvent[]> {
     const allEvents: UnifiedCalendarEvent[] = [];
 
     for (const [providerName, provider] of this.providers) {
@@ -404,7 +464,12 @@ export class CalendarManager extends EventEmitter {
   }
 
   // Get events from specific provider
-  async getEventsByProvider(provider: CalendarProvider, startDate: Date, endDate: Date, userId?: string): Promise<UnifiedCalendarEvent[]> {
+  async getEventsByProvider(
+    provider: CalendarProvider,
+    startDate: Date,
+    endDate: Date,
+    userId?: string
+  ): Promise<UnifiedCalendarEvent[]> {
     const providerInstance = this.providers.get(provider);
     if (!providerInstance) {
       throw new Error(`Provider ${provider} is not available`);
@@ -414,7 +479,11 @@ export class CalendarManager extends EventEmitter {
   }
 
   // Create event on specific provider
-  async createEvent(provider: CalendarProvider, event: Partial<UnifiedCalendarEvent>, userId?: string): Promise<UnifiedCalendarEvent> {
+  async createEvent(
+    provider: CalendarProvider,
+    event: Partial<UnifiedCalendarEvent>,
+    userId?: string
+  ): Promise<UnifiedCalendarEvent> {
     const providerInstance = this.providers.get(provider);
     if (!providerInstance) {
       throw new Error(`Provider ${provider} is not available`);
@@ -426,7 +495,12 @@ export class CalendarManager extends EventEmitter {
   }
 
   // Sync event between providers
-  async syncEventBetweenProviders(sourceProvider: CalendarProvider, targetProvider: CalendarProvider, eventId: string, userId?: string): Promise<void> {
+  async syncEventBetweenProviders(
+    sourceProvider: CalendarProvider,
+    targetProvider: CalendarProvider,
+    eventId: string,
+    userId?: string
+  ): Promise<void> {
     const sourceProviderInstance = this.providers.get(sourceProvider);
     const targetProviderInstance = this.providers.get(targetProvider);
 
@@ -449,7 +523,7 @@ export class CalendarManager extends EventEmitter {
 
       // Create event in target provider
       await targetProviderInstance.createEvent(sourceEvent, userId);
-      
+
       log.info(`Synced event ${eventId} from ${sourceProvider} to ${targetProvider}`);
       this.emit('eventSynced', { sourceProvider, targetProvider, event: sourceEvent });
     } catch (error) {
@@ -459,7 +533,11 @@ export class CalendarManager extends EventEmitter {
   }
 
   // Get combined availability from all providers
-  async getCombinedAvailability(startDate: Date, endDate: Date, userId?: string): Promise<CalendarAvailability[]> {
+  async getCombinedAvailability(
+    startDate: Date,
+    endDate: Date,
+    userId?: string
+  ): Promise<CalendarAvailability[]> {
     const availability: CalendarAvailability[] = [];
 
     for (const [providerName, provider] of this.providers) {
@@ -486,7 +564,7 @@ export class CalendarManager extends EventEmitter {
         // Check for time overlap
         if (this.eventsOverlap(event1, event2)) {
           const conflictId = `${event1.id}_${event2.id}`;
-          
+
           // Skip if conflict already exists
           if (this.conflicts.some(c => c.id === conflictId)) continue;
 
@@ -504,7 +582,7 @@ export class CalendarManager extends EventEmitter {
     }
 
     this.conflicts.push(...newConflicts);
-    
+
     if (newConflicts.length > 0) {
       this.emit('conflictsDetected', newConflicts);
       log.warn(`Detected ${newConflicts.length} new calendar conflicts`);
@@ -521,7 +599,10 @@ export class CalendarManager extends EventEmitter {
   }
 
   // Resolve conflict
-  async resolveConflict(conflictId: string, resolution: CalendarSyncConflict['resolution']): Promise<void> {
+  async resolveConflict(
+    conflictId: string,
+    resolution: CalendarSyncConflict['resolution']
+  ): Promise<void> {
     const conflict = this.conflicts.find(c => c.id === conflictId);
     if (!conflict) {
       throw new Error(`Conflict ${conflictId} not found`);

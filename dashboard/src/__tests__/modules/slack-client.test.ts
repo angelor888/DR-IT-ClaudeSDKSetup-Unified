@@ -16,7 +16,7 @@ jest.mock('../../core/services/base.service', () => ({
       warn: jest.fn(),
       error: jest.fn(),
     };
-    
+
     constructor(options: any) {
       this.name = options.name;
     }
@@ -32,7 +32,7 @@ jest.mock('../../core/services/base.service', () => ({
     protected async request(config: any): Promise<any> {
       throw new Error('request not mocked');
     }
-  }
+  },
 }));
 
 jest.mock('../../core/config', () => ({
@@ -43,8 +43,8 @@ jest.mock('../../core/config', () => ({
       },
     },
     monitoring: {
-      logLevel: 'info'
-    }
+      logLevel: 'info',
+    },
   },
 }));
 
@@ -96,14 +96,14 @@ describe('SlackClient', () => {
       });
 
       await expect(client.testAuth()).rejects.toThrow(SlackAuthError);
-      
+
       mockGet.mockResolvedValueOnce({
         data: {
           ok: false,
           error: 'invalid_auth',
         },
       });
-      
+
       await expect(client.testAuth()).rejects.toThrow('Slack authentication failed: invalid_auth');
     });
 

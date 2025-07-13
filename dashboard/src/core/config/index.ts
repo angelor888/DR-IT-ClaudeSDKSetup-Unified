@@ -85,7 +85,7 @@ function loadConfigFromEnv(): DeepPartial<AppConfig> {
   }
 
   const nodeEnv = (env.NODE_ENV as Environment) || 'development';
-  
+
   return {
     server: {
       port: parseNumber(env.PORT, 8080),
@@ -94,7 +94,9 @@ function loadConfigFromEnv(): DeepPartial<AppConfig> {
       corsOrigin: parseCorsOrigin(env.CORS_ORIGIN),
       corsCredentials: parseBoolean(env.CORS_CREDENTIALS, true),
       isProduction: nodeEnv === 'production',
-      baseUrl: env.BASE_URL || (nodeEnv === 'production' ? 'https://dashboard.duetright.com' : 'http://localhost:8080'),
+      baseUrl:
+        env.BASE_URL ||
+        (nodeEnv === 'production' ? 'https://dashboard.duetright.com' : 'http://localhost:8080'),
     },
     firebase: firebaseConfig,
     services: {

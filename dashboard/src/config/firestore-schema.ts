@@ -103,7 +103,7 @@ export interface CommunicationPreferences {
       schedule: Array<{
         day: string;
         start: string; // HH:mm format
-        end: string;   // HH:mm format
+        end: string; // HH:mm format
       }>;
     };
   };
@@ -258,15 +258,15 @@ export const REQUIRED_INDEXES = [
     collection: 'messages',
     fields: [
       { field: 'conversationId', order: 'ASCENDING' },
-      { field: 'timestamp', order: 'DESCENDING' }
-    ]
+      { field: 'timestamp', order: 'DESCENDING' },
+    ],
   },
   {
     collection: 'messages',
     fields: [
       { field: 'platform', order: 'ASCENDING' },
-      { field: 'timestamp', order: 'DESCENDING' }
-    ]
+      { field: 'timestamp', order: 'DESCENDING' },
+    ],
   },
   {
     collection: 'messages',
@@ -274,52 +274,52 @@ export const REQUIRED_INDEXES = [
       { field: 'platform', order: 'ASCENDING' },
       { field: 'teamId', order: 'ASCENDING' },
       { field: 'channelId', order: 'ASCENDING' },
-      { field: 'platformMessageId', order: 'ASCENDING' }
-    ]
+      { field: 'platformMessageId', order: 'ASCENDING' },
+    ],
   },
-  
+
   // Conversations
   {
     collection: 'conversations',
     fields: [
       { field: 'userId', order: 'ASCENDING' },
-      { field: 'lastMessageAt', order: 'DESCENDING' }
-    ]
+      { field: 'lastMessageAt', order: 'DESCENDING' },
+    ],
   },
   {
     collection: 'conversations',
     fields: [
       { field: 'platform', order: 'ASCENDING' },
       { field: 'status', order: 'ASCENDING' },
-      { field: 'lastMessageAt', order: 'DESCENDING' }
-    ]
+      { field: 'lastMessageAt', order: 'DESCENDING' },
+    ],
   },
-  
+
   // Templates
   {
     collection: 'message_templates',
     fields: [
       { field: 'userId', order: 'ASCENDING' },
       { field: 'deleted', order: 'ASCENDING' },
-      { field: 'usageCount', order: 'DESCENDING' }
-    ]
+      { field: 'usageCount', order: 'DESCENDING' },
+    ],
   },
-  
+
   // AI Tasks
   {
     collection: 'ai_tasks',
     fields: [
       { field: 'status', order: 'ASCENDING' },
-      { field: 'createdAt', order: 'ASCENDING' }
-    ]
+      { field: 'createdAt', order: 'ASCENDING' },
+    ],
   },
-  
+
   // Grok Usage
   {
     collection: 'grok_usage',
     fields: [
       { field: 'userId', order: 'ASCENDING' },
-      { field: 'date', order: 'ASCENDING' }
-    ]
-  }
+      { field: 'date', order: 'ASCENDING' },
+    ],
+  },
 ] as const;

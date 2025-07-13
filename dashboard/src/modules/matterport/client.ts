@@ -18,7 +18,7 @@ export class MatterportClient extends BaseService {
   constructor(options: Partial<BaseServiceOptions> = {}) {
     // Get Matterport configuration
     const matterportConfig = config.services.matterport;
-    
+
     if (!matterportConfig.apiKey) {
       throw new Error('Matterport API key is required. Please provide MATTERPORT_API_KEY.');
     }
@@ -209,10 +209,7 @@ export class MatterportClient extends BaseService {
     updates: Partial<MatterportAnnotation>
   ): Promise<MatterportAnnotation> {
     try {
-      const response = await this.patch(
-        `/models/${modelId}/annotations/${annotationId}`,
-        updates
-      );
+      const response = await this.patch(`/models/${modelId}/annotations/${annotationId}`, updates);
       return response.data.data;
     } catch (error) {
       this.log.error(`Failed to update annotation ${annotationId}`, error);
@@ -408,12 +405,12 @@ export class MatterportClient extends BaseService {
   async checkHealth() {
     try {
       const startTime = Date.now();
-      
+
       // Use a simple API call to check if Matterport API is accessible
       await this.get('/models?limit=1');
-      
+
       const responseTime = Date.now() - startTime;
-      
+
       return {
         name: 'matterport',
         status: 'healthy' as const,

@@ -55,13 +55,9 @@ export class SlackReporter {
       .map(c => `• \`${c.name}\` - ${c.description}`)
       .join('\n');
 
-    const featuresText = data.features
-      .map(f => `• ${f}`)
-      .join('\n');
+    const featuresText = data.features.map(f => `• ${f}`).join('\n');
 
-    const qualityText = data.qualityMetrics
-      .map(q => `• ${q}`)
-      .join('\n');
+    const qualityText = data.qualityMetrics.map(q => `• ${q}`).join('\n');
 
     return `🎯 **${data.title}**
 
@@ -100,7 +96,7 @@ ${data.nextPhase}
     try {
       const formattedReport = this.formatReport(data);
       const channelId = '#it-report'; // Will be resolved to channel ID by Slack service
-      
+
       await this.slackService.sendMessage(channelId, formattedReport, {
         saveToDb: true,
       });

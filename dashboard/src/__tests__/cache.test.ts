@@ -66,7 +66,7 @@ describe('Redis Cache', () => {
     it('should delete keys', async () => {
       const key = 'test:delete';
       await cache.set(key, 'value');
-      
+
       const deleted = await cache.delete(key);
       expect(deleted).toBe(true);
 
@@ -77,9 +77,9 @@ describe('Redis Cache', () => {
     it('should handle TTL correctly', async () => {
       const key = 'test:ttl';
       const value = 'expires';
-      
+
       await cache.set(key, value, 1); // 1 second TTL
-      
+
       // Value should exist immediately
       let result = await cache.get(key);
       expect(result).toBe(value);
@@ -124,7 +124,7 @@ describe('Redis Cache', () => {
   describe('Health Check', () => {
     it('should report healthy when connected', async () => {
       const health = await cache.healthCheck();
-      
+
       expect(health.name).toBe('redis');
       expect(health.status).toBe('healthy');
       expect(health.message).toContain('Redis cache operational');
@@ -137,7 +137,7 @@ describe('Redis Cache', () => {
       mockRedis.ping.mockRejectedValueOnce(new Error('Connection refused'));
 
       const health = await cache.healthCheck();
-      
+
       expect(health.status).toBe('unhealthy');
       expect(health.message).toBe('Connection refused');
     });
@@ -148,7 +148,7 @@ describe('Cache Strategies', () => {
   describe('User Data Strategy', () => {
     it('should generate correct key and TTL', () => {
       const strategy = CacheStrategies.userData('user123');
-      
+
       expect(strategy.key).toBe('user:user123');
       expect(strategy.ttl).toBe(300); // 5 minutes
     });
@@ -157,7 +157,7 @@ describe('Cache Strategies', () => {
   describe('Service Health Strategy', () => {
     it('should generate correct key and TTL', () => {
       const strategy = CacheStrategies.serviceHealth('slack');
-      
+
       expect(strategy.key).toBe('health:slack');
       expect(strategy.ttl).toBe(30); // 30 seconds
     });
@@ -166,7 +166,7 @@ describe('Cache Strategies', () => {
   describe('API Response Strategy', () => {
     it('should generate correct key and TTL', () => {
       const strategy = CacheStrategies.apiResponse('/api/users', 'page=1&limit=10');
-      
+
       expect(strategy.key).toBe('api:/api/users:page=1&limit=10');
       expect(strategy.ttl).toBe(60); // 1 minute
     });
@@ -175,7 +175,7 @@ describe('Cache Strategies', () => {
   describe('Service Health Strategy', () => {
     it('should generate correct key and TTL', () => {
       const strategy = CacheStrategies.serviceHealth('jobber');
-      
+
       expect(strategy.key).toBe('health:jobber');
       expect(strategy.ttl).toBe(30); // 30 seconds
     });
@@ -201,7 +201,7 @@ describe('Cache Strategies', () => {
   describe('Google Calendar Strategy', () => {
     it('should generate correct key', () => {
       const strategy = CacheStrategies.googleCalendarEvents('primary', '2025-07-12');
-      
+
       expect(strategy.key).toBe('google:calendar:primary:2025-07-12');
       expect(strategy.ttl).toBe(300); // 5 minutes
     });
@@ -216,7 +216,7 @@ describe('Cache Middleware', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     req = {
       method: 'GET',
       path: '/api/users',
@@ -240,7 +240,7 @@ describe('Cache Middleware', () => {
   describe('Cache Hit/Miss', () => {
     it('should return cached data on hit', async () => {
       const cachedData = { users: ['user1', 'user2'] };
-      
+
       // Pre-populate cache
       await cache.set('api:/api/users:{"page":"1"}', cachedData);
 
@@ -263,7 +263,7 @@ describe('Cache Middleware', () => {
     it('should cache response after miss', async () => {
       const responseData = { users: ['user1', 'user2'] };
       const middleware = cacheMiddleware();
-      
+
       await middleware(req as Request, res as Response, next);
 
       // Simulate response
@@ -280,7 +280,7 @@ describe('Cache Middleware', () => {
   describe('Request Filtering', () => {
     it('should skip caching for non-GET requests', async () => {
       req.method = 'POST';
-      
+
       const middleware = cacheMiddleware();
       await middleware(req as Request, res as Response, next);
 
@@ -290,7 +290,7 @@ describe('Cache Middleware', () => {
 
     it('should respect condition function', async () => {
       const condition = jest.fn().mockReturnValue(false);
-      
+
       const middleware = cacheMiddleware({ condition });
       await middleware(req as Request, res as Response, next);
 
@@ -344,7 +344,7 @@ describe('Cache Invalidation Middleware', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     req = {
       user: { ...mockDecodedToken, id: 'user123', uid: 'user123', sub: 'user123' },
       params: { id: '456' },
@@ -373,8 +373,8 @@ describe('Cache Invalidation Middleware', () => {
   });
 
   it('should support dynamic pattern generation', async () => {
-    const middleware = invalidateCache((req) => [`user:${req.user?.id}:*`]);
-    
+    const middleware = invalidateCache(req => [`user:${req.user?.id}:*`]);
+
     const deleteSpy = jest.spyOn(cache, 'deletePattern');
     await middleware(req as Request, res as Response, next);
 

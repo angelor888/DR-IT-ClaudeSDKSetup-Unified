@@ -40,7 +40,7 @@ export async function createApp(): Promise<{ app: Application; server: any }> {
 
   if (config.features?.jobs?.enabled !== false) {
     initializeJobQueues();
-    
+
     if (config.features?.scheduler?.enabled !== false) {
       const scheduler = initializeScheduler();
       scheduler.start();

@@ -11,8 +11,9 @@ export async function authenticateSocket(
   next: (err?: ExtendedError) => void
 ): Promise<void> {
   try {
-    const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
-    
+    const token =
+      socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
+
     if (!token) {
       log.warn('WebSocket connection attempt without token');
       return next(new Error('Authentication token required'));
@@ -20,7 +21,7 @@ export async function authenticateSocket(
 
     // Verify the Firebase ID token
     const decodedToken = await getAuth().verifyIdToken(token);
-    
+
     if (!decodedToken) {
       log.warn('Invalid authentication token');
       return next(new Error('Invalid authentication token'));
@@ -28,7 +29,7 @@ export async function authenticateSocket(
 
     // Get user record for additional info
     const userRecord = await getAuth().getUser(decodedToken.uid);
-    
+
     // Attach user information to socket
     const socketWithAuth = socket as SocketWithAuth;
     socketWithAuth.userId = decodedToken.uid;

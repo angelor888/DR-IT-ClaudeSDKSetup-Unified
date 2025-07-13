@@ -130,7 +130,7 @@ export class SlackService {
         return {
           success: false,
           messageId: options?.messageId || '',
-          info: { error: response.error || 'Failed to send message' }
+          info: { error: response.error || 'Failed to send message' },
         };
       }
 
@@ -170,14 +170,14 @@ export class SlackService {
           channel: message.channel,
           timestamp: message.ts,
           threadTimestamp: options?.thread_ts,
-        }
+        },
       };
     } catch (error) {
       log.error('Failed to send message', error);
       return {
         success: false,
         messageId: options?.messageId || '',
-        info: { error: (error as Error).message }
+        info: { error: (error as Error).message },
       };
     }
   }
@@ -282,7 +282,7 @@ export class SlackService {
   }> {
     const response = await this.client.testAuth();
     log.debug('Auth test response', { response });
-    
+
     if (!response || !response.ok || !response.data) {
       log.error('Auth test failed', { response });
       throw new Error(response?.error || 'Failed to get bot info - no response data');

@@ -20,10 +20,7 @@ router.use(requireAuth);
 // Get communication statistics
 router.get(
   '/',
-  [
-    query('startDate').optional().isISO8601(),
-    query('endDate').optional().isISO8601(),
-  ],
+  [query('startDate').optional().isISO8601(), query('endDate').optional().isISO8601()],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -32,10 +29,13 @@ router.get(
 
       // Default to last 30 days if not specified
       const end = endDate ? new Date(endDate as string) : new Date();
-      const start = startDate ? new Date(startDate as string) : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const start = startDate
+        ? new Date(startDate as string)
+        : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
 
       // Get messages in date range
-      const messagesSnapshot = await db.collection('messages')
+      const messagesSnapshot = await db
+        .collection('messages')
         .where('userId', '==', userId)
         .where('timestamp', '>=', start)
         .where('timestamp', '<=', end)
@@ -45,7 +45,7 @@ router.get(
 
       // Calculate stats
       const totalMessages = messages.length;
-      
+
       // Platform breakdown
       const platforms = {
         slack: messages.filter(m => m.platform === 'slack').length,
@@ -64,8 +64,14 @@ router.get(
       // Response time calculation
       const responseTimesMs: number[] = [];
       messages.forEach(msg => {
-        if ((msg as any).type === 'outgoing' && (msg as any).replyToTimestamp && (msg as any).timestamp) {
-          const responseTime = new Date((msg as any).timestamp).getTime() - new Date((msg as any).replyToTimestamp).getTime();
+        if (
+          (msg as any).type === 'outgoing' &&
+          (msg as any).replyToTimestamp &&
+          (msg as any).timestamp
+        ) {
+          const responseTime =
+            new Date((msg as any).timestamp).getTime() -
+            new Date((msg as any).replyToTimestamp).getTime();
           responseTimesMs.push(responseTime);
         }
       });
@@ -75,9 +81,10 @@ router.get(
 
       const responseTime = {
         fastest: responseTimeMinutes[0] || 0,
-        average: responseTimeMinutes.length > 0 
-          ? responseTimeMinutes.reduce((a, b) => a + b, 0) / responseTimeMinutes.length 
-          : 0,
+        average:
+          responseTimeMinutes.length > 0
+            ? responseTimeMinutes.reduce((a, b) => a + b, 0) / responseTimeMinutes.length
+            : 0,
         median: responseTimeMinutes[Math.floor(responseTimeMinutes.length / 2)] || 0,
         slowest: responseTimeMinutes[responseTimeMinutes.length - 1] || 0,
       };
@@ -93,9 +100,13 @@ router.get(
       // Top contacts
       const contactMap = new Map<string, { count: number; name: string; lastContact: Date }>();
       messages.forEach(msg => {
-        const contactId = (msg as any).type === 'incoming' ? (msg as any).sender?.id : (msg as any).recipient?.id;
-        const contactName = (msg as any).type === 'incoming' ? (msg as any).sender?.name : (msg as any).recipient?.name;
-        
+        const contactId =
+          (msg as any).type === 'incoming' ? (msg as any).sender?.id : (msg as any).recipient?.id;
+        const contactName =
+          (msg as any).type === 'incoming'
+            ? (msg as any).sender?.name
+            : (msg as any).recipient?.name;
+
         if (contactId) {
           const existing = contactMap.get(contactId);
           if (existing) {
@@ -143,7 +154,7 @@ router.get(
             start,
             end,
           },
-        }
+        },
       });
     } catch (error) {
       log.error('Failed to get stats', error);
@@ -155,10 +166,7 @@ router.get(
 // Get AI usage stats
 router.get(
   '/ai-usage',
-  [
-    query('startDate').optional().isISO8601(),
-    query('endDate').optional().isISO8601(),
-  ],
+  [query('startDate').optional().isISO8601(), query('endDate').optional().isISO8601()],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -167,10 +175,13 @@ router.get(
 
       // Default to last 30 days if not specified
       const end = endDate ? new Date(endDate as string) : new Date();
-      const start = startDate ? new Date(startDate as string) : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const start = startDate
+        ? new Date(startDate as string)
+        : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
 
       // Query Grok usage stats
-      const usageSnapshot = await db.collection('grok_usage')
+      const usageSnapshot = await db
+        .collection('grok_usage')
         .where('userId', '==', userId)
         .where('date', '>=', start)
         .where('date', '<=', end)
@@ -210,7 +221,7 @@ router.get(
             start,
             end,
           },
-        }
+        },
       });
     } catch (error) {
       log.error('Failed to get AI usage stats', error);

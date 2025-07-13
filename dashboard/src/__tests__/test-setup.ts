@@ -21,7 +21,7 @@ export const mockDecodedToken: DecodedIdToken = {
     sign_in_provider: 'password',
     sign_in_second_factor: undefined,
     second_factor_identifier: undefined,
-    tenant: undefined
+    tenant: undefined,
   },
   iat: Date.now() / 1000,
   iss: 'https://securetoken.google.com/test-project',
@@ -31,7 +31,7 @@ export const mockDecodedToken: DecodedIdToken = {
   email_verified: true,
   phone_number: undefined,
   name: 'Test User',
-  picture: undefined
+  picture: undefined,
 };
 
 // Mock user for authenticated requests
@@ -39,7 +39,7 @@ export const mockUser = {
   ...mockDecodedToken,
   id: 'test-user-id',
   roles: ['user'],
-  teamId: 'test-team-id'
+  teamId: 'test-team-id',
 };
 
 // Mock Express Request
@@ -54,7 +54,7 @@ export const mockRequest = (overrides = {}) => ({
   path: '/test',
   method: 'GET',
   get: jest.fn(),
-  ...overrides
+  ...overrides,
 });
 
 // Mock Express Response
@@ -75,7 +75,8 @@ export const mockNext = jest.fn();
 process.env.NODE_ENV = 'test';
 process.env.FIREBASE_PROJECT_ID = 'test-project';
 process.env.FIREBASE_CLIENT_EMAIL = 'test@test-project.iam.gserviceaccount.com';
-process.env.FIREBASE_PRIVATE_KEY = '-----BEGIN PRIVATE KEY-----\\ntest-key\\n-----END PRIVATE KEY-----';
+process.env.FIREBASE_PRIVATE_KEY =
+  '-----BEGIN PRIVATE KEY-----\\ntest-key\\n-----END PRIVATE KEY-----';
 
 // Mock console methods to reduce noise in tests
 global.console = {

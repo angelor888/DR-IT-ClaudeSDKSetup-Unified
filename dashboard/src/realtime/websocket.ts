@@ -28,11 +28,11 @@ export class WebSocketServer {
     this.handlers = new EventHandlers(this.io);
     this.setupMiddleware();
     this.setupConnectionHandlers();
-    
+
     // Initialize Communications namespace
     initializeCommunicationsRealtime(this.io);
     this.log.info('Communications namespace initialized');
-    
+
     // Initialize Grok service if enabled
     if (config.features.grokEnabled) {
       try {
@@ -70,7 +70,7 @@ export class WebSocketServer {
       this.setupSocketEventHandlers(socketWithAuth);
 
       // Handle disconnection
-      socketWithAuth.on('disconnect', (reason) => {
+      socketWithAuth.on('disconnect', reason => {
         this.log.info(`User disconnected: ${socketWithAuth.userId}`, {
           userId: socketWithAuth.userId,
           socketId: socketWithAuth.id,
@@ -79,7 +79,7 @@ export class WebSocketServer {
       });
 
       // Handle errors
-      socketWithAuth.on('error', (error) => {
+      socketWithAuth.on('error', error => {
         this.log.error('Socket error', {
           userId: socketWithAuth.userId,
           socketId: socketWithAuth.id,
@@ -97,7 +97,7 @@ export class WebSocketServer {
     });
 
     // Handle notification preferences
-    socket.on(EventTypes.UPDATE_NOTIFICATION_PREFS, (preferences) => {
+    socket.on(EventTypes.UPDATE_NOTIFICATION_PREFS, preferences => {
       this.handlers.handleNotificationPreferences(socket, preferences);
     });
 
@@ -112,9 +112,9 @@ export class WebSocketServer {
         socket.join(roomName);
         socket.emit(EventTypes.ROOM_JOINED, { room: roomName });
       } else {
-        socket.emit(EventTypes.ERROR, { 
+        socket.emit(EventTypes.ERROR, {
           message: 'Unauthorized to join room',
-          room: roomName 
+          room: roomName,
         });
       }
     });
@@ -128,14 +128,14 @@ export class WebSocketServer {
 
   private setupGrokHandlers(socket: SocketWithAuth): void {
     if (!this.grokService) return;
-    
+
     this.grokService.handleWebSocketConnection(socket, socket.userId);
   }
 
   private isAuthorizedForRoom(socket: SocketWithAuth, room: string): boolean {
     // Implement room authorization logic
     const [type, id] = room.split(':');
-    
+
     switch (type) {
       case 'user':
         return id === socket.userId;

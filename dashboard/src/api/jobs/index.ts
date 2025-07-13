@@ -22,10 +22,7 @@ const schemas = {
 
   addNotificationJob: Joi.object({
     type: Joi.string().valid('email', 'sms', 'push').required(),
-    to: Joi.alternatives().try(
-      Joi.string(),
-      Joi.array().items(Joi.string())
-    ).required(),
+    to: Joi.alternatives().try(Joi.string(), Joi.array().items(Joi.string())).required(),
     subject: Joi.string().when('type', { is: 'email', then: Joi.required() }),
     body: Joi.string().required(),
     data: Joi.object().optional(),
@@ -67,13 +64,17 @@ const schemas = {
  *                   paused:
  *                     type: number
  */
-router.get('/queues', authenticate, asyncHandler(async (_req, res) => {
-  const counts = await jobQueues.getJobCounts();
-  res.json({
-    success: true,
-    data: counts,
-  });
-}));
+router.get(
+  '/queues',
+  authenticate,
+  asyncHandler(async (_req, res) => {
+    const counts = await jobQueues.getJobCounts();
+    res.json({
+      success: true,
+      data: counts,
+    });
+  })
+);
 
 /**
  * @swagger
@@ -105,13 +106,14 @@ router.get('/queues', authenticate, asyncHandler(async (_req, res) => {
  *       201:
  *         description: Job created successfully
  */
-router.post('/sync', 
-  authenticate, 
+router.post(
+  '/sync',
+  authenticate,
   rateLimiters.write,
   validate(schemas.addSyncJob),
   asyncHandler(async (req, res) => {
     const { service, entityType, entityId, force } = req.body;
-    
+
     const job = await jobQueues.addSyncJob({
       service,
       entityType,
@@ -169,13 +171,14 @@ router.post('/sync',
  *       201:
  *         description: Notification job created
  */
-router.post('/notification',
+router.post(
+  '/notification',
   authenticate,
   rateLimiters.write,
   validate(schemas.addNotificationJob),
   asyncHandler(async (req, res) => {
     const { type, to, subject, body, data } = req.body;
-    
+
     const job = await jobQueues.addNotificationJob({
       type,
       to,
@@ -208,17 +211,21 @@ router.post('/notification',
  *       200:
  *         description: Scheduled jobs status
  */
-router.get('/scheduler', authenticate, asyncHandler(async (_req, res) => {
-  const runningJobs = scheduler.getRunningJobs();
-  
-  res.json({
-    success: true,
-    data: {
-      running: runningJobs,
-      total: runningJobs.length,
-    },
-  });
-}));
+router.get(
+  '/scheduler',
+  authenticate,
+  asyncHandler(async (_req, res) => {
+    const runningJobs = scheduler.getRunningJobs();
+
+    res.json({
+      success: true,
+      data: {
+        running: runningJobs,
+        total: runningJobs.length,
+      },
+    });
+  })
+);
 
 /**
  * @swagger
@@ -243,13 +250,14 @@ router.get('/scheduler', authenticate, asyncHandler(async (_req, res) => {
  *       200:
  *         description: Job triggered successfully
  */
-router.post('/scheduler/trigger',
+router.post(
+  '/scheduler/trigger',
   authenticate,
   rateLimiters.write,
   validate(schemas.triggerScheduledJob),
   asyncHandler(async (req, res) => {
     const { name } = req.body;
-    
+
     // Only allow admins to trigger scheduled jobs
     if (!req.user?.roles?.includes('admin')) {
       return res.status(403).json({

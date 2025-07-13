@@ -101,7 +101,7 @@ export class GoogleService {
   }> {
     try {
       const isAuth = await this.isAuthenticated(userId);
-      
+
       if (!isAuth) {
         return {
           isAuthenticated: false,
@@ -116,9 +116,18 @@ export class GoogleService {
       // Test each service
       const [userInfo, calendarTest, gmailTest, driveTest] = await Promise.allSettled([
         this.getUserInfo(userId),
-        this.calendar.listCalendars(userId).then(() => true).catch(() => false),
-        this.gmail.getUnreadCount(userId).then(() => true).catch(() => false),
-        this.drive.listFiles({ pageSize: 1, userId }).then(() => true).catch(() => false),
+        this.calendar
+          .listCalendars(userId)
+          .then(() => true)
+          .catch(() => false),
+        this.gmail
+          .getUnreadCount(userId)
+          .then(() => true)
+          .catch(() => false),
+        this.drive
+          .listFiles({ pageSize: 1, userId })
+          .then(() => true)
+          .catch(() => false),
       ]);
 
       return {
@@ -156,7 +165,7 @@ export class GoogleService {
     try {
       // Use the client's health check as the base
       const clientHealth = await this.client.checkHealth();
-      
+
       // If client is unhealthy, return that immediately
       if (clientHealth.status === 'unhealthy') {
         return clientHealth;
@@ -164,7 +173,7 @@ export class GoogleService {
 
       // If client is healthy or degraded, test individual services
       const isAuth = await this.isAuthenticated();
-      
+
       if (!isAuth) {
         return {
           name: 'google',
@@ -185,9 +194,18 @@ export class GoogleService {
 
       // Test individual services quickly
       const serviceTests = await Promise.allSettled([
-        this.calendar.listCalendars().then(() => 'healthy').catch(() => 'unhealthy'),
-        this.gmail.getUnreadCount().then(() => 'healthy').catch(() => 'unhealthy'),
-        this.drive.listFiles({ pageSize: 1 }).then(() => 'healthy').catch(() => 'unhealthy'),
+        this.calendar
+          .listCalendars()
+          .then(() => 'healthy')
+          .catch(() => 'unhealthy'),
+        this.gmail
+          .getUnreadCount()
+          .then(() => 'healthy')
+          .catch(() => 'unhealthy'),
+        this.drive
+          .listFiles({ pageSize: 1 })
+          .then(() => 'healthy')
+          .catch(() => 'unhealthy'),
       ]);
 
       const services = {

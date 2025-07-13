@@ -109,7 +109,7 @@ router.post(
       // Check if auto-response is needed
       const twilioService = getTwilioServiceInstance();
       const autoResponse = await twilioService.getAutoResponseForNumber(webhook.From);
-      
+
       if (autoResponse) {
         const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>

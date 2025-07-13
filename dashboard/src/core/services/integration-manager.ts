@@ -4,7 +4,13 @@ import { EventEmitter } from 'events';
 
 const log = logger.child('IntegrationManager');
 
-export type ServiceType = 'calendar' | 'communication' | 'crm' | 'payment' | 'storage' | 'analytics';
+export type ServiceType =
+  | 'calendar'
+  | 'communication'
+  | 'crm'
+  | 'payment'
+  | 'storage'
+  | 'analytics';
 export type ServiceStatus = 'active' | 'disabled' | 'error' | 'connecting' | 'unknown';
 
 export interface ServiceConfig {
@@ -80,14 +86,14 @@ export abstract class BaseServiceClient extends EventEmitter {
   protected updateMetrics(responseTime: number, isError: boolean = false) {
     this.metrics.requestCount++;
     this.metrics.lastRequest = new Date();
-    
+
     if (isError) {
       this.metrics.errorCount++;
     }
 
     // Calculate rolling average response time
     const alpha = 0.1; // Smoothing factor
-    this.metrics.averageResponseTime = 
+    this.metrics.averageResponseTime =
       this.metrics.averageResponseTime * (1 - alpha) + responseTime * alpha;
   }
 }
@@ -119,7 +125,9 @@ export class IntegrationManager extends EventEmitter {
   }
 
   // Register a new service integration
-  async register(integration: Omit<ServiceIntegration, 'health' | 'metrics' | 'status'>): Promise<void> {
+  async register(
+    integration: Omit<ServiceIntegration, 'health' | 'metrics' | 'status'>
+  ): Promise<void> {
     try {
       log.info(`Registering integration: ${integration.name}`);
 
@@ -132,7 +140,7 @@ export class IntegrationManager extends EventEmitter {
 
       // Initialize the service client
       await integration.client.initialize();
-      
+
       // Perform initial health check
       const health = await integration.client.healthCheck();
       fullIntegration.health = health;
@@ -142,11 +150,11 @@ export class IntegrationManager extends EventEmitter {
       this.integrations.set(integration.id, fullIntegration);
 
       // Listen for client events
-      integration.client.on('error', (error) => {
+      integration.client.on('error', error => {
         this.handleClientError(integration.id, error);
       });
 
-      integration.client.on('statusChange', (status) => {
+      integration.client.on('statusChange', status => {
         this.updateIntegrationStatus(integration.id, status);
       });
 
@@ -199,7 +207,7 @@ export class IntegrationManager extends EventEmitter {
     }
 
     integration.enabled = enabled;
-    
+
     if (enabled) {
       await integration.client.initialize();
       integration.status = 'active';
@@ -221,9 +229,10 @@ export class IntegrationManager extends EventEmitter {
     const integrations = this.getAllIntegrations();
     const active = integrations.filter(i => i.status === 'active').length;
     const errors = integrations.filter(i => i.status === 'error').length;
-    
-    const avgResponseTime = integrations.reduce((sum, i) => 
-      sum + i.metrics.averageResponseTime, 0) / integrations.length || 0;
+
+    const avgResponseTime =
+      integrations.reduce((sum, i) => sum + i.metrics.averageResponseTime, 0) /
+        integrations.length || 0;
 
     return {
       totalIntegrations: integrations.length,
@@ -241,7 +250,7 @@ export class IntegrationManager extends EventEmitter {
       integration.health.status = 'error';
       integration.health.errorMessage = error.message;
       integration.health.lastCheck = new Date();
-      
+
       this.emit('integrationError', { integration, error });
       log.error(`Integration ${integration.name} error:`, error);
     }
@@ -253,20 +262,23 @@ export class IntegrationManager extends EventEmitter {
       integration.status = status;
       integration.health.status = status;
       integration.health.lastCheck = new Date();
-      
+
       this.emit('integrationStatusChanged', integration);
     }
   }
 
   private startHealthChecking(): void {
     // Health check every 5 minutes
-    this.healthCheckInterval = setInterval(async () => {
-      await this.performHealthChecks();
-    }, 5 * 60 * 1000);
+    this.healthCheckInterval = setInterval(
+      async () => {
+        await this.performHealthChecks();
+      },
+      5 * 60 * 1000
+    );
   }
 
   private async performHealthChecks(): Promise<void> {
-    const promises = Array.from(this.integrations.values()).map(async (integration) => {
+    const promises = Array.from(this.integrations.values()).map(async integration => {
       if (!integration.enabled) return;
 
       try {
@@ -288,9 +300,7 @@ export class IntegrationManager extends EventEmitter {
       clearInterval(this.healthCheckInterval);
     }
 
-    const unregisterPromises = Array.from(this.integrations.keys()).map(id => 
-      this.unregister(id)
-    );
+    const unregisterPromises = Array.from(this.integrations.keys()).map(id => this.unregister(id));
 
     await Promise.allSettled(unregisterPromises);
   }

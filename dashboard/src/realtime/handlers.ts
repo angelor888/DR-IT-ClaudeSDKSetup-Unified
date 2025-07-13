@@ -1,12 +1,7 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { logger } from '../core/logging/logger';
 import { getHealthMonitor } from '../core/services/health-monitor';
-import { 
-  SocketWithAuth, 
-  EventTypes, 
-  ServiceHealthData,
-  NotificationData 
-} from './types';
+import { SocketWithAuth, EventTypes, ServiceHealthData, NotificationData } from './types';
 
 export class EventHandlers {
   private readonly log = logger.child('WebSocketHandlers');
@@ -21,7 +16,7 @@ export class EventHandlers {
     try {
       // Send current health status immediately
       const health = await this.healthMonitor.checkServiceHealth(serviceName);
-      
+
       socket.emit(EventTypes.SERVICE_HEALTH_UPDATE, {
         service: serviceName,
         health,
@@ -37,7 +32,7 @@ export class EventHandlers {
         service: serviceName,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      
+
       socket.emit(EventTypes.ERROR, {
         message: 'Failed to subscribe to service health',
         service: serviceName,
@@ -45,10 +40,7 @@ export class EventHandlers {
     }
   }
 
-  async handleNotificationPreferences(
-    socket: SocketWithAuth,
-    preferences: any
-  ): Promise<void> {
+  async handleNotificationPreferences(socket: SocketWithAuth, preferences: any): Promise<void> {
     try {
       // TODO: Store preferences in database
       this.log.info('Notification preferences updated', {
@@ -65,7 +57,7 @@ export class EventHandlers {
         userId: socket.userId,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      
+
       socket.emit(EventTypes.ERROR, {
         message: 'Failed to update notification preferences',
       });
@@ -74,10 +66,9 @@ export class EventHandlers {
 
   // Broadcast methods for external use
   broadcastServiceHealthUpdate(serviceHealth: ServiceHealthData): void {
-    this.io.to(`service:${serviceHealth.name}`).emit(
-      EventTypes.SERVICE_HEALTH_UPDATE,
-      serviceHealth
-    );
+    this.io
+      .to(`service:${serviceHealth.name}`)
+      .emit(EventTypes.SERVICE_HEALTH_UPDATE, serviceHealth);
   }
 
   broadcastNotification(userId: string, notification: NotificationData): void {

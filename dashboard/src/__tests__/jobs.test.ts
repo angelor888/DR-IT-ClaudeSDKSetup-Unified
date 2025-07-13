@@ -7,7 +7,7 @@ jest.mock('bull', () => {
   return jest.fn().mockImplementation((name: string) => {
     const jobs: any[] = [];
     const processors: Map<string, Function> = new Map();
-    
+
     return {
       name,
       add: jest.fn((jobName: string, data: any, options?: any) => {
@@ -103,7 +103,7 @@ describe('Job Queues', () => {
     it('should register job processors', () => {
       const syncQueue = (jobQueues as any).syncQueue;
       const notificationQueue = (jobQueues as any).notificationQueue;
-      
+
       expect(syncQueue.process).toHaveBeenCalled();
       expect(notificationQueue.process).toHaveBeenCalled();
     });
@@ -370,7 +370,7 @@ describe('Job Scheduler', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockJobQueues = {
       addSyncJob: jest.fn().mockResolvedValue({ id: 'job123' }),
       addReportJob: jest.fn().mockResolvedValue({ id: 'job456' }),
@@ -384,73 +384,52 @@ describe('Job Scheduler', () => {
   describe('Scheduled Jobs', () => {
     it('should schedule daily sync jobs', () => {
       const cron = require('node-cron');
-      
+
       // Should have scheduled sync jobs
-      expect(cron.schedule).toHaveBeenCalledWith(
-        '0 2 * * *',
-        expect.any(Function)
-      );
+      expect(cron.schedule).toHaveBeenCalledWith('0 2 * * *', expect.any(Function));
     });
 
     it('should schedule hourly slack sync', () => {
       const cron = require('node-cron');
-      
-      expect(cron.schedule).toHaveBeenCalledWith(
-        '0 * * * *',
-        expect.any(Function)
-      );
+
+      expect(cron.schedule).toHaveBeenCalledWith('0 * * * *', expect.any(Function));
     });
 
     it('should schedule daily reports', () => {
       const cron = require('node-cron');
-      
-      expect(cron.schedule).toHaveBeenCalledWith(
-        '0 8 * * *',
-        expect.any(Function)
-      );
+
+      expect(cron.schedule).toHaveBeenCalledWith('0 8 * * *', expect.any(Function));
     });
 
     it('should schedule weekly reports', () => {
       const cron = require('node-cron');
-      
-      expect(cron.schedule).toHaveBeenCalledWith(
-        '0 8 * * 1',
-        expect.any(Function)
-      );
+
+      expect(cron.schedule).toHaveBeenCalledWith('0 8 * * 1', expect.any(Function));
     });
 
     it('should schedule monthly reports', () => {
       const cron = require('node-cron');
-      
-      expect(cron.schedule).toHaveBeenCalledWith(
-        '0 8 1 * *',
-        expect.any(Function)
-      );
+
+      expect(cron.schedule).toHaveBeenCalledWith('0 8 1 * *', expect.any(Function));
     });
 
     it('should schedule daily cleanup', () => {
       const cron = require('node-cron');
-      
-      expect(cron.schedule).toHaveBeenCalledWith(
-        '0 3 * * *',
-        expect.any(Function)
-      );
+
+      expect(cron.schedule).toHaveBeenCalledWith('0 3 * * *', expect.any(Function));
     });
 
     it('should schedule health checks', () => {
       const cron = require('node-cron');
-      
-      expect(cron.schedule).toHaveBeenCalledWith(
-        '*/5 * * * *',
-        expect.any(Function)
-      );
+
+      expect(cron.schedule).toHaveBeenCalledWith('*/5 * * * *', expect.any(Function));
     });
   });
 
   describe('Job Management', () => {
     it('should start all scheduled jobs', () => {
       scheduler.start();
-      
+
       (scheduler as any).jobs.forEach((job: any) => {
         expect(job.start).toHaveBeenCalled();
       });
@@ -458,7 +437,7 @@ describe('Job Scheduler', () => {
 
     it('should stop all scheduled jobs', () => {
       scheduler.stop();
-      
+
       (scheduler as any).jobs.forEach((job: any) => {
         expect(job.stop).toHaveBeenCalled();
       });
@@ -466,14 +445,14 @@ describe('Job Scheduler', () => {
 
     it('should get running jobs', () => {
       const runningJobs = scheduler.getRunningJobs();
-      
+
       expect(Array.isArray(runningJobs)).toBe(true);
       expect(runningJobs.length).toBeGreaterThan(0);
     });
 
     it('should trigger job manually', async () => {
       await scheduler.triggerJob('daily-sync');
-      
+
       expect(mockJobQueues.addSyncJob).toHaveBeenCalled();
     });
 
@@ -488,7 +467,7 @@ describe('Job Scheduler', () => {
     it('should execute sync job correctly', async () => {
       const syncCallback = (scheduler as any).jobs.get('daily-sync').callback;
       await syncCallback();
-      
+
       expect(mockJobQueues.addSyncJob).toHaveBeenCalledWith(
         { service: 'jobber', userId: 'system' },
         expect.any(Object)
@@ -498,7 +477,7 @@ describe('Job Scheduler', () => {
     it('should execute report job correctly', async () => {
       const reportCallback = (scheduler as any).jobs.get('daily-report').callback;
       await reportCallback();
-      
+
       expect(mockJobQueues.addReportJob).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'daily',
@@ -510,9 +489,9 @@ describe('Job Scheduler', () => {
 
     it('should handle job execution errors', async () => {
       mockJobQueues.addSyncJob.mockRejectedValueOnce(new Error('Queue error'));
-      
+
       const syncCallback = (scheduler as any).jobs.get('daily-sync').callback;
-      
+
       // Should not throw
       await expect(syncCallback()).resolves.toBeUndefined();
     });

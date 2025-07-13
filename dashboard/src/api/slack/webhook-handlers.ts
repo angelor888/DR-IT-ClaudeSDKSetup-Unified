@@ -98,7 +98,7 @@ export class UnifiedSlackWebhookHandler {
     // Update conversation
     await conversationRef.update({
       lastMessageAt: new Date(),
-      messageCount: conversationDoc.exists ? (conversationDoc.data()!.messageCount + 1) : 1,
+      messageCount: conversationDoc.exists ? conversationDoc.data()!.messageCount + 1 : 1,
       updatedAt: new Date(),
     });
 
@@ -107,10 +107,10 @@ export class UnifiedSlackWebhookHandler {
       await this.triggerAIAssistance(messageRef.id, messageData);
     }
 
-    log.debug('Message stored in unified system', { 
-      conversationId, 
+    log.debug('Message stored in unified system', {
+      conversationId,
       messageId: messageRef.id,
-      platformMessageId: event.ts 
+      platformMessageId: event.ts,
     });
   }
 
@@ -231,7 +231,8 @@ export class UnifiedSlackWebhookHandler {
     });
 
     // Find the message
-    const messagesSnapshot = await db.collection('messages')
+    const messagesSnapshot = await db
+      .collection('messages')
       .where('platform', '==', 'slack')
       .where('teamId', '==', teamId)
       .where('channelId', '==', event.item.channel)
@@ -266,10 +267,11 @@ export class UnifiedSlackWebhookHandler {
   private async triggerAIAssistance(messageId: string, messageData: any): Promise<void> {
     try {
       // Check user preferences for AI assistance
-      const prefsDoc = await db.collection('communication_preferences')
+      const prefsDoc = await db
+        .collection('communication_preferences')
         .doc(messageData.sender?.id || 'default')
         .get();
-      
+
       if (!prefsDoc.exists || !prefsDoc.data()?.ai?.autoSuggest) {
         return;
       }

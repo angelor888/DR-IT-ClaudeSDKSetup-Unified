@@ -20,7 +20,9 @@ router.use(requireAuth);
 router.post(
   '/ai/suggest',
   [
-    body('action').isIn(['suggest', 'improve', 'categorize', 'analyze']).withMessage('Invalid action'),
+    body('action')
+      .isIn(['suggest', 'improve', 'categorize', 'analyze'])
+      .withMessage('Invalid action'),
     body('content').isString().notEmpty().withMessage('Content is required'),
     body('context').optional().isObject(),
   ],
@@ -112,9 +114,7 @@ router.post(
 // Conversation summarization endpoint
 router.post(
   '/ai/summarize',
-  [
-    body('conversationId').isString().notEmpty().withMessage('Conversation ID is required'),
-  ],
+  [body('conversationId').isString().notEmpty().withMessage('Conversation ID is required')],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -138,9 +138,7 @@ router.post(
 // Sentiment analysis endpoint
 router.post(
   '/ai/analyze-sentiment',
-  [
-    body('messageId').isString().notEmpty().withMessage('Message ID is required'),
-  ],
+  [body('messageId').isString().notEmpty().withMessage('Message ID is required')],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -266,10 +264,7 @@ router.post(
 // Get AI usage stats
 router.get(
   '/ai/usage',
-  [
-    query('startDate').optional().isISO8601(),
-    query('endDate').optional().isISO8601(),
-  ],
+  [query('startDate').optional().isISO8601(), query('endDate').optional().isISO8601()],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

@@ -22,9 +22,17 @@ export class TwilioService {
   /**
    * Send SMS message with error handling and logging
    */
-  async sendSMS(to: string, body: string, options: Partial<SendMessageOptions & { messageId?: string }> = {}) {
+  async sendSMS(
+    to: string,
+    body: string,
+    options: Partial<SendMessageOptions & { messageId?: string }> = {}
+  ) {
     try {
-      log.info('Sending SMS message', { to, bodyLength: body.length, messageId: options.messageId });
+      log.info('Sending SMS message', {
+        to,
+        bodyLength: body.length,
+        messageId: options.messageId,
+      });
 
       const result = await this.client.sendMessage({
         to,
@@ -48,7 +56,7 @@ export class TwilioService {
             to: result.data?.to,
             from: result.data?.from,
             dateSent: result.data?.dateCreated,
-          }
+          },
         };
       } else {
         log.error('Failed to send SMS', {
@@ -60,15 +68,19 @@ export class TwilioService {
         return {
           success: false,
           messageId: options.messageId || '',
-          info: { error: result.error?.message, code: result.error?.code }
+          info: { error: result.error?.message, code: result.error?.code },
         };
       }
     } catch (error) {
-      log.error('Error sending SMS', { error: error instanceof Error ? error.message : error, to, messageId: options.messageId });
+      log.error('Error sending SMS', {
+        error: error instanceof Error ? error.message : error,
+        to,
+        messageId: options.messageId,
+      });
       return {
         success: false,
         messageId: options.messageId || '',
-        info: { error: error instanceof Error ? error.message : 'Unknown error' }
+        info: { error: error instanceof Error ? error.message : 'Unknown error' },
       };
     }
   }
@@ -292,27 +304,31 @@ export class TwilioService {
   async getAutoResponseForNumber(phoneNumber: string): Promise<string | null> {
     try {
       const db = getFirestore();
-      
+
       // Check for phone-specific auto-response
-      const phoneConfigDoc = await db.collection('twilio_auto_responses')
+      const phoneConfigDoc = await db
+        .collection('twilio_auto_responses')
         .doc(phoneNumber.replace(/[^\w]/g, ''))
         .get();
-      
+
       if (phoneConfigDoc.exists && phoneConfigDoc.data()?.enabled) {
         return phoneConfigDoc.data()!.message;
       }
-      
+
       // Check default auto-response settings
-      const defaultConfigDoc = await db.collection('communication_preferences')
+      const defaultConfigDoc = await db
+        .collection('communication_preferences')
         .doc('default')
         .get();
-      
-      if (defaultConfigDoc.exists && 
-          defaultConfigDoc.data()?.autoResponse?.enabled &&
-          defaultConfigDoc.data()?.autoResponse?.customMessage) {
+
+      if (
+        defaultConfigDoc.exists &&
+        defaultConfigDoc.data()?.autoResponse?.enabled &&
+        defaultConfigDoc.data()?.autoResponse?.customMessage
+      ) {
         return defaultConfigDoc.data()!.autoResponse.customMessage;
       }
-      
+
       return null;
     } catch (error) {
       log.error('Error getting auto-response', { phoneNumber, error });

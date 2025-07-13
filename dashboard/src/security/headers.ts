@@ -20,16 +20,8 @@ export const securityHeaders = helmet({
         'https://fonts.googleapis.com',
         'https://cdn.jsdelivr.net',
       ],
-      fontSrc: [
-        "'self'",
-        'https://fonts.gstatic.com',
-      ],
-      imgSrc: [
-        "'self'",
-        'data:',
-        'https:',
-        'blob:',
-      ],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
       connectSrc: [
         "'self'",
         'wss:', // WebSocket connections
@@ -99,10 +91,7 @@ export const securityHeaders = helmet({
 // Additional security middleware
 export const additionalSecurityHeaders = (req: any, res: any, next: any) => {
   // Feature Policy / Permissions Policy
-  res.setHeader(
-    'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=(), payment=()'
-  );
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
 
   // X-Content-Type-Options
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -134,7 +123,7 @@ export const corsOptions = {
     // Check if origin is allowed
     const allowedOrigins = config.cors?.origin || config.server.corsOrigin || '*';
     const origins = Array.isArray(allowedOrigins) ? allowedOrigins : [allowedOrigins];
-    
+
     if (origins.includes(origin) || origins.includes('*')) {
       callback(null, true);
     } else {

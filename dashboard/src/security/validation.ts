@@ -8,10 +8,10 @@ const log = logger.child('Validation');
 export const commonSchemas = {
   // ID validation (UUID v4)
   id: Joi.string().uuid({ version: 'uuidv4' }).required(),
-  
+
   // Email validation
   email: Joi.string().email().lowercase().trim().required(),
-  
+
   // Password validation
   password: Joi.string()
     .min(8)
@@ -19,26 +19,27 @@ export const commonSchemas = {
     .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
     .required()
     .messages({
-      'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+      'string.pattern.base':
+        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
     }),
-  
+
   // Phone number validation
   phone: Joi.string()
     .pattern(/^\+?[1-9]\d{1,14}$/)
     .messages({
       'string.pattern.base': 'Invalid phone number format',
     }),
-  
+
   // URL validation
   url: Joi.string().uri(),
-  
+
   // Date validation
   date: Joi.date().iso(),
-  
+
   // Pagination
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
-  
+
   // Sort
   sortBy: Joi.string().pattern(/^[a-zA-Z_]+$/),
   sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
@@ -112,7 +113,8 @@ export const serviceSchemas = {
         .max(21)
         .required()
         .messages({
-          'string.pattern.base': 'Channel name can only contain lowercase letters, numbers, hyphens, and underscores',
+          'string.pattern.base':
+            'Channel name can only contain lowercase letters, numbers, hyphens, and underscores',
         }),
       isPrivate: Joi.boolean().default(false),
       description: Joi.string().max(250),
@@ -150,10 +152,7 @@ export const serviceSchemas = {
       push: Joi.boolean(),
       sms: Joi.boolean(),
       slack: Joi.boolean(),
-      categories: Joi.object().pattern(
-        Joi.string(),
-        Joi.boolean()
-      ),
+      categories: Joi.object().pattern(Joi.string(), Joi.boolean()),
     }).min(1),
   },
 };
@@ -217,7 +216,7 @@ export function validate(schema: Joi.ObjectSchema, source: 'body' | 'query' | 'p
           error: 'Validation failed',
           code: 'VALIDATION_ERROR',
           details: {
-            fields: error.details.map((detail) => ({
+            fields: error.details.map(detail => ({
               field: detail.path.join('.'),
               message: detail.message,
               type: detail.type,
@@ -258,7 +257,7 @@ export const sanitizers = {
       "'": '&#39;',
       '/': '&#x2F;',
     };
-    return input.replace(/[&<>"'/]/g, (char) => map[char]);
+    return input.replace(/[&<>"'/]/g, char => map[char]);
   },
 
   // Normalize whitespace
@@ -275,7 +274,7 @@ export const sanitizers = {
 // Request sanitization middleware
 export function sanitizeRequest(fields: string[] = ['body']) {
   return (req: Request, _res: Response, next: NextFunction) => {
-    fields.forEach((field) => {
+    fields.forEach(field => {
       const reqKey = field as keyof Request;
       if (req[reqKey] && (field === 'body' || field === 'query' || field === 'params')) {
         (req as any)[field] = sanitizeObject(req[reqKey]);
@@ -289,11 +288,11 @@ function sanitizeObject(obj: any): any {
   if (typeof obj === 'string') {
     return sanitizers.normalizeWhitespace(sanitizers.stripHtml(obj));
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(sanitizeObject);
   }
-  
+
   if (obj && typeof obj === 'object') {
     const sanitized: any = {};
     for (const [key, value] of Object.entries(obj)) {
@@ -301,6 +300,6 @@ function sanitizeObject(obj: any): any {
     }
     return sanitized;
   }
-  
+
   return obj;
 }

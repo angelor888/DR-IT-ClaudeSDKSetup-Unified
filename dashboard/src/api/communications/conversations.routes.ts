@@ -51,23 +51,22 @@ router.get(
       const total = countSnapshot.data().count;
 
       // Get paginated results
-      query = query.orderBy('lastMessageAt', 'desc')
-        .limit(Number(limit))
-        .offset(Number(offset));
+      query = query.orderBy('lastMessageAt', 'desc').limit(Number(limit)).offset(Number(offset));
 
       const snapshot = await query.get();
       const conversations = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       })) as any[];
 
       // Apply search filter in memory if provided
       let filteredConversations = conversations;
       if (search) {
         const searchLower = (search as string).toLowerCase();
-        filteredConversations = conversations.filter((conv: any) => 
-          conv.title?.toLowerCase().includes(searchLower) ||
-          conv.participants?.some((p: any) => p.name?.toLowerCase().includes(searchLower))
+        filteredConversations = conversations.filter(
+          (conv: any) =>
+            conv.title?.toLowerCase().includes(searchLower) ||
+            conv.participants?.some((p: any) => p.name?.toLowerCase().includes(searchLower))
         );
       }
 
@@ -77,8 +76,8 @@ router.get(
           conversations: filteredConversations,
           total: search ? filteredConversations.length : total,
           limit: Number(limit),
-          offset: Number(offset)
-        }
+          offset: Number(offset),
+        },
       });
     } catch (error) {
       log.error('Failed to get conversations', error);
@@ -90,9 +89,7 @@ router.get(
 // Get single conversation with messages
 router.get(
   '/:id',
-  [
-    param('id').isString().notEmpty(),
-  ],
+  [param('id').isString().notEmpty()],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -100,34 +97,35 @@ router.get(
       const { id } = req.params;
 
       const doc = await db.collection('conversations').doc(id).get();
-      
+
       if (!doc.exists) {
         res.status(404).json({
           status: 'error',
-          message: 'Conversation not found'
+          message: 'Conversation not found',
         });
         return;
       }
 
       const conversation = doc.data();
-      
+
       if (conversation?.userId !== userId) {
         res.status(403).json({
           status: 'error',
-          message: 'Unauthorized'
+          message: 'Unauthorized',
         });
         return;
       }
 
       // Get messages for this conversation
-      const messagesSnapshot = await db.collection('messages')
+      const messagesSnapshot = await db
+        .collection('messages')
         .where('conversationId', '==', id)
         .orderBy('timestamp', 'asc')
         .get();
 
       const messages = messagesSnapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
 
       res.json({
@@ -135,8 +133,8 @@ router.get(
         data: {
           id: doc.id,
           ...conversation,
-          messages
-        }
+          messages,
+        },
       });
     } catch (error) {
       log.error('Failed to get conversation', error);
@@ -179,8 +177,8 @@ router.post(
         status: 'success',
         data: {
           id: conversationRef.id,
-          ...conversationData
-        }
+          ...conversationData,
+        },
       });
     } catch (error) {
       log.error('Failed to create conversation', error);
@@ -192,9 +190,7 @@ router.post(
 // Archive conversation
 router.post(
   '/:id/archive',
-  [
-    param('id').isString().notEmpty(),
-  ],
+  [param('id').isString().notEmpty()],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -207,17 +203,17 @@ router.post(
       if (!doc.exists) {
         res.status(404).json({
           status: 'error',
-          message: 'Conversation not found'
+          message: 'Conversation not found',
         });
         return;
       }
 
       const conversation = doc.data();
-      
+
       if (conversation?.userId !== userId) {
         res.status(403).json({
           status: 'error',
-          message: 'Unauthorized'
+          message: 'Unauthorized',
         });
         return;
       }
@@ -230,7 +226,7 @@ router.post(
 
       res.json({
         status: 'success',
-        message: 'Conversation archived'
+        message: 'Conversation archived',
       });
     } catch (error) {
       log.error('Failed to archive conversation', error);
@@ -242,9 +238,7 @@ router.post(
 // Unarchive conversation
 router.post(
   '/:id/unarchive',
-  [
-    param('id').isString().notEmpty(),
-  ],
+  [param('id').isString().notEmpty()],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -257,17 +251,17 @@ router.post(
       if (!doc.exists) {
         res.status(404).json({
           status: 'error',
-          message: 'Conversation not found'
+          message: 'Conversation not found',
         });
         return;
       }
 
       const conversation = doc.data();
-      
+
       if (conversation?.userId !== userId) {
         res.status(403).json({
           status: 'error',
-          message: 'Unauthorized'
+          message: 'Unauthorized',
         });
         return;
       }
@@ -280,7 +274,7 @@ router.post(
 
       res.json({
         status: 'success',
-        message: 'Conversation unarchived'
+        message: 'Conversation unarchived',
       });
     } catch (error) {
       log.error('Failed to unarchive conversation', error);

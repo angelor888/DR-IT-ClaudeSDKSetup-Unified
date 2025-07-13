@@ -16,12 +16,12 @@ export class RedisCache {
       url: config.redis?.url || 'redis://localhost:6379',
       socket: {
         connectTimeout: 5000,
-        reconnectStrategy: (retries) => {
+        reconnectStrategy: retries => {
           if (retries > this.maxReconnectAttempts) {
             this.log.error('Max reconnection attempts reached');
             return new Error('Max reconnection attempts reached');
           }
-          
+
           const delay = Math.min(retries * this.reconnectDelay, 30000);
           this.log.info(`Reconnecting to Redis in ${delay}ms (attempt ${retries})`);
           return delay;
@@ -43,7 +43,7 @@ export class RedisCache {
       this.log.info('Redis client ready');
     });
 
-    this.client.on('error', (error) => {
+    this.client.on('error', error => {
       this.log.error('Redis error', { error: error.message });
       this.connected = false;
     });
@@ -91,7 +91,7 @@ export class RedisCache {
     try {
       const value = await this.client.get(key);
       if (!value) return null;
-      
+
       return JSON.parse(value) as T;
     } catch (error) {
       this.log.error('Error getting from cache', {
@@ -110,13 +110,13 @@ export class RedisCache {
 
     try {
       const serialized = JSON.stringify(value);
-      
+
       if (ttlSeconds) {
         await this.client.setEx(key, ttlSeconds, serialized);
       } else {
         await this.client.set(key, serialized);
       }
-      
+
       return true;
     } catch (error) {
       this.log.error('Error setting cache', {
@@ -154,7 +154,7 @@ export class RedisCache {
     try {
       const keys = await this.client.keys(pattern);
       if (keys.length === 0) return 0;
-      
+
       const deleted = await this.client.del(keys);
       return deleted;
     } catch (error) {
@@ -198,7 +198,7 @@ export class RedisCache {
   // Health check for monitoring
   async healthCheck(): Promise<ServiceHealthCheck> {
     const startTime = Date.now();
-    
+
     try {
       if (!this.connected) {
         return {
@@ -211,9 +211,9 @@ export class RedisCache {
 
       // Perform a simple ping
       await this.client.ping();
-      
+
       const responseTime = Date.now() - startTime;
-      
+
       return {
         name: 'Redis Cache',
         status: 'healthy',

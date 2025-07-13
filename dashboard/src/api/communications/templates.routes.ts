@@ -33,7 +33,8 @@ router.get(
       const userId = req.user!.uid;
       const { platform, category, aiGenerated, search, limit } = req.query;
 
-      let query = db.collection('message_templates')
+      let query = db
+        .collection('message_templates')
         .where('userId', '==', userId)
         .where('deleted', '==', false);
 
@@ -55,22 +56,23 @@ router.get(
       const snapshot = await query.get();
       let templates = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
 
       // Apply search filter in memory if provided
       if (search) {
         const searchLower = (search as string).toLowerCase();
-        templates = templates.filter(template => 
-          (template as any).name?.toLowerCase().includes(searchLower) ||
-          (template as any).content?.toLowerCase().includes(searchLower) ||
-          (template as any).category?.toLowerCase().includes(searchLower)
+        templates = templates.filter(
+          template =>
+            (template as any).name?.toLowerCase().includes(searchLower) ||
+            (template as any).content?.toLowerCase().includes(searchLower) ||
+            (template as any).category?.toLowerCase().includes(searchLower)
         );
       }
 
       res.json({
         status: 'success',
-        data: templates
+        data: templates,
       });
     } catch (error) {
       log.error('Failed to get templates', error);
@@ -82,9 +84,7 @@ router.get(
 // Get single template
 router.get(
   '/:id',
-  [
-    param('id').isString().notEmpty(),
-  ],
+  [param('id').isString().notEmpty()],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -92,21 +92,21 @@ router.get(
       const { id } = req.params;
 
       const doc = await db.collection('message_templates').doc(id).get();
-      
+
       if (!doc.exists) {
         res.status(404).json({
           status: 'error',
-          message: 'Template not found'
+          message: 'Template not found',
         });
         return;
       }
 
       const template = doc.data();
-      
+
       if (template?.userId !== userId) {
         res.status(403).json({
           status: 'error',
-          message: 'Unauthorized'
+          message: 'Unauthorized',
         });
         return;
       }
@@ -115,8 +115,8 @@ router.get(
         status: 'success',
         data: {
           id: doc.id,
-          ...template
-        }
+          ...template,
+        },
       });
     } catch (error) {
       log.error('Failed to get template', error);
@@ -161,8 +161,8 @@ router.post(
         status: 'success',
         data: {
           id: templateRef.id,
-          ...templateData
-        }
+          ...templateData,
+        },
       });
     } catch (error) {
       log.error('Failed to create template', error);
@@ -194,17 +194,17 @@ router.put(
       if (!doc.exists) {
         res.status(404).json({
           status: 'error',
-          message: 'Template not found'
+          message: 'Template not found',
         });
         return;
       }
 
       const template = doc.data();
-      
+
       if (template?.userId !== userId) {
         res.status(403).json({
           status: 'error',
-          message: 'Unauthorized'
+          message: 'Unauthorized',
         });
         return;
       }
@@ -220,8 +220,8 @@ router.put(
         status: 'success',
         data: {
           id: updatedDoc.id,
-          ...updatedDoc.data()
-        }
+          ...updatedDoc.data(),
+        },
       });
     } catch (error) {
       log.error('Failed to update template', error);
@@ -233,9 +233,7 @@ router.put(
 // Delete template (soft delete)
 router.delete(
   '/:id',
-  [
-    param('id').isString().notEmpty(),
-  ],
+  [param('id').isString().notEmpty()],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -248,17 +246,17 @@ router.delete(
       if (!doc.exists) {
         res.status(404).json({
           status: 'error',
-          message: 'Template not found'
+          message: 'Template not found',
         });
         return;
       }
 
       const template = doc.data();
-      
+
       if (template?.userId !== userId) {
         res.status(403).json({
           status: 'error',
-          message: 'Unauthorized'
+          message: 'Unauthorized',
         });
         return;
       }
@@ -270,7 +268,7 @@ router.delete(
 
       res.json({
         status: 'success',
-        message: 'Template deleted'
+        message: 'Template deleted',
       });
     } catch (error) {
       log.error('Failed to delete template', error);
@@ -282,9 +280,7 @@ router.delete(
 // Use template (increment usage count)
 router.post(
   '/:id/use',
-  [
-    param('id').isString().notEmpty(),
-  ],
+  [param('id').isString().notEmpty()],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -297,17 +293,17 @@ router.post(
       if (!doc.exists) {
         res.status(404).json({
           status: 'error',
-          message: 'Template not found'
+          message: 'Template not found',
         });
         return;
       }
 
       const template = doc.data();
-      
+
       if (template?.userId !== userId) {
         res.status(403).json({
           status: 'error',
-          message: 'Unauthorized'
+          message: 'Unauthorized',
         });
         return;
       }
@@ -319,7 +315,7 @@ router.post(
 
       res.json({
         status: 'success',
-        message: 'Template usage recorded'
+        message: 'Template usage recorded',
       });
     } catch (error) {
       log.error('Failed to record template usage', error);

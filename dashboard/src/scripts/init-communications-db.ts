@@ -17,7 +17,7 @@ async function createCollections() {
     await conversationsRef.doc('_init').set({
       _initialized: true,
       _description: 'Unified conversations across all platforms',
-      _createdAt: new Date().toISOString()
+      _createdAt: new Date().toISOString(),
     });
 
     // Create messages collection
@@ -25,7 +25,7 @@ async function createCollections() {
     await messagesRef.doc('_init').set({
       _initialized: true,
       _description: 'Unified messages from all communication platforms',
-      _createdAt: new Date().toISOString()
+      _createdAt: new Date().toISOString(),
     });
 
     // Create communication_templates collection
@@ -33,7 +33,7 @@ async function createCollections() {
     await templatesRef.doc('_init').set({
       _initialized: true,
       _description: 'Message templates for quick responses',
-      _createdAt: new Date().toISOString()
+      _createdAt: new Date().toISOString(),
     });
 
     // Create communication_preferences collection
@@ -41,7 +41,7 @@ async function createCollections() {
     await preferencesRef.doc('_init').set({
       _initialized: true,
       _description: 'User preferences for communications',
-      _createdAt: new Date().toISOString()
+      _createdAt: new Date().toISOString(),
     });
 
     // Create communication_stats collection
@@ -49,14 +49,14 @@ async function createCollections() {
     await statsRef.doc('_init').set({
       _initialized: true,
       _description: 'Analytics and statistics for communications',
-      _createdAt: new Date().toISOString()
+      _createdAt: new Date().toISOString(),
     });
 
     log.info('Communications Hub collections initialized successfully');
 
     // Create indexes
     log.info('Creating Firestore indexes...');
-    
+
     // Note: Composite indexes need to be created through Firebase Console or CLI
     // Here we document the required indexes:
     const requiredIndexes = [
@@ -65,24 +65,24 @@ async function createCollections() {
         fields: [
           { field: 'userId', order: 'ASCENDING' },
           { field: 'status', order: 'ASCENDING' },
-          { field: 'lastMessageAt', order: 'DESCENDING' }
-        ]
+          { field: 'lastMessageAt', order: 'DESCENDING' },
+        ],
       },
       {
         collection: 'messages',
         fields: [
           { field: 'conversationId', order: 'ASCENDING' },
-          { field: 'timestamp', order: 'DESCENDING' }
-        ]
+          { field: 'timestamp', order: 'DESCENDING' },
+        ],
       },
       {
         collection: 'messages',
         fields: [
           { field: 'userId', order: 'ASCENDING' },
           { field: 'platform', order: 'ASCENDING' },
-          { field: 'timestamp', order: 'DESCENDING' }
-        ]
-      }
+          { field: 'timestamp', order: 'DESCENDING' },
+        ],
+      },
     ];
 
     log.info('Required composite indexes:');
@@ -92,7 +92,6 @@ async function createCollections() {
     });
 
     log.info('Please create these indexes in the Firebase Console');
-
   } catch (error) {
     log.error('Failed to initialize Communications Hub collections:', error);
     throw error;
@@ -106,7 +105,7 @@ if (require.main === module) {
       log.info('Script completed successfully');
       process.exit(0);
     })
-    .catch((error) => {
+    .catch(error => {
       log.error('Script failed:', error);
       process.exit(1);
     });

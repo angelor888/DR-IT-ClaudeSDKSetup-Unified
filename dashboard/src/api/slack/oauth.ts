@@ -58,10 +58,7 @@ const SLACK_BOT_SCOPES = [
  */
 router.get(
   '/install',
-  [
-    query('userId').optional().isString(),
-    query('redirect').optional().isString(),
-  ],
+  [query('userId').optional().isString(), query('redirect').optional().isString()],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -69,15 +66,18 @@ router.get(
 
       // Generate state parameter for CSRF protection
       const state = crypto.randomBytes(32).toString('hex');
-      
+
       // Store state in database for verification
-      await db.collection('oauth_states').doc(state).set({
-        provider: 'slack',
-        userId: userId || null,
-        redirect: redirect || '/dashboard/communications',
-        createdAt: new Date(),
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
-      });
+      await db
+        .collection('oauth_states')
+        .doc(state)
+        .set({
+          provider: 'slack',
+          userId: userId || null,
+          redirect: redirect || '/dashboard/communications',
+          createdAt: new Date(),
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        });
 
       // Build authorization URL
       const params = new URLSearchParams({
@@ -106,10 +106,7 @@ router.get(
  */
 router.get(
   '/callback',
-  [
-    query('code').isString().notEmpty(),
-    query('state').isString().notEmpty(),
-  ],
+  [query('code').isString().notEmpty(), query('state').isString().notEmpty()],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -122,7 +119,7 @@ router.get(
       }
 
       const stateData = stateDoc.data()!;
-      
+
       // Check if state is expired
       if (new Date() > stateData.expiresAt.toDate()) {
         await stateDoc.ref.delete();
@@ -130,7 +127,8 @@ router.get(
       }
 
       // Exchange code for access token
-      const tokenResponse = await axios.post('https://slack.com/api/oauth.v2.access', 
+      const tokenResponse = await axios.post(
+        'https://slack.com/api/oauth.v2.access',
         new URLSearchParams({
           client_id: SLACK_CLIENT_ID!,
           client_secret: SLACK_CLIENT_SECRET!,
@@ -172,7 +170,10 @@ router.get(
       };
 
       // Save to Firestore
-      await db.collection('slack_installations').doc(`${data.team.id}_${stateData.userId || data.authed_user.id}`).set(tokenData);
+      await db
+        .collection('slack_installations')
+        .doc(`${data.team.id}_${stateData.userId || data.authed_user.id}`)
+        .set(tokenData);
 
       // Delete used state
       await stateDoc.ref.delete();
@@ -188,7 +189,7 @@ router.get(
       res.redirect(`${config.server.baseUrl}${redirectUrl}?slack_connected=true`);
     } catch (error) {
       log.error('OAuth callback failed', error);
-      
+
       // Redirect to error page
       res.redirect(`${config.server.baseUrl}/dashboard/communications?error=slack_oauth_failed`);
     }
@@ -201,10 +202,7 @@ router.get(
  */
 router.post(
   '/revoke',
-  [
-    body('teamId').isString().notEmpty(),
-    body('userId').optional().isString(),
-  ],
+  [body('teamId').isString().notEmpty(), body('userId').optional().isString()],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -222,17 +220,20 @@ router.post(
 
       // Revoke token with Slack
       try {
-        await axios.post('https://slack.com/api/auth.revoke',
+        await axios.post(
+          'https://slack.com/api/auth.revoke',
           { token: installation.accessToken },
           {
             headers: {
-              'Authorization': `Bearer ${installation.accessToken}`,
+              Authorization: `Bearer ${installation.accessToken}`,
               'Content-Type': 'application/json',
             },
           }
         );
       } catch (error) {
-        log.warn('Failed to revoke token with Slack', { error: error instanceof Error ? error.message : 'Unknown error' });
+        log.warn('Failed to revoke token with Slack', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
       }
 
       // Delete from database
@@ -255,37 +256,32 @@ router.post(
  * GET /api/slack/oauth/installations
  * List user's Slack installations
  */
-router.get(
-  '/installations',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      // Get userId from auth middleware when implemented
-      const userId = req.query.userId as string || 'default';
+router.get('/installations', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Get userId from auth middleware when implemented
+    const userId = (req.query.userId as string) || 'default';
 
-      const snapshot = await db.collection('slack_installations')
-        .where('userId', '==', userId)
-        .get();
+    const snapshot = await db.collection('slack_installations').where('userId', '==', userId).get();
 
-      const installations = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          teamId: data.teamId,
-          teamName: data.teamName,
-          scope: data.scope,
-          createdAt: data.createdAt,
-        };
-      });
+    const installations = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        teamId: data.teamId,
+        teamName: data.teamName,
+        scope: data.scope,
+        createdAt: data.createdAt,
+      };
+    });
 
-      res.json({
-        status: 'success',
-        data: installations,
-      });
-    } catch (error) {
-      log.error('Failed to list installations', error);
-      next(error);
-    }
+    res.json({
+      status: 'success',
+      data: installations,
+    });
+  } catch (error) {
+    log.error('Failed to list installations', error);
+    next(error);
   }
-);
+});
 
 export default router;

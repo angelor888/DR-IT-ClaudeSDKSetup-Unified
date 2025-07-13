@@ -5,7 +5,7 @@
  * This bypasses the complex TypeScript stack and uses direct Slack Web API
  */
 
-const https = require('https');
+// const https = require('https'); // Currently using axios instead
 
 const DAILY_REPORT = `🚀 **July 12, 2025 - Exceptional Development Day Summary**
 

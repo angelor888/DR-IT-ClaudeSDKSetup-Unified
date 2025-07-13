@@ -9,9 +9,11 @@ export class GoogleClient extends BaseService {
   constructor(options: Partial<BaseServiceOptions> = {}) {
     // Get Google configuration
     const googleConfig = config.services.google;
-    
+
     if (!googleConfig.clientId || !googleConfig.clientSecret) {
-      throw new Error('Google OAuth credentials are required. Please provide GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.');
+      throw new Error(
+        'Google OAuth credentials are required. Please provide GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.'
+      );
     }
 
     // Initialize BaseService with Google configuration
@@ -102,10 +104,10 @@ export class GoogleClient extends BaseService {
   async checkHealth() {
     try {
       const startTime = Date.now();
-      
+
       // Check if we can authenticate (even if token is expired, we can refresh)
       const isAuth = await this.isAuthenticated();
-      
+
       if (isAuth) {
         // If authenticated, try to get user info to test API connectivity
         try {
@@ -121,7 +123,9 @@ export class GoogleClient extends BaseService {
             lastCheck: new Date(),
             responseTime,
             details: {
-              hasCredentials: !!(config.services.google.clientId && config.services.google.clientSecret),
+              hasCredentials: !!(
+                config.services.google.clientId && config.services.google.clientSecret
+              ),
               isAuthenticated: isAuth,
               authError: authError instanceof Error ? authError.message : 'Unknown auth error',
             },
@@ -130,15 +134,17 @@ export class GoogleClient extends BaseService {
       }
 
       const responseTime = Date.now() - startTime;
-      
+
       return {
         name: 'google',
-        status: isAuth ? 'healthy' as const : 'degraded' as const,
+        status: isAuth ? ('healthy' as const) : ('degraded' as const),
         message: isAuth ? 'Google services accessible' : 'Google services not authenticated',
         lastCheck: new Date(),
         responseTime,
         details: {
-          hasCredentials: !!(config.services.google.clientId && config.services.google.clientSecret),
+          hasCredentials: !!(
+            config.services.google.clientId && config.services.google.clientSecret
+          ),
           isAuthenticated: isAuth,
         },
       };
@@ -149,7 +155,9 @@ export class GoogleClient extends BaseService {
         message: error instanceof Error ? error.message : 'Unknown error',
         lastCheck: new Date(),
         details: {
-          hasCredentials: !!(config.services.google.clientId && config.services.google.clientSecret),
+          hasCredentials: !!(
+            config.services.google.clientId && config.services.google.clientSecret
+          ),
           error: error instanceof Error ? error.message : 'Unknown error',
         },
       };

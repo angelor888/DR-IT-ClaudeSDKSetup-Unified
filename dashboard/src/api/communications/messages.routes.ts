@@ -60,24 +60,23 @@ router.get(
       const total = countSnapshot.data().count;
 
       // Get paginated results
-      query = query.orderBy('timestamp', 'desc')
-        .limit(Number(limit))
-        .offset(Number(offset));
+      query = query.orderBy('timestamp', 'desc').limit(Number(limit)).offset(Number(offset));
 
       const snapshot = await query.get();
       const messages = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
 
       // Apply search filter in memory if provided
       let filteredMessages = messages;
       if (search) {
         const searchLower = (search as string).toLowerCase();
-        filteredMessages = messages.filter(msg => 
-          (msg as any).content?.toLowerCase().includes(searchLower) ||
-          (msg as any).sender?.name?.toLowerCase().includes(searchLower) ||
-          (msg as any).recipient?.name?.toLowerCase().includes(searchLower)
+        filteredMessages = messages.filter(
+          msg =>
+            (msg as any).content?.toLowerCase().includes(searchLower) ||
+            (msg as any).sender?.name?.toLowerCase().includes(searchLower) ||
+            (msg as any).recipient?.name?.toLowerCase().includes(searchLower)
         );
       }
 
@@ -87,8 +86,8 @@ router.get(
           messages: filteredMessages,
           total: search ? filteredMessages.length : total,
           limit: Number(limit),
-          offset: Number(offset)
-        }
+          offset: Number(offset),
+        },
       });
     } catch (error) {
       log.error('Failed to get messages', error);
@@ -100,9 +99,7 @@ router.get(
 // Get single message
 router.get(
   '/:id',
-  [
-    param('id').isString().notEmpty(),
-  ],
+  [param('id').isString().notEmpty()],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -110,21 +107,21 @@ router.get(
       const { id } = req.params;
 
       const doc = await db.collection('messages').doc(id).get();
-      
+
       if (!doc.exists) {
         res.status(404).json({
           status: 'error',
-          message: 'Message not found'
+          message: 'Message not found',
         });
         return;
       }
 
       const message = doc.data();
-      
+
       if (message?.userId !== userId) {
         res.status(403).json({
           status: 'error',
-          message: 'Unauthorized'
+          message: 'Unauthorized',
         });
         return;
       }
@@ -133,8 +130,8 @@ router.get(
         status: 'success',
         data: {
           id: doc.id,
-          ...message
-        }
+          ...message,
+        },
       });
     } catch (error) {
       log.error('Failed to get message', error);
@@ -180,10 +177,12 @@ router.post(
         attachments: attachments || [],
         status: 'pending',
         timestamp: new Date(),
-        ai: useAI ? {
-          enhanced: true,
-          context: aiContext,
-        } : undefined,
+        ai: useAI
+          ? {
+              enhanced: true,
+              context: aiContext,
+            }
+          : undefined,
       };
 
       const messageRef = await db.collection('messages').add(messageData);
@@ -229,7 +228,7 @@ router.post(
           ...messageData,
           status: result.success ? 'sent' : 'failed',
           platformMessageId: result.messageId,
-        }
+        },
       });
     } catch (error) {
       log.error('Failed to send message', error);
@@ -253,7 +252,7 @@ router.post(
 
       // Batch update
       const batch = db.batch();
-      
+
       for (const messageId of messageIds) {
         const messageRef = db.collection('messages').doc(messageId);
         batch.update(messageRef, {
@@ -267,8 +266,8 @@ router.post(
       res.json({
         status: 'success',
         data: {
-          updated: messageIds.length
-        }
+          updated: messageIds.length,
+        },
       });
     } catch (error) {
       log.error('Failed to mark messages as read', error);
@@ -292,7 +291,7 @@ router.post(
 
       // Batch update
       const batch = db.batch();
-      
+
       for (const messageId of messageIds) {
         const messageRef = db.collection('messages').doc(messageId);
         batch.update(messageRef, {
@@ -306,8 +305,8 @@ router.post(
       res.json({
         status: 'success',
         data: {
-          archived: messageIds.length
-        }
+          archived: messageIds.length,
+        },
       });
     } catch (error) {
       log.error('Failed to archive messages', error);

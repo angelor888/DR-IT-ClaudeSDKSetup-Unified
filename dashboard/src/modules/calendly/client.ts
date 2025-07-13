@@ -21,7 +21,7 @@ export class CalendlyClient {
 
   constructor(config: CalendlyConfig) {
     this.config = config;
-    
+
     if (!config.personalAccessToken) {
       throw new Error('Calendly Personal Access Token is required');
     }
@@ -29,7 +29,7 @@ export class CalendlyClient {
     this.axiosInstance = axios.create({
       baseURL: config.baseUrl || 'https://api.calendly.com',
       headers: {
-        'Authorization': `Bearer ${config.personalAccessToken}`,
+        Authorization: `Bearer ${config.personalAccessToken}`,
         'Content-Type': 'application/json',
       },
       timeout: 30000,
@@ -37,11 +37,11 @@ export class CalendlyClient {
 
     // Request interceptor for logging
     this.axiosInstance.interceptors.request.use(
-      (config) => {
+      config => {
         log.debug(`Making Calendly API request: ${config.method?.toUpperCase()} ${config.url}`);
         return config;
       },
-      (error) => {
+      error => {
         log.error('Calendly API request error:', error);
         return Promise.reject(error);
       }
@@ -49,24 +49,24 @@ export class CalendlyClient {
 
     // Response interceptor for error handling
     this.axiosInstance.interceptors.response.use(
-      (response) => {
+      response => {
         log.debug(`Calendly API response: ${response.status} for ${response.config.url}`);
         return response;
       },
-      (error) => {
+      error => {
         if (error.response) {
           const apiError: CalendlyAPIError = error.response.data;
           log.error(`Calendly API error: ${error.response.status}`, apiError);
-          
+
           // Enhance error with Calendly-specific information
           const enhancedError = new Error(apiError.message || 'Calendly API error');
           enhancedError.name = 'CalendlyAPIError';
           (enhancedError as any).status = error.response.status;
           (enhancedError as any).details = apiError.details;
-          
+
           return Promise.reject(enhancedError);
         }
-        
+
         log.error('Calendly API network error:', error);
         return Promise.reject(error);
       }
@@ -79,21 +79,24 @@ export class CalendlyClient {
       await this.getCurrentUser();
       return { status: 'ok' };
     } catch (error: any) {
-      return { 
-        status: 'error', 
-        message: error.message || 'Failed to connect to Calendly API' 
+      return {
+        status: 'error',
+        message: error.message || 'Failed to connect to Calendly API',
       };
     }
   }
 
   // User management
   async getCurrentUser(): Promise<CalendlyUser> {
-    const response: AxiosResponse<{ resource: CalendlyUser }> = await this.axiosInstance.get('/users/me');
+    const response: AxiosResponse<{ resource: CalendlyUser }> =
+      await this.axiosInstance.get('/users/me');
     return response.data.resource;
   }
 
   async getUser(userUri: string): Promise<CalendlyUser> {
-    const response: AxiosResponse<{ resource: CalendlyUser }> = await this.axiosInstance.get(`/users/${this.extractUuid(userUri)}`);
+    const response: AxiosResponse<{ resource: CalendlyUser }> = await this.axiosInstance.get(
+      `/users/${this.extractUuid(userUri)}`
+    );
     return response.data.resource;
   }
 
@@ -101,7 +104,8 @@ export class CalendlyClient {
   async getCurrentOrganization(): Promise<CalendlyOrganization> {
     const user = await this.getCurrentUser();
     const orgUuid = this.extractUuid(user.current_organization);
-    const response: AxiosResponse<{ resource: CalendlyOrganization }> = await this.axiosInstance.get(`/organizations/${orgUuid}`);
+    const response: AxiosResponse<{ resource: CalendlyOrganization }> =
+      await this.axiosInstance.get(`/organizations/${orgUuid}`);
     return response.data.resource;
   }
 
@@ -113,7 +117,7 @@ export class CalendlyClient {
   // Event types
   async getEventTypes(userUri?: string, organizationUri?: string): Promise<CalendlyEventType[]> {
     const params: any = {};
-    
+
     if (userUri) {
       params.user = userUri;
     } else if (organizationUri) {
@@ -124,33 +128,36 @@ export class CalendlyClient {
       params.user = user.uri;
     }
 
-    const response: AxiosResponse<CalendlyAPIResponse<CalendlyEventType>> = 
+    const response: AxiosResponse<CalendlyAPIResponse<CalendlyEventType>> =
       await this.axiosInstance.get('/event_types', { params });
-    
+
     return response.data.collection;
   }
 
   async getEventType(eventTypeUuid: string): Promise<CalendlyEventType> {
-    const response: AxiosResponse<{ resource: CalendlyEventType }> = 
-      await this.axiosInstance.get(`/event_types/${eventTypeUuid}`);
+    const response: AxiosResponse<{ resource: CalendlyEventType }> = await this.axiosInstance.get(
+      `/event_types/${eventTypeUuid}`
+    );
     return response.data.resource;
   }
 
   // Events (scheduled meetings)
-  async getScheduledEvents(params: {
-    user?: string;
-    organization?: string;
-    invitee_email?: string;
-    status?: 'active' | 'canceled';
-    min_start_time?: string;
-    max_start_time?: string;
-    count?: number;
-    page_token?: string;
-    sort?: string;
-  } = {}): Promise<{ events: CalendlyEvent[]; pagination: any }> {
-    const response: AxiosResponse<CalendlyAPIResponse<CalendlyEvent>> = 
+  async getScheduledEvents(
+    params: {
+      user?: string;
+      organization?: string;
+      invitee_email?: string;
+      status?: 'active' | 'canceled';
+      min_start_time?: string;
+      max_start_time?: string;
+      count?: number;
+      page_token?: string;
+      sort?: string;
+    } = {}
+  ): Promise<{ events: CalendlyEvent[]; pagination: any }> {
+    const response: AxiosResponse<CalendlyAPIResponse<CalendlyEvent>> =
       await this.axiosInstance.get('/scheduled_events', { params });
-    
+
     return {
       events: response.data.collection,
       pagination: response.data.pagination,
@@ -158,30 +165,36 @@ export class CalendlyClient {
   }
 
   async getScheduledEvent(eventUuid: string): Promise<CalendlyEvent> {
-    const response: AxiosResponse<{ resource: CalendlyEvent }> = 
-      await this.axiosInstance.get(`/scheduled_events/${eventUuid}`);
+    const response: AxiosResponse<{ resource: CalendlyEvent }> = await this.axiosInstance.get(
+      `/scheduled_events/${eventUuid}`
+    );
     return response.data.resource;
   }
 
   async cancelScheduledEvent(eventUuid: string, reason?: string): Promise<CalendlyEvent> {
-    const response: AxiosResponse<{ resource: CalendlyEvent }> = 
-      await this.axiosInstance.delete(`/scheduled_events/${eventUuid}`, {
+    const response: AxiosResponse<{ resource: CalendlyEvent }> = await this.axiosInstance.delete(
+      `/scheduled_events/${eventUuid}`,
+      {
         data: reason ? { reason } : undefined,
-      });
+      }
+    );
     return response.data.resource;
   }
 
   // Invitees
-  async getEventInvitees(eventUuid: string, params: {
-    count?: number;
-    email?: string;
-    page_token?: string;
-    sort?: string;
-    status?: 'active' | 'canceled';
-  } = {}): Promise<{ invitees: CalendlyInvitee[]; pagination: any }> {
-    const response: AxiosResponse<CalendlyAPIResponse<CalendlyInvitee>> = 
+  async getEventInvitees(
+    eventUuid: string,
+    params: {
+      count?: number;
+      email?: string;
+      page_token?: string;
+      sort?: string;
+      status?: 'active' | 'canceled';
+    } = {}
+  ): Promise<{ invitees: CalendlyInvitee[]; pagination: any }> {
+    const response: AxiosResponse<CalendlyAPIResponse<CalendlyInvitee>> =
       await this.axiosInstance.get(`/scheduled_events/${eventUuid}/invitees`, { params });
-    
+
     return {
       invitees: response.data.collection,
       pagination: response.data.pagination,
@@ -189,8 +202,9 @@ export class CalendlyClient {
   }
 
   async getInvitee(inviteeUuid: string): Promise<CalendlyInvitee> {
-    const response: AxiosResponse<{ resource: CalendlyInvitee }> = 
-      await this.axiosInstance.get(`/scheduled_events/invitees/${inviteeUuid}`);
+    const response: AxiosResponse<{ resource: CalendlyInvitee }> = await this.axiosInstance.get(
+      `/scheduled_events/invitees/${inviteeUuid}`
+    );
     return response.data.resource;
   }
 
@@ -209,17 +223,21 @@ export class CalendlyClient {
     scope: 'organization' | 'user';
     signing_key?: string;
   }): Promise<CalendlyWebhook> {
-    const response: AxiosResponse<{ resource: CalendlyWebhook }> = 
-      await this.axiosInstance.post('/webhook_subscriptions', params);
+    const response: AxiosResponse<{ resource: CalendlyWebhook }> = await this.axiosInstance.post(
+      '/webhook_subscriptions',
+      params
+    );
     return response.data.resource;
   }
 
-  async getWebhooks(params: {
-    organization?: string;
-    user?: string;
-    scope?: 'organization' | 'user';
-  } = {}): Promise<CalendlyWebhook[]> {
-    const response: AxiosResponse<CalendlyAPIResponse<CalendlyWebhook>> = 
+  async getWebhooks(
+    params: {
+      organization?: string;
+      user?: string;
+      scope?: 'organization' | 'user';
+    } = {}
+  ): Promise<CalendlyWebhook[]> {
+    const response: AxiosResponse<CalendlyAPIResponse<CalendlyWebhook>> =
       await this.axiosInstance.get('/webhook_subscriptions', { params });
     return response.data.collection;
   }
@@ -229,13 +247,18 @@ export class CalendlyClient {
   }
 
   // Availability
-  async getUserAvailability(userUri: string, params: {
-    start_time: string;
-    end_time: string;
-    event_type?: string;
-  }): Promise<any> {
+  async getUserAvailability(
+    userUri: string,
+    params: {
+      start_time: string;
+      end_time: string;
+      event_type?: string;
+    }
+  ): Promise<any> {
     const userUuid = this.extractUuid(userUri);
-    const response = await this.axiosInstance.get(`/users/${userUuid}/availability_schedules`, { params });
+    const response = await this.axiosInstance.get(`/users/${userUuid}/availability_schedules`, {
+      params,
+    });
     return response.data;
   }
 
@@ -246,7 +269,11 @@ export class CalendlyClient {
   }
 
   // Batch operations for efficiency
-  async getEventsForDateRange(startDate: Date, endDate: Date, userUri?: string): Promise<CalendlyEvent[]> {
+  async getEventsForDateRange(
+    startDate: Date,
+    endDate: Date,
+    userUri?: string
+  ): Promise<CalendlyEvent[]> {
     const params = {
       min_start_time: startDate.toISOString(),
       max_start_time: endDate.toISOString(),
@@ -270,7 +297,10 @@ export class CalendlyClient {
     return allEvents;
   }
 
-  async searchEventsByEmail(email: string, dateRange?: { start: Date; end: Date }): Promise<CalendlyEvent[]> {
+  async searchEventsByEmail(
+    email: string,
+    dateRange?: { start: Date; end: Date }
+  ): Promise<CalendlyEvent[]> {
     const params: any = {
       invitee_email: email,
       count: 100,

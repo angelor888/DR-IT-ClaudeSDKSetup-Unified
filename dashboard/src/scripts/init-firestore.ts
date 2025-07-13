@@ -10,22 +10,22 @@ const log = logger.child('FirestoreInit');
 async function initializeFirestore() {
   try {
     log.info('Starting Firestore initialization...');
-    
+
     // Initialize Firebase first
     initializeFirebase();
     const db = getFirestore();
-    
+
     // Create default communication preferences
     await createDefaultPreferences(db);
-    
+
     // Create sample data for development
     if (process.env.NODE_ENV === 'development') {
       await createSampleData(db);
     }
-    
+
     // Log index requirements
     logIndexRequirements();
-    
+
     log.info('Firestore initialization completed successfully');
   } catch (error) {
     log.error('Failed to initialize Firestore', error);
@@ -35,7 +35,7 @@ async function initializeFirestore() {
 
 async function createDefaultPreferences(db: any) {
   log.info('Creating default communication preferences...');
-  
+
   const defaultPrefs = {
     userId: 'default',
     defaultPlatform: 'slack',
@@ -48,7 +48,7 @@ async function createDefaultPreferences(db: any) {
     autoResponse: {
       enabled: true,
       useAI: true,
-      customMessage: 'Thank you for your message. We\'ll get back to you as soon as possible.',
+      customMessage: "Thank you for your message. We'll get back to you as soon as possible.",
       workingHours: {
         enabled: true,
         timezone: 'America/New_York',
@@ -71,17 +71,15 @@ async function createDefaultPreferences(db: any) {
     createdAt: new Date(),
     updatedAt: new Date(),
   };
-  
-  await db.collection(COLLECTIONS.COMMUNICATION_PREFERENCES)
-    .doc('default')
-    .set(defaultPrefs);
-    
+
+  await db.collection(COLLECTIONS.COMMUNICATION_PREFERENCES).doc('default').set(defaultPrefs);
+
   log.info('Default preferences created');
 }
 
 async function createSampleData(db: any) {
   log.info('Creating sample data for development...');
-  
+
   // Sample message templates
   const templates = [
     {
@@ -99,7 +97,8 @@ async function createSampleData(db: any) {
     {
       userId: 'default',
       name: 'Technical Support',
-      content: 'Thanks for contacting technical support. Can you please describe the issue you\'re experiencing?',
+      content:
+        "Thanks for contacting technical support. Can you please describe the issue you're experiencing?",
       category: 'support',
       platform: 'all',
       aiGenerated: false,
@@ -111,7 +110,8 @@ async function createSampleData(db: any) {
     {
       userId: 'default',
       name: 'Out of Office',
-      content: 'We\'re currently out of the office. We\'ll respond to your message within one business day.',
+      content:
+        "We're currently out of the office. We'll respond to your message within one business day.",
       category: 'auto-response',
       platform: 'all',
       aiGenerated: false,
@@ -121,11 +121,11 @@ async function createSampleData(db: any) {
       updatedAt: new Date(),
     },
   ];
-  
+
   for (const template of templates) {
     await db.collection(COLLECTIONS.MESSAGE_TEMPLATES).add(template);
   }
-  
+
   // Sample contact
   const sampleContact = {
     name: 'John Doe',
@@ -137,23 +137,21 @@ async function createSampleData(db: any) {
     createdAt: new Date(),
     updatedAt: new Date(),
   };
-  
+
   await db.collection(COLLECTIONS.CONTACTS).add(sampleContact);
-  
+
   log.info('Sample data created');
 }
 
 function logIndexRequirements() {
   log.info('Firestore index requirements:');
   log.info('Please create these composite indexes in the Firebase Console:');
-  
+
   for (const index of REQUIRED_INDEXES) {
-    const fieldsStr = index.fields
-      .map(f => `${f.field} (${f.order})`)
-      .join(', ');
+    const fieldsStr = index.fields.map(f => `${f.field} (${f.order})`).join(', ');
     log.info(`- ${index.collection}: ${fieldsStr}`);
   }
-  
+
   log.info('');
   log.info('Single-field indexes (auto-created):');
   const singleFields = [
@@ -168,7 +166,7 @@ function logIndexRequirements() {
     'contacts: email, phoneNumbers, tags',
     'calls: platform, from, to, timestamp',
   ];
-  
+
   for (const field of singleFields) {
     log.info(`- ${field}`);
   }
@@ -281,7 +279,7 @@ if (require.main === module) {
       logSecurityRules();
       process.exit(0);
     })
-    .catch((error) => {
+    .catch(error => {
       log.error('Initialization failed', error);
       process.exit(1);
     });

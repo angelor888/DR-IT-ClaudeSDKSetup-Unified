@@ -38,10 +38,7 @@ export class UnifiedTwilioWebhookHandler {
       .reduce((acc, key) => acc + key + req.body[key], fullUrl);
 
     // Calculate expected signature
-    const expectedSignature = crypto
-      .createHmac('sha1', authToken)
-      .update(params)
-      .digest('base64');
+    const expectedSignature = crypto.createHmac('sha1', authToken).update(params).digest('base64');
 
     return signature === expectedSignature;
   }
@@ -71,7 +68,8 @@ export class UnifiedTwilioWebhookHandler {
       let contactInfo = null;
       try {
         // Try to find contact by phone number in our system
-        const contactsSnapshot = await db.collection('contacts')
+        const contactsSnapshot = await db
+          .collection('contacts')
           .where('phoneNumbers', 'array-contains', phoneNumber)
           .limit(1)
           .get();
@@ -94,11 +92,15 @@ export class UnifiedTwilioWebhookHandler {
         platform: 'twilio',
         platformId: phoneNumber,
         title: contactInfo?.name || `SMS from ${phoneNumber}`,
-        participants: contactInfo ? [contactInfo] : [{
-          id: phoneNumber,
-          name: phoneNumber,
-          phone: phoneNumber,
-        }],
+        participants: contactInfo
+          ? [contactInfo]
+          : [
+              {
+                id: phoneNumber,
+                name: phoneNumber,
+                phone: phoneNumber,
+              },
+            ],
         status: 'active',
         messageCount: 0,
         lastMessageAt: new Date(),
@@ -123,8 +125,9 @@ export class UnifiedTwilioWebhookHandler {
       content: webhook.Body || '',
       sender: {
         id: phoneNumber,
-        name: conversationDoc.exists ? 
-          conversationDoc.data()!.participants?.[0]?.name : phoneNumber,
+        name: conversationDoc.exists
+          ? conversationDoc.data()!.participants?.[0]?.name
+          : phoneNumber,
         phone: phoneNumber,
       },
       timestamp: new Date(),
@@ -144,8 +147,7 @@ export class UnifiedTwilioWebhookHandler {
     // Update conversation
     await conversationRef.update({
       lastMessageAt: new Date(),
-      messageCount: conversationDoc.exists ? 
-        (conversationDoc.data()!.messageCount + 1) : 1,
+      messageCount: conversationDoc.exists ? conversationDoc.data()!.messageCount + 1 : 1,
       updatedAt: new Date(),
     });
 
@@ -241,11 +243,13 @@ export class UnifiedTwilioWebhookHandler {
         platform: 'twilio',
         platformId: phoneNumber,
         title: `Voicemail from ${phoneNumber}`,
-        participants: [{
-          id: phoneNumber,
-          name: phoneNumber,
-          phone: phoneNumber,
-        }],
+        participants: [
+          {
+            id: phoneNumber,
+            name: phoneNumber,
+            phone: phoneNumber,
+          },
+        ],
         status: 'active',
         messageCount: 1,
         lastMessageAt: new Date(),
@@ -264,9 +268,11 @@ export class UnifiedTwilioWebhookHandler {
     }
 
     // Trigger urgent notification if needed
-    if (data.TranscriptionText && 
-        (data.TranscriptionText.toLowerCase().includes('urgent') ||
-         data.TranscriptionText.toLowerCase().includes('emergency'))) {
+    if (
+      data.TranscriptionText &&
+      (data.TranscriptionText.toLowerCase().includes('urgent') ||
+        data.TranscriptionText.toLowerCase().includes('emergency'))
+    ) {
       await this.triggerUrgentNotification(conversationId, messageData);
     }
   }
@@ -279,7 +285,8 @@ export class UnifiedTwilioWebhookHandler {
     });
 
     // Update message status in database
-    const messagesSnapshot = await db.collection('messages')
+    const messagesSnapshot = await db
+      .collection('messages')
       .where('platform', '==', 'twilio')
       .where('metadata.messageSid', '==', webhook.MessageSid)
       .limit(1)
@@ -299,7 +306,8 @@ export class UnifiedTwilioWebhookHandler {
   private async checkAutoResponse(messageId: string, messageData: any): Promise<void> {
     try {
       // Check user preferences for auto-response
-      const prefsDoc = await db.collection('communication_preferences')
+      const prefsDoc = await db
+        .collection('communication_preferences')
         .doc('default') // Would use actual user ID in production
         .get();
 
@@ -308,20 +316,30 @@ export class UnifiedTwilioWebhookHandler {
       }
 
       const prefs = prefsDoc.data()!;
-      
+
       // Check working hours if configured
       if (prefs.autoResponse.workingHours?.enabled) {
         const now = new Date();
-        const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
-        const schedule = prefs.autoResponse.workingHours.schedule?.find((s: any) => s.day === dayOfWeek);
-        
+        const dayOfWeek = [
+          'sunday',
+          'monday',
+          'tuesday',
+          'wednesday',
+          'thursday',
+          'friday',
+          'saturday',
+        ][now.getDay()];
+        const schedule = prefs.autoResponse.workingHours.schedule?.find(
+          (s: any) => s.day === dayOfWeek
+        );
+
         if (schedule) {
           const currentTime = now.getHours() * 60 + now.getMinutes();
           const [startHour, startMin] = schedule.start.split(':').map(Number);
           const [endHour, endMin] = schedule.end.split(':').map(Number);
           const startTime = startHour * 60 + startMin;
           const endTime = endHour * 60 + endMin;
-          
+
           if (currentTime >= startTime && currentTime <= endTime) {
             // Within working hours, don't auto-respond
             return;
@@ -330,16 +348,13 @@ export class UnifiedTwilioWebhookHandler {
       }
 
       // Send auto-response
-      const autoResponseText = prefs.autoResponse.customMessage || 
-        'Thank you for your message. We\'ll get back to you as soon as possible.';
+      const autoResponseText =
+        prefs.autoResponse.customMessage ||
+        "Thank you for your message. We'll get back to you as soon as possible.";
 
-      await this.twilioService.sendSMS(
-        messageData.sender.phone,
-        autoResponseText,
-        {
-          messageId: `auto_${messageId}`,
-        }
-      );
+      await this.twilioService.sendSMS(messageData.sender.phone, autoResponseText, {
+        messageId: `auto_${messageId}`,
+      });
 
       log.debug('Auto-response sent', { messageId, to: messageData.sender.phone });
     } catch (error) {

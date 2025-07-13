@@ -32,7 +32,7 @@ export class JobScheduler {
       try {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
-        
+
         await this.jobQueues.addReportJob({
           type: 'daily',
           date: yesterday.toISOString().split('T')[0],
@@ -51,7 +51,7 @@ export class JobScheduler {
       try {
         const lastWeek = new Date();
         lastWeek.setDate(lastWeek.getDate() - 7);
-        
+
         await this.jobQueues.addReportJob({
           type: 'weekly',
           date: lastWeek.toISOString().split('T')[0],
@@ -70,7 +70,7 @@ export class JobScheduler {
       try {
         const lastMonth = new Date();
         lastMonth.setMonth(lastMonth.getMonth() - 1);
-        
+
         await this.jobQueues.addReportJob({
           type: 'monthly',
           date: lastMonth.toISOString().split('T')[0],

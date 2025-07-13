@@ -12,9 +12,9 @@ export abstract class BaseService {
       info: jest.fn(),
       warn: jest.fn(),
       error: jest.fn(),
-    }))
+    })),
   };
-  
+
   constructor(options: any) {
     this.name = options.name;
   }

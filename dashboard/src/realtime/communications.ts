@@ -27,12 +27,12 @@ export function initializeCommunicationsRealtime(io: Server): CommunicationsName
       // Create a mock request object for auth middleware
       const req: any = {
         headers: {
-          authorization: `Bearer ${token}`
+          authorization: `Bearer ${token}`,
         },
-        user: null
+        user: null,
       };
       const res: any = {
-        status: () => ({ json: () => {} })
+        status: () => ({ json: () => {} }),
       };
 
       // Use existing auth middleware
@@ -65,9 +65,11 @@ export function initializeCommunicationsRealtime(io: Server): CommunicationsName
         // Verify user has access to conversation
         const doc = await db.collection('conversations').doc(conversationId).get();
         const conversation = doc.data();
-        
-        if (conversation?.userId === userId || 
-            conversation?.participants?.some((p: any) => p.id === userId)) {
+
+        if (
+          conversation?.userId === userId ||
+          conversation?.participants?.some((p: any) => p.id === userId)
+        ) {
           socket.join(`conversation:${conversationId}`);
           socket.emit('joined:conversation', { conversationId });
           log.debug('User joined conversation', { userId, conversationId });
@@ -88,81 +90,83 @@ export function initializeCommunicationsRealtime(io: Server): CommunicationsName
     });
 
     // Handle sending messages
-    socket.on('send:message', async (data: {
-      conversationId: string;
-      content: string;
-      platform: 'slack' | 'twilio' | 'email';
-      metadata?: any;
-    }) => {
-      try {
-        const { conversationId, content, platform, metadata } = data;
+    socket.on(
+      'send:message',
+      async (data: {
+        conversationId: string;
+        content: string;
+        platform: 'slack' | 'twilio' | 'email';
+        metadata?: any;
+      }) => {
+        try {
+          const { conversationId, content, platform, metadata } = data;
 
-        // Create message in Firestore
-        const messageData = {
-          conversationId,
-          userId,
-          content,
-          platform,
-          sender: {
-            id: userId,
-            name: socket.data.user?.displayName || 'User',
-            type: 'user'
-          },
-          status: 'pending',
-          direction: 'outbound',
-          timestamp: new Date().toISOString(),
-          metadata
-        };
+          // Create message in Firestore
+          const messageData = {
+            conversationId,
+            userId,
+            content,
+            platform,
+            sender: {
+              id: userId,
+              name: socket.data.user?.displayName || 'User',
+              type: 'user',
+            },
+            status: 'pending',
+            direction: 'outbound',
+            timestamp: new Date().toISOString(),
+            metadata,
+          };
 
-        const messageRef = await db.collection('messages').add(messageData);
-        const messageId = messageRef.id;
+          const messageRef = await db.collection('messages').add(messageData);
+          const messageId = messageRef.id;
 
-        // Update conversation last message
-        await db.collection('conversations').doc(conversationId).update({
-          lastMessageAt: messageData.timestamp,
-          lastMessage: {
-            content: messageData.content,
-            sender: messageData.sender.name,
-            timestamp: messageData.timestamp
-          },
-          updatedAt: new Date().toISOString()
-        });
+          // Update conversation last message
+          await db
+            .collection('conversations')
+            .doc(conversationId)
+            .update({
+              lastMessageAt: messageData.timestamp,
+              lastMessage: {
+                content: messageData.content,
+                sender: messageData.sender.name,
+                timestamp: messageData.timestamp,
+              },
+              updatedAt: new Date().toISOString(),
+            });
 
-        // Emit to all users in conversation
-        communicationsNamespace.to(`conversation:${conversationId}`).emit('new:message', {
-          id: messageId,
-          ...messageData
-        });
+          // Emit to all users in conversation
+          communicationsNamespace.to(`conversation:${conversationId}`).emit('new:message', {
+            id: messageId,
+            ...messageData,
+          });
 
-        // TODO: Send to actual platform (Slack/Twilio/etc)
-        
-      } catch (error) {
-        log.error('Failed to send message:', error);
-        socket.emit('error', { message: 'Failed to send message' });
+          // TODO: Send to actual platform (Slack/Twilio/etc)
+        } catch (error) {
+          log.error('Failed to send message:', error);
+          socket.emit('error', { message: 'Failed to send message' });
+        }
       }
-    });
+    );
 
     // Handle typing indicators
     socket.on('typing:start', (conversationId: string) => {
       socket.to(`conversation:${conversationId}`).emit('typing:started', {
         conversationId,
         userId,
-        userName: socket.data.user?.displayName || 'User'
+        userName: socket.data.user?.displayName || 'User',
       });
     });
 
     socket.on('typing:stop', (conversationId: string) => {
       socket.to(`conversation:${conversationId}`).emit('typing:stopped', {
         conversationId,
-        userId
+        userId,
       });
     });
 
     // Handle marking messages as read
-    socket.on('messages:read', async (data: {
-      conversationId: string;
-      messageIds: string[];
-    }) => {
+    socket.on('messages:read', async (data: { conversationId: string; messageIds: string[] }) => {
       try {
         const { conversationId, messageIds } = data;
 
@@ -170,32 +174,32 @@ export function initializeCommunicationsRealtime(io: Server): CommunicationsName
         const batch = db.batch();
         messageIds.forEach(messageId => {
           const messageRef = db.collection('messages').doc(messageId);
-          batch.update(messageRef, { 
+          batch.update(messageRef, {
             status: 'read',
-            readAt: new Date().toISOString()
+            readAt: new Date().toISOString(),
           });
         });
         await batch.commit();
 
         // Update conversation unread count
-        const messages = await db.collection('messages')
+        const messages = await db
+          .collection('messages')
           .where('conversationId', '==', conversationId)
           .where('status', 'in', ['delivered', 'sent'])
           .where('direction', '==', 'inbound')
           .count()
           .get();
-        
+
         await db.collection('conversations').doc(conversationId).update({
-          unreadCount: messages.data().count
+          unreadCount: messages.data().count,
         });
 
         // Notify other users
         socket.to(`conversation:${conversationId}`).emit('messages:marked-read', {
           conversationId,
           messageIds,
-          userId
+          userId,
         });
-
       } catch (error) {
         log.error('Failed to mark messages as read:', error);
         socket.emit('error', { message: 'Failed to mark messages as read' });
@@ -205,14 +209,14 @@ export function initializeCommunicationsRealtime(io: Server): CommunicationsName
     // Handle presence updates
     socket.on('presence:update', (status: 'online' | 'away' | 'busy') => {
       socket.data.presence = status;
-      
+
       // Broadcast to all user's conversations
       socket.rooms.forEach(room => {
         if (room.startsWith('conversation:')) {
           socket.to(room).emit('presence:updated', {
             userId,
             status,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           });
         }
       });
@@ -221,14 +225,14 @@ export function initializeCommunicationsRealtime(io: Server): CommunicationsName
     // Handle disconnect
     socket.on('disconnect', () => {
       log.info('User disconnected from communications namespace', { userId });
-      
+
       // Broadcast offline presence
       socket.rooms.forEach(room => {
         if (room.startsWith('conversation:')) {
           socket.to(room).emit('presence:updated', {
             userId,
             status: 'offline',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           });
         }
       });
@@ -238,7 +242,7 @@ export function initializeCommunicationsRealtime(io: Server): CommunicationsName
   communicationsNamespace.on('connection', handleConnection);
 
   return {
-    handleConnection
+    handleConnection,
   };
 }
 

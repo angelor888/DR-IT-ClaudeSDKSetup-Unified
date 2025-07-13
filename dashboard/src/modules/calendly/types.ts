@@ -55,7 +55,16 @@ export interface CalendlyEvent {
   end_time: string;
   event_type: string;
   location?: {
-    type: 'physical' | 'gotomeeting' | 'inbound_call' | 'outbound_call' | 'zoom' | 'google_conference' | 'microsoft_teams' | 'webex' | 'custom';
+    type:
+      | 'physical'
+      | 'gotomeeting'
+      | 'inbound_call'
+      | 'outbound_call'
+      | 'zoom'
+      | 'google_conference'
+      | 'microsoft_teams'
+      | 'webex'
+      | 'custom';
     location?: string;
     join_url?: string;
     phone_number?: string;
@@ -133,7 +142,11 @@ export interface CalendlyWebhook {
 export interface CalendlyWebhookPayload {
   created_at: string;
   created_by: string;
-  event: 'invitee.created' | 'invitee.canceled' | 'invitee_no_show.created' | 'invitee_no_show.deleted';
+  event:
+    | 'invitee.created'
+    | 'invitee.canceled'
+    | 'invitee_no_show.created'
+    | 'invitee_no_show.deleted';
   payload: {
     event_type?: CalendlyEventType;
     event?: CalendlyEvent;
@@ -213,11 +226,11 @@ export interface CalendlySchedulingPreferences {
   workingHours: Array<{
     day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
     startTime: string; // HH:MM format
-    endTime: string;   // HH:MM format
+    endTime: string; // HH:MM format
   }>;
   bufferTime: {
     before: number; // minutes
-    after: number;  // minutes
+    after: number; // minutes
   };
   minimumNotice: number; // hours
   maximumNotice: number; // days

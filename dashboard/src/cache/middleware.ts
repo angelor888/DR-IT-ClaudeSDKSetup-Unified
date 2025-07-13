@@ -25,7 +25,7 @@ export function cacheMiddleware(options: CacheOptions = {}) {
     }
 
     const cache = getRedisCache();
-    
+
     // Generate cache key
     let cacheKey: string;
     let ttl: number;
@@ -47,39 +47,39 @@ export function cacheMiddleware(options: CacheOptions = {}) {
     try {
       // Try to get from cache
       const cachedData = await cache.get<any>(cacheKey);
-      
+
       if (cachedData) {
         log.debug('Cache hit', { key: cacheKey, path: req.path });
-        
+
         // Add cache headers
         res.setHeader('X-Cache', 'HIT');
         res.setHeader('X-Cache-Key', cacheKey);
-        
+
         return res.json(cachedData);
       }
 
       log.debug('Cache miss', { key: cacheKey, path: req.path });
-      
+
       // Store original res.json
       const originalJson = res.json.bind(res);
-      
+
       // Override res.json to cache the response
-      res.json = function(data: any) {
+      res.json = function (data: any) {
         // Only cache successful responses
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          cache.set(cacheKey, data, ttl).catch((error) => {
+          cache.set(cacheKey, data, ttl).catch(error => {
             log.error('Failed to cache response', {
               key: cacheKey,
               error: error instanceof Error ? error.message : 'Unknown error',
             });
           });
         }
-        
+
         // Add cache headers
         res.setHeader('X-Cache', 'MISS');
         res.setHeader('X-Cache-Key', cacheKey);
         res.setHeader('X-Cache-TTL', ttl.toString());
-        
+
         return originalJson(data);
       };
 
@@ -89,7 +89,7 @@ export function cacheMiddleware(options: CacheOptions = {}) {
         key: cacheKey,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      
+
       // Continue without caching on error
       next();
     }
@@ -98,37 +98,37 @@ export function cacheMiddleware(options: CacheOptions = {}) {
 
 // Specific cache middleware for common use cases
 export const cacheUserData = cacheMiddleware({
-  strategy: (req) => CacheStrategies.userData(req.user?.id || 'anonymous'),
-  condition: (req) => !!req.user?.id,
+  strategy: req => CacheStrategies.userData(req.user?.id || 'anonymous'),
+  condition: req => !!req.user?.id,
 });
 
 export const cacheServiceHealth = cacheMiddleware({
-  strategy: (req) => {
+  strategy: req => {
     const serviceName = req.params.name || 'all';
     return CacheStrategies.serviceHealth(serviceName);
   },
 });
 
 export const cacheJobberData = cacheMiddleware({
-  strategy: (req) => {
+  strategy: req => {
     const { jobId, customerId, quoteId } = req.params;
-    
+
     if (jobId) return CacheStrategies.jobberJob(jobId);
     if (customerId) return CacheStrategies.jobberCustomer(customerId);
     if (quoteId) return CacheStrategies.jobberQuote(quoteId);
-    
+
     // Default to API response caching
     return CacheStrategies.apiResponse(req.path, JSON.stringify(req.query));
   },
 });
 
 export const cacheSlackData = cacheMiddleware({
-  strategy: (req) => {
+  strategy: req => {
     const { channelId, userId } = req.params;
-    
+
     if (channelId) return CacheStrategies.slackChannel(channelId);
     if (userId) return CacheStrategies.slackUser(userId);
-    
+
     // Default to API response caching
     return CacheStrategies.apiResponse(req.path, JSON.stringify(req.query));
   },
@@ -138,10 +138,10 @@ export const cacheSlackData = cacheMiddleware({
 export function invalidateCache(patterns: string[] | ((req: Request) => string[])) {
   return async (req: Request, _res: Response, next: NextFunction) => {
     const cache = getRedisCache();
-    
+
     try {
       const patternsToInvalidate = typeof patterns === 'function' ? patterns(req) : patterns;
-      
+
       for (const pattern of patternsToInvalidate) {
         const deleted = await cache.deletePattern(pattern);
         log.info('Cache invalidated', { pattern, deletedKeys: deleted });
@@ -151,7 +151,7 @@ export function invalidateCache(patterns: string[] | ((req: Request) => string[]
         error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
-    
+
     next();
   };
 }

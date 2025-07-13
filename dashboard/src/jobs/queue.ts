@@ -12,21 +12,21 @@ export enum JobType {
   SYNC_JOBBER_DATA = 'sync_jobber_data',
   SYNC_SLACK_DATA = 'sync_slack_data',
   SYNC_GOOGLE_CALENDAR = 'sync_google_calendar',
-  
+
   // Notifications
   SEND_EMAIL = 'send_email',
   SEND_SMS = 'send_sms',
   SEND_PUSH_NOTIFICATION = 'send_push_notification',
-  
+
   // Reports
   GENERATE_DAILY_REPORT = 'generate_daily_report',
   GENERATE_WEEKLY_REPORT = 'generate_weekly_report',
   GENERATE_MONTHLY_REPORT = 'generate_monthly_report',
-  
+
   // Maintenance
   CLEANUP_OLD_DATA = 'cleanup_old_data',
   BACKUP_DATABASE = 'backup_database',
-  
+
   // Health checks
   SERVICE_HEALTH_CHECK = 'service_health_check',
 }
@@ -83,8 +83,8 @@ export class JobQueues {
   private initializeQueues(): void {
     // Create a queue for each job type category
     const queueNames = ['sync', 'notifications', 'reports', 'maintenance', 'health'];
-    
-    queueNames.forEach((name) => {
+
+    queueNames.forEach(name => {
       const queue = new Bull(name, this.redisUrl, {
         defaultJobOptions: {
           ...defaultJobOptions,
@@ -95,7 +95,7 @@ export class JobQueues {
 
       this.setupQueueEventHandlers(queue, name);
       this.queues.set(name, queue);
-      
+
       log.info(`Queue initialized: ${name}`);
     });
   }
@@ -163,7 +163,7 @@ export class JobQueues {
     try {
       const ws = getWebSocketServer();
       const data = job.data as any;
-      
+
       if (data.userId) {
         const syncEvent: SyncEventData = {
           syncId: job.id?.toString() || 'unknown',
@@ -270,8 +270,8 @@ export class JobQueues {
 
   async getJobCounts(queueName?: string): Promise<Record<string, any>> {
     const counts: Record<string, any> = {};
-    
-    const queuesToCheck = queueName 
+
+    const queuesToCheck = queueName
       ? [this.queues.get(queueName)].filter(Boolean)
       : Array.from(this.queues.values());
 
@@ -301,9 +301,7 @@ export class JobQueues {
   }
 
   async closeAll(): Promise<void> {
-    const closePromises = Array.from(this.queues.values()).map((queue) => 
-      queue.close()
-    );
+    const closePromises = Array.from(this.queues.values()).map(queue => queue.close());
     await Promise.all(closePromises);
     log.info('All queues closed');
   }

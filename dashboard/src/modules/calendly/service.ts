@@ -1,11 +1,11 @@
 // Calendly service implementation using the Universal Integration Framework
-import { 
-  BaseServiceClient, 
-  ServiceType, 
-  ServiceStatus, 
-  ServiceCapabilities, 
+import {
+  BaseServiceClient,
+  ServiceType,
+  ServiceStatus,
+  ServiceCapabilities,
   ServiceHealth,
-  WebhookHandler 
+  WebhookHandler,
 } from '../../core/services/integration-manager';
 import { CalendlyConfig } from '../../core/config/types';
 import { CalendlyClient } from './client';
@@ -30,7 +30,7 @@ export class CalendlyService extends BaseServiceClient {
 
   constructor(config: CalendlyConfig) {
     super(config);
-    
+
     if (!config.enabled) {
       throw new Error('Calendly service is not enabled');
     }
@@ -71,7 +71,7 @@ export class CalendlyService extends BaseServiceClient {
 
       this.health.status = 'active';
       this.emit('statusChange', 'active');
-      
+
       log.info('Calendly service initialized successfully');
     } catch (error) {
       log.error('Failed to initialize Calendly service:', error);
@@ -84,7 +84,7 @@ export class CalendlyService extends BaseServiceClient {
 
   async healthCheck(): Promise<ServiceHealth> {
     const startTime = Date.now();
-    
+
     try {
       const healthResult = await this.client.healthCheck();
       const responseTime = Date.now() - startTime;
@@ -123,13 +123,13 @@ export class CalendlyService extends BaseServiceClient {
   async destroy(): Promise<void> {
     try {
       log.info('Destroying Calendly service...');
-      
+
       // Clean up webhooks
       await this.cleanupWebhooks();
-      
+
       this.health.status = 'disabled';
       this.emit('statusChange', 'disabled');
-      
+
       log.info('Calendly service destroyed successfully');
     } catch (error) {
       log.error('Error destroying Calendly service:', error);
@@ -153,7 +153,10 @@ export class CalendlyService extends BaseServiceClient {
     }
   }
 
-  async getEventsByCustomer(customerEmail: string, dateRange?: { start: Date; end: Date }): Promise<CalendlyJobEvent[]> {
+  async getEventsByCustomer(
+    customerEmail: string,
+    dateRange?: { start: Date; end: Date }
+  ): Promise<CalendlyJobEvent[]> {
     try {
       const events = await this.client.searchEventsByEmail(customerEmail, dateRange);
       return this.convertToJobEvents(events);
@@ -167,7 +170,7 @@ export class CalendlyService extends BaseServiceClient {
     try {
       const eventUuid = this.extractUuid(calendlyEventUri);
       const calendlyEvent = await this.client.getScheduledEvent(eventUuid);
-      
+
       // Create job event record in Firestore
       const jobEvent: CalendlyJobEvent = {
         id: eventUuid,
@@ -194,7 +197,7 @@ export class CalendlyService extends BaseServiceClient {
 
       // Store in Firestore
       await this.db.collection('calendly_events').doc(eventUuid).set(jobEvent);
-      
+
       // Create system event
       await createEvent(
         'sync',
@@ -212,10 +215,14 @@ export class CalendlyService extends BaseServiceClient {
     }
   }
 
-  async updateEventStatus(calendlyEventUri: string, status: 'completed' | 'no_show', notes?: string): Promise<void> {
+  async updateEventStatus(
+    calendlyEventUri: string,
+    status: 'completed' | 'no_show',
+    notes?: string
+  ): Promise<void> {
     try {
       const eventUuid = this.extractUuid(calendlyEventUri);
-      
+
       // Update in Firestore
       await this.db.collection('calendly_events').doc(eventUuid).update({
         status,
@@ -233,8 +240,10 @@ export class CalendlyService extends BaseServiceClient {
   async getSchedulingPreferences(userUri?: string): Promise<CalendlySchedulingPreferences> {
     try {
       // This is a simplified version - Calendly API has limited preference access
-      const user = userUri ? await this.client.getUser(userUri) : await this.client.getCurrentUser();
-      
+      const user = userUri
+        ? await this.client.getUser(userUri)
+        : await this.client.getCurrentUser();
+
       return {
         timezone: user.timezone,
         workingHours: [
@@ -329,13 +338,16 @@ export class CalendlyService extends BaseServiceClient {
     if (!payload.payload.invitee || !payload.payload.event) return;
 
     const { invitee, event } = payload.payload;
-    
+
     // Check if this event is already synced with a job
-    const eventDoc = await this.db.collection('calendly_events').doc(this.extractUuid(event.uri)).get();
-    
+    const eventDoc = await this.db
+      .collection('calendly_events')
+      .doc(this.extractUuid(event.uri))
+      .get();
+
     if (eventDoc.exists) {
       const jobEvent = eventDoc.data() as CalendlyJobEvent;
-      
+
       // Create system notification
       await createEvent(
         'create',
@@ -343,11 +355,14 @@ export class CalendlyService extends BaseServiceClient {
         'calendly_booking',
         `New booking: ${invitee.name} scheduled for ${event.name}`,
         { source: 'webhook' },
-        { userId: 'system', metadata: { 
-          inviteeEmail: invitee.email,
-          eventTime: event.start_time,
-          jobId: jobEvent.jobId,
-        }}
+        {
+          userId: 'system',
+          metadata: {
+            inviteeEmail: invitee.email,
+            eventTime: event.start_time,
+            jobId: jobEvent.jobId,
+          },
+        }
       );
     }
 
@@ -358,10 +373,13 @@ export class CalendlyService extends BaseServiceClient {
     if (!payload.payload.invitee || !payload.payload.event) return;
 
     const { invitee, event } = payload.payload;
-    
+
     // Update event status if synced
-    const eventDoc = await this.db.collection('calendly_events').doc(this.extractUuid(event.uri)).get();
-    
+    const eventDoc = await this.db
+      .collection('calendly_events')
+      .doc(this.extractUuid(event.uri))
+      .get();
+
     if (eventDoc.exists) {
       await this.db.collection('calendly_events').doc(this.extractUuid(event.uri)).update({
         status: 'canceled',
@@ -376,10 +394,13 @@ export class CalendlyService extends BaseServiceClient {
     if (!payload.payload.invitee || !payload.payload.event) return;
 
     const { invitee, event } = payload.payload;
-    
+
     // Update event status if synced
-    const eventDoc = await this.db.collection('calendly_events').doc(this.extractUuid(event.uri)).get();
-    
+    const eventDoc = await this.db
+      .collection('calendly_events')
+      .doc(this.extractUuid(event.uri))
+      .get();
+
     if (eventDoc.exists) {
       await this.db.collection('calendly_events').doc(this.extractUuid(event.uri)).update({
         status: 'no_show',
@@ -394,7 +415,7 @@ export class CalendlyService extends BaseServiceClient {
   private async setupWebhooks(): Promise<void> {
     try {
       const organization = await this.client.getCurrentOrganization();
-      
+
       // Check existing webhooks
       const existingWebhooks = await this.client.getWebhooks({
         organization: organization.uri,
@@ -406,7 +427,7 @@ export class CalendlyService extends BaseServiceClient {
 
       // Create webhook if it doesn't exist
       const existingWebhook = existingWebhooks.find(wh => wh.callback_url === webhookUrl);
-      
+
       if (!existingWebhook) {
         await this.client.createWebhook({
           url: webhookUrl,
@@ -414,7 +435,7 @@ export class CalendlyService extends BaseServiceClient {
           organization: organization.uri,
           scope: 'organization',
         });
-        
+
         log.info('Created Calendly webhook subscription');
       } else {
         log.info('Calendly webhook already exists');
@@ -429,7 +450,7 @@ export class CalendlyService extends BaseServiceClient {
     try {
       const webhooks = await this.client.getWebhooks();
       const webhookUrl = `${process.env.BASE_URL}/webhooks/calendly`;
-      
+
       for (const webhook of webhooks) {
         if (webhook.callback_url === webhookUrl) {
           await this.client.deleteWebhook(this.extractUuid(webhook.uri));

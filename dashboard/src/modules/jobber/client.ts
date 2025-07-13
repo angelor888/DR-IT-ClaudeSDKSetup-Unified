@@ -499,7 +499,7 @@ export class JobberClient extends BaseService {
   async checkHealth() {
     try {
       const startTime = Date.now();
-      
+
       // Use a simple introspection query to check if GraphQL API is accessible
       const introspectionQuery = `
         query {
@@ -510,11 +510,11 @@ export class JobberClient extends BaseService {
           }
         }
       `;
-      
+
       await this.query(introspectionQuery);
-      
+
       const responseTime = Date.now() - startTime;
-      
+
       return {
         name: 'jobber',
         status: 'healthy' as const,

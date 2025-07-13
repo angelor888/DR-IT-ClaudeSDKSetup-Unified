@@ -17,7 +17,7 @@ describe('WebSocket Server', () => {
   beforeAll(async () => {
     // Create HTTP server
     httpServer = createServer();
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       httpServer.listen(0, () => {
         const port = (httpServer.address() as AddressInfo).port;
         serverUrl = `http://localhost:${port}`;
@@ -36,13 +36,13 @@ describe('WebSocket Server', () => {
   });
 
   afterAll(async () => {
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       httpServer.close(() => resolve());
     });
   });
 
   describe('Connection Handling', () => {
-    it('should accept connections with valid auth token', (done) => {
+    it('should accept connections with valid auth token', done => {
       // Mock Firebase auth
       const mockVerifyIdToken = jest.fn().mockResolvedValue({
         uid: 'test-user-123',
@@ -64,7 +64,7 @@ describe('WebSocket Server', () => {
       });
     });
 
-    it('should reject connections without auth token', (done) => {
+    it('should reject connections without auth token', done => {
       client = io(serverUrl, {
         auth: {},
       });
@@ -75,7 +75,7 @@ describe('WebSocket Server', () => {
       });
     });
 
-    it('should reject connections with invalid auth token', (done) => {
+    it('should reject connections with invalid auth token', done => {
       // Mock Firebase auth to reject
       const mockVerifyIdToken = jest.fn().mockRejectedValue(new Error('Invalid token'));
       (getAuth as jest.Mock).mockReturnValue({
@@ -107,7 +107,7 @@ describe('WebSocket Server', () => {
       });
     });
 
-    it('should join user room on connection', (done) => {
+    it('should join user room on connection', done => {
       client = io(serverUrl, {
         auth: {
           token: 'valid-token',
@@ -125,7 +125,7 @@ describe('WebSocket Server', () => {
       });
     });
 
-    it('should join team room if teamId provided', (done) => {
+    it('should join team room if teamId provided', done => {
       client = io(serverUrl, {
         auth: {
           token: 'valid-token',
@@ -148,7 +148,8 @@ describe('WebSocket Server', () => {
 
     beforeEach(() => {
       // Mock successful auth
-      const mockVerifyIdToken = jest.fn()
+      const mockVerifyIdToken = jest
+        .fn()
         .mockResolvedValueOnce({
           uid: 'test-user-123',
           email: 'test@example.com',
@@ -168,7 +169,7 @@ describe('WebSocket Server', () => {
       }
     });
 
-    it('should broadcast notification to specific user', (done) => {
+    it('should broadcast notification to specific user', done => {
       client = io(serverUrl, {
         auth: {
           token: 'valid-token',
@@ -188,7 +189,7 @@ describe('WebSocket Server', () => {
       });
     });
 
-    it('should broadcast to team members only', (done) => {
+    it('should broadcast to team members only', done => {
       const teamId = 'team-123';
       let receivedCount = 0;
 
@@ -247,7 +248,7 @@ describe('WebSocket Server', () => {
       });
     });
 
-    it('should handle sync started event', (done) => {
+    it('should handle sync started event', done => {
       client = io(serverUrl, {
         auth: {
           token: 'valid-token',
@@ -268,7 +269,7 @@ describe('WebSocket Server', () => {
       });
     });
 
-    it('should handle sync progress event', (done) => {
+    it('should handle sync progress event', done => {
       client = io(serverUrl, {
         auth: {
           token: 'valid-token',
@@ -289,7 +290,7 @@ describe('WebSocket Server', () => {
       });
     });
 
-    it('should handle sync completed event', (done) => {
+    it('should handle sync completed event', done => {
       client = io(serverUrl, {
         auth: {
           token: 'valid-token',
@@ -310,7 +311,7 @@ describe('WebSocket Server', () => {
       });
     });
 
-    it('should handle sync failed event', (done) => {
+    it('should handle sync failed event', done => {
       client = io(serverUrl, {
         auth: {
           token: 'valid-token',
@@ -344,7 +345,7 @@ describe('WebSocket Server', () => {
       });
     });
 
-    it('should handle client disconnect gracefully', (done) => {
+    it('should handle client disconnect gracefully', done => {
       client = io(serverUrl, {
         auth: {
           token: 'valid-token',
@@ -353,7 +354,7 @@ describe('WebSocket Server', () => {
 
       client.on('connect', () => {
         const socketId = client.id;
-        
+
         client.on('disconnect', () => {
           expect(client.connected).toBe(false);
           done();
@@ -363,7 +364,7 @@ describe('WebSocket Server', () => {
       });
     });
 
-    it('should support reconnection', (done) => {
+    it('should support reconnection', done => {
       let connectCount = 0;
 
       client = io(serverUrl, {
@@ -376,7 +377,7 @@ describe('WebSocket Server', () => {
 
       client.on('connect', () => {
         connectCount++;
-        
+
         if (connectCount === 1) {
           // First connection, disconnect to trigger reconnection
           client.disconnect();
@@ -391,7 +392,7 @@ describe('WebSocket Server', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle server errors gracefully', (done) => {
+    it('should handle server errors gracefully', done => {
       // Mock auth to throw error
       const mockVerifyIdToken = jest.fn().mockImplementation(() => {
         throw new Error('Database error');

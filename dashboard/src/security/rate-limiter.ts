@@ -9,7 +9,7 @@ const log = logger.child('RateLimiter');
 class RedisStore {
   private cache: any; // Will be initialized on first use
   private prefix = 'ratelimit:';
-  
+
   private getCache(): any {
     if (!this.cache) {
       this.cache = getRedisCache();
@@ -24,8 +24,11 @@ class RedisStore {
 
     try {
       // Get current count
-      const current = await this.getCache().get(fullKey) as { count: number; resetTime: number } | null;
-      
+      const current = (await this.getCache().get(fullKey)) as {
+        count: number;
+        resetTime: number;
+      } | null;
+
       if (!current || now > current.resetTime) {
         // Start new window
         const resetTime = now + window;
@@ -36,18 +39,18 @@ class RedisStore {
       // Increment existing window
       const newCount = current.count + 1;
       await this.getCache().set(
-        fullKey, 
-        { count: newCount, resetTime: current.resetTime }, 
+        fullKey,
+        { count: newCount, resetTime: current.resetTime },
         Math.ceil((current.resetTime - now) / 1000)
       );
-      
+
       return { totalHits: newCount, resetTime: new Date(current.resetTime) };
     } catch (error) {
       log.error('Redis store error', {
         key: fullKey,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      
+
       // Fallback to allowing request on error
       return { totalHits: 0, resetTime: new Date(Date.now() + 60000) };
     }
@@ -55,9 +58,12 @@ class RedisStore {
 
   async decrement(key: string): Promise<void> {
     const fullKey = this.prefix + key;
-    
+
     try {
-      const current = await this.getCache().get(fullKey) as { count: number; resetTime: number } | null;
+      const current = (await this.getCache().get(fullKey)) as {
+        count: number;
+        resetTime: number;
+      } | null;
       if (current && current.count > 0) {
         await this.getCache().set(
           fullKey,
@@ -97,7 +103,7 @@ export const rateLimiters = {
         path: req.path,
         userId: (req as any).user?.id,
       });
-      
+
       res.status(429).json({
         success: false,
         error: 'Too many authentication attempts',
@@ -156,7 +162,7 @@ export const rateLimiters = {
         userId: (req as any).user?.id,
         method: req.method,
       });
-      
+
       res.status(429).json({
         success: false,
         error: 'Too many write operations',
