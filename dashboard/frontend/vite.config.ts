@@ -7,6 +7,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      'use-sync-external-store$': path.resolve(__dirname, './src/compat/use-sync-external-store.js'),
+      'use-sync-external-store/with-selector$': path.resolve(__dirname, './src/compat/use-sync-external-store.js'),
       '@': path.resolve(__dirname, './src'),
       '@app': path.resolve(__dirname, './src/app'),
       '@features': path.resolve(__dirname, './src/features'),
@@ -16,6 +18,17 @@ export default defineConfig({
       '@types': path.resolve(__dirname, './src/types'),
       '@styles': path.resolve(__dirname, './src/styles'),
     },
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'use-sync-external-store/shim'],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+      },
+    },
+  },
+  define: {
+    'process.env': {},
   },
   build: {
     // Increase chunk size warning limit (default is 500kb)

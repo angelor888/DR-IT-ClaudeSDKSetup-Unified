@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1242 2208" width="1242" height="2208">
+  <rect width="1242" height="2208" fill="#1976d2"/>
+  <g transform="translate(621, 1104)">
+    <!-- Centered tools icon - larger for high res -->
+    <path d="M-120 -180 L-40 -100 L-50 -90 L-20 -60 L-30 -50 L-60 -80 L-140 -160 L-120 -180 Z" 
+          fill="#ffffff" stroke="#333" stroke-width="3"/>
+    <rect x="-135" y="-195" width="15" height="80" rx="7" 
+          fill="#8B4513" transform="rotate(-45 -127 -155)" stroke="#333" stroke-width="2"/>
+    
+    <path d="M120 -180 L40 -100 L50 -90 L20 -60 L30 -50 L60 -80 L140 -160 L120 -180 Z" 
+          fill="#ffffff" stroke="#333" stroke-width="3"/>
+    <rect x="120" y="-195" width="15" height="85" rx="7" 
+          fill="#8B4513" transform="rotate(45 127 -152)" stroke="#333" stroke-width="2"/>
+    
+    <circle cx="0" cy="130" r="25" fill="#ffffff" stroke="#333" stroke-width="3"/>
+    <circle cx="0" cy="130" r="17" fill="#333"/>
+    <line x1="-17" y1="130" x2="17" y2="130" stroke="#fff" stroke-width="3"/>
+    <line x1="0" y1="113" x2="0" y2="147" stroke="#fff" stroke-width="3"/>
+  </g>
+  
+  <!-- App name -->
+  <text x="621" y="1300" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="48" font-weight="bold">DuetRight</text>
+  <text x="621" y="1350" text-anchor="middle" fill="#e3f2fd" font-family="Arial, sans-serif" font-size="28">IT Dashboard</text>
+</svg>
