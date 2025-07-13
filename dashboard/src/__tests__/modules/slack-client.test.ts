@@ -6,8 +6,35 @@ import {
 } from '../../core/errors/slack.error';
 import { config } from '../../core/config';
 
-// Mock axios and BaseService
-jest.mock('axios');
+// Mock BaseService to avoid all its dependencies
+jest.mock('../../core/services/base.service', () => ({
+  BaseService: class MockBaseService {
+    protected readonly name: string;
+    protected readonly log: any = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+    
+    constructor(options: any) {
+      this.name = options.name;
+    }
+
+    protected async get(path: string, config?: any): Promise<any> {
+      throw new Error('get not mocked');
+    }
+
+    protected async post(path: string, data?: any, config?: any): Promise<any> {
+      throw new Error('post not mocked');
+    }
+
+    protected async request(config: any): Promise<any> {
+      throw new Error('request not mocked');
+    }
+  }
+}));
+
 jest.mock('../../core/config', () => ({
   config: {
     services: {
@@ -15,6 +42,9 @@ jest.mock('../../core/config', () => ({
         botToken: 'xoxb-test-token',
       },
     },
+    monitoring: {
+      logLevel: 'info'
+    }
   },
 }));
 
@@ -23,11 +53,12 @@ const mockGet = jest.fn();
 const mockPost = jest.fn();
 const mockRequest = jest.fn();
 
-// Replace BaseService methods with mocks
-(SlackClient.prototype as any).get = mockGet;
-(SlackClient.prototype as any).post = mockPost;
-// Override the protected request method
-(SlackClient.prototype as any).request = mockRequest;
+// Replace BaseService methods with mocks after class is loaded
+beforeAll(() => {
+  (SlackClient.prototype as any).get = mockGet;
+  (SlackClient.prototype as any).post = mockPost;
+  (SlackClient.prototype as any).request = mockRequest;
+});
 
 describe('SlackClient', () => {
   let client: SlackClient;
@@ -57,7 +88,7 @@ describe('SlackClient', () => {
 
   describe('error handling', () => {
     it('should handle authentication errors', async () => {
-      mockRequest.mockResolvedValueOnce({
+      mockGet.mockResolvedValueOnce({
         data: {
           ok: false,
           error: 'invalid_auth',
@@ -65,6 +96,14 @@ describe('SlackClient', () => {
       });
 
       await expect(client.testAuth()).rejects.toThrow(SlackAuthError);
+      
+      mockGet.mockResolvedValueOnce({
+        data: {
+          ok: false,
+          error: 'invalid_auth',
+        },
+      });
+      
       await expect(client.testAuth()).rejects.toThrow('Slack authentication failed: invalid_auth');
     });
 
@@ -101,7 +140,7 @@ describe('SlackClient', () => {
           channels: [{ id: 'C123', name: 'general' }],
         },
       };
-      mockRequest.mockResolvedValueOnce(mockResponse);
+      mockGet.mockResolvedValueOnce(mockResponse);
 
       const result = await client.listChannels();
       expect(result).toEqual(mockResponse.data);

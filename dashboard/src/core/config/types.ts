@@ -5,6 +5,7 @@ export interface ServerConfig {
   corsOrigin: string[];
   corsCredentials: boolean;
   isProduction?: boolean;
+  baseUrl?: string;
 }
 
 export interface FirebaseConfig {
@@ -25,6 +26,8 @@ export interface SlackConfig {
   appToken?: string;
   channelId?: string;
   notificationsChannelId?: string;
+  clientId?: string;
+  clientSecret?: string;
 }
 
 export interface JobberConfig {
