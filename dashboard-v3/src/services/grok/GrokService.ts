@@ -65,7 +65,6 @@ interface MCPToolCall {
 }
 
 class GrokService {
-  private client: AxiosInstance;
   private functionsClient: AxiosInstance;
   private apiKey: string;
   private baseURL: string;
@@ -84,17 +83,7 @@ class GrokService {
     // ALWAYS use Firebase Functions to avoid CORS issues
     this.useFirebaseFunctions = true;
 
-    // Direct API client (for development)
-    this.client = axios.create({
-      baseURL: this.baseURL,
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      timeout: 60000, // 60 seconds for AI responses
-    });
-
-    // Firebase Functions client (for production)
+    // Firebase Functions client (ONLY way to access Grok API)
     this.functionsClient = axios.create({
       baseURL: this.functionsURL,
       headers: {
