@@ -2,21 +2,16 @@ import React, { useState } from 'react';
 import {
   Box,
   Paper,
-  TextField,
   Button,
   Typography,
   Alert,
+  CircularProgress,
   Divider,
-  IconButton,
-  InputAdornment,
 } from '@mui/material';
 import {
-  Visibility,
-  VisibilityOff,
   Google as GoogleIcon,
-  Email as EmailIcon,
 } from '@mui/icons-material';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '../../config/firebase';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
@@ -24,9 +19,6 @@ import { setUser } from '../../store/slices/authSlice';
 import { useNavigate } from 'react-router-dom';
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -34,19 +26,6 @@ const LoginPage: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (err: any) {
-      setError(err.message || 'Login failed');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
@@ -54,9 +33,29 @@ const LoginPage: React.FC = () => {
 
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      provider.addScope('email');
+      provider.addScope('profile');
+      
+      const result = await signInWithPopup(auth, provider);
+      console.log('Google login successful:', result.user?.email);
     } catch (err: any) {
-      setError(err.message || 'Google login failed');
+      console.error('Google login error:', err);
+      
+      let errorMessage = 'Google login failed. ';
+      
+      if (err.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Login was cancelled. Please try again.';
+      } else if (err.code === 'auth/popup-blocked') {
+        errorMessage = 'Popup was blocked. Please allow popups for this site and try again.';
+      } else if (err.code === 'auth/cancelled-popup-request') {
+        errorMessage = 'Login was cancelled. Please try again.';
+      } else if (err.code === 'auth/unauthorized-domain') {
+        errorMessage = 'This domain is not authorized for Google login. Please contact support.';
+      } else {
+        errorMessage += err.message || 'Please try again or contact support.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -119,6 +118,9 @@ const LoginPage: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
             AI-Powered Business Management
           </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+            Sign in with your DuetRight Google account
+          </Typography>
         </Box>
 
         {(error || authError) && (
@@ -129,21 +131,25 @@ const LoginPage: React.FC = () => {
 
         <Button
           fullWidth
-          variant="outlined"
+          variant="contained"
           size="large"
-          startIcon={<GoogleIcon />}
+          startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <GoogleIcon />}
           onClick={handleGoogleLogin}
           disabled={isLoading}
           sx={{
-            mb: 2,
-            borderColor: 'divider',
+            mb: 3,
+            py: 1.5,
+            backgroundColor: '#4285f4',
+            color: 'white',
             '&:hover': {
-              borderColor: 'primary.main',
-              backgroundColor: 'action.hover',
+              backgroundColor: '#3367d6',
+            },
+            '&:disabled': {
+              backgroundColor: '#94a3b8',
             },
           }}
         >
-          Continue with Google
+          {isLoading ? 'Signing in...' : 'Sign in with Google'}
         </Button>
 
         {isDevelopment && (
@@ -173,61 +179,6 @@ const LoginPage: React.FC = () => {
             </Divider>
           </>
         )}
-
-        <Box component="form" onSubmit={handleEmailLogin}>
-          <TextField
-            fullWidth
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={isLoading}
-            required
-            sx={{ mb: 2 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <EmailIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          <TextField
-            fullWidth
-            label="Password"
-            type={showPassword ? 'text' : 'password'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={isLoading}
-            required
-            sx={{ mb: 3 }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                    disabled={isLoading}
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          <Button
-            fullWidth
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={isLoading || !email || !password}
-            sx={{ mb: 2 }}
-          >
-            {isLoading ? 'Signing in...' : 'Sign In'}
-          </Button>
-        </Box>
 
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 3 }}>
           Powered by Grok 4 AI • MCP Integration Hub
