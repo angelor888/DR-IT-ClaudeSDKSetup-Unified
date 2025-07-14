@@ -546,11 +546,15 @@ export const jobberOAuth = functions.https.onRequest(async (req, res) => {
         }
 
         // Exchange code for access token
+        const redirectUri = `${req.get('origin')}/jobber-callback`;
+        console.log('Exchanging code for token with redirect_uri:', redirectUri);
+        
         const tokenResponse = await axios.post('https://api.getjobber.com/api/oauth/token', {
           client_id: jobberClientId,
           client_secret: jobberClientSecret,
           code,
           grant_type: 'authorization_code',
+          redirect_uri: redirectUri,
         });
 
         const { access_token, refresh_token } = tokenResponse.data;
@@ -647,34 +651,34 @@ export const jobberClients = functions.https.onRequest(async (req, res) => {
         return;
       }
 
-      const jobberResponse = await axios.get('https://api.getjobber.com/api/graphql', {
+      const jobberResponse = await axios.post('https://api.getjobber.com/api/graphql', {
+        query: `
+          query GetClients {
+            clients {
+              nodes {
+                id
+                firstName
+                lastName
+                companyName
+                email
+                phoneNumber
+                billingAddress {
+                  street
+                  city
+                  province
+                  postalCode
+                }
+                createdAt
+                updatedAt
+              }
+            }
+          }
+        `,
+      }, {
         headers: {
           'Authorization': `Bearer ${jobberToken}`,
           'Content-Type': 'application/json',
-        },
-        data: {
-          query: `
-            query GetClients {
-              clients {
-                nodes {
-                  id
-                  firstName
-                  lastName
-                  companyName
-                  email
-                  phoneNumber
-                  billingAddress {
-                    street
-                    city
-                    province
-                    postalCode
-                  }
-                  createdAt
-                  updatedAt
-                }
-              }
-            }
-          `,
+          'X-JOBBER-GRAPHQL-VERSION': '2023-11-15',
         },
       });
 
@@ -762,6 +766,7 @@ export const jobberJobs = functions.https.onRequest(async (req, res) => {
         headers: {
           'Authorization': `Bearer ${jobberToken}`,
           'Content-Type': 'application/json',
+          'X-JOBBER-GRAPHQL-VERSION': '2023-11-15',
         },
       });
 
@@ -810,6 +815,7 @@ export const jobberSync = functions.https.onRequest(async (req, res) => {
       }
 
       // Fetch clients from Jobber
+      console.log('Fetching clients from Jobber API...');
       const clientsResponse = await axios.post('https://api.getjobber.com/api/graphql', {
         query: `
           query GetClients {
@@ -837,8 +843,11 @@ export const jobberSync = functions.https.onRequest(async (req, res) => {
         headers: {
           'Authorization': `Bearer ${jobberToken}`,
           'Content-Type': 'application/json',
+          'X-JOBBER-GRAPHQL-VERSION': '2023-11-15',
         },
       });
+      
+      console.log(`Successfully fetched ${clientsResponse.data.data.clients.nodes.length} clients`);
 
       // Fetch jobs from Jobber
       const jobsResponse = await axios.post('https://api.getjobber.com/api/graphql', {
@@ -878,6 +887,7 @@ export const jobberSync = functions.https.onRequest(async (req, res) => {
         headers: {
           'Authorization': `Bearer ${jobberToken}`,
           'Content-Type': 'application/json',
+          'X-JOBBER-GRAPHQL-VERSION': '2023-11-15',
         },
       });
 
@@ -961,9 +971,22 @@ export const jobberSync = functions.https.onRequest(async (req, res) => {
 
     } catch (error: any) {
       console.error('Jobber sync error:', error);
+      
+      // Enhanced error logging
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+        console.error('Response headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('Request error:', error.request);
+      } else {
+        console.error('General error:', error.message);
+      }
+      
       res.status(500).json({
         success: false,
-        error: error.message || 'Sync failed',
+        error: error.response?.data?.error || error.message || 'Sync failed',
+        details: error.response?.data || null,
       });
     }
   });
@@ -1014,6 +1037,7 @@ export const jobberTest = functions.https.onRequest(async (req, res) => {
         headers: {
           'Authorization': `Bearer ${jobberToken}`,
           'Content-Type': 'application/json',
+          'X-JOBBER-GRAPHQL-VERSION': '2023-11-15',
         },
       });
 
@@ -1027,6 +1051,100 @@ export const jobberTest = functions.https.onRequest(async (req, res) => {
       res.status(500).json({
         success: false,
         error: error.message || 'Connection test failed',
+      });
+    }
+  });
+});
+
+// Debug Jobber connection
+export const jobberDebug = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== 'GET') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        res.status(401).json({ error: 'No authorization header' });
+        return;
+      }
+
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      const userId = decodedToken.uid;
+
+      console.log('Debug: Checking Jobber for user:', userId);
+
+      // Get integration doc
+      const integrationDoc = await admin.firestore().collection('user_integrations').doc(userId).get();
+      
+      if (!integrationDoc.exists) {
+        res.json({
+          success: false,
+          error: 'No integration document found',
+          userId,
+        });
+        return;
+      }
+
+      const integrationData = integrationDoc.data();
+      const jobberToken = integrationData?.jobber?.access_token;
+
+      if (!jobberToken) {
+        res.json({
+          success: false,
+          error: 'No Jobber token found',
+          hasIntegration: true,
+          jobberData: integrationData?.jobber ? Object.keys(integrationData.jobber) : null,
+        });
+        return;
+      }
+
+      console.log('Debug: Found Jobber token, testing API...');
+
+      // Try a simple API call
+      try {
+        const testResponse = await axios.post('https://api.getjobber.com/api/graphql', {
+          query: `{ account { id } }`,
+        }, {
+          headers: {
+            'Authorization': `Bearer ${jobberToken}`,
+            'Content-Type': 'application/json',
+            'X-JOBBER-GRAPHQL-VERSION': '2023-11-15',
+          },
+        });
+
+        console.log('Debug: API test response:', testResponse.status);
+
+        res.json({
+          success: true,
+          tokenFound: true,
+          apiTest: 'success',
+          accountId: testResponse.data?.data?.account?.id,
+        });
+
+      } catch (apiError: any) {
+        console.error('Debug: API test failed:', apiError.response?.status, apiError.response?.data);
+        
+        res.json({
+          success: false,
+          tokenFound: true,
+          apiTest: 'failed',
+          apiError: {
+            status: apiError.response?.status,
+            data: apiError.response?.data,
+            message: apiError.message,
+          },
+        });
+      }
+
+    } catch (error: any) {
+      console.error('Debug endpoint error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
       });
     }
   });
