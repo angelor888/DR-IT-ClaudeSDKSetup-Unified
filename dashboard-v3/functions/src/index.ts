@@ -779,6 +779,259 @@ export const jobberJobs = functions.https.onRequest(async (req, res) => {
   });
 });
 
+// Sync all Jobber data to Firestore
+export const jobberSync = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== 'POST') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        res.status(401).send('Unauthorized');
+        return;
+      }
+
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      const userId = decodedToken.uid;
+
+      const integrationDoc = await admin.firestore().collection('user_integrations').doc(userId).get();
+      const jobberToken = integrationDoc.data()?.jobber?.access_token;
+
+      if (!jobberToken) {
+        res.status(400).json({
+          success: false,
+          error: 'Jobber not connected',
+        });
+        return;
+      }
+
+      // Fetch clients from Jobber
+      const clientsResponse = await axios.post('https://api.getjobber.com/api/graphql', {
+        query: `
+          query GetClients {
+            clients {
+              nodes {
+                id
+                firstName
+                lastName
+                companyName
+                email
+                phoneNumber
+                billingAddress {
+                  street
+                  city
+                  province
+                  postalCode
+                }
+                createdAt
+                updatedAt
+              }
+            }
+          }
+        `,
+      }, {
+        headers: {
+          'Authorization': `Bearer ${jobberToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Fetch jobs from Jobber
+      const jobsResponse = await axios.post('https://api.getjobber.com/api/graphql', {
+        query: `
+          query GetJobs {
+            jobs {
+              nodes {
+                id
+                title
+                description
+                jobStatus
+                startAt
+                endAt
+                totalAmount
+                createdAt
+                updatedAt
+                client {
+                  id
+                  firstName
+                  lastName
+                }
+                lineItems {
+                  nodes {
+                    id
+                    name
+                    description
+                    quantity
+                    unitCost
+                    total
+                  }
+                }
+              }
+            }
+          }
+        `,
+      }, {
+        headers: {
+          'Authorization': `Bearer ${jobberToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const clients = clientsResponse.data.data.clients.nodes;
+      const jobs = jobsResponse.data.data.jobs.nodes;
+
+      // Store clients in Firestore
+      const batch = admin.firestore().batch();
+      
+      clients.forEach((client: any) => {
+        const clientRef = admin.firestore().collection('customers').doc(client.id);
+        batch.set(clientRef, {
+          id: client.id,
+          firstName: client.firstName,
+          lastName: client.lastName,
+          companyName: client.companyName || '',
+          email: client.email || '',
+          phoneNumber: client.phoneNumber || '',
+          address: client.billingAddress ? {
+            street: client.billingAddress.street || '',
+            city: client.billingAddress.city || '',
+            province: client.billingAddress.province || '',
+            postalCode: client.billingAddress.postalCode || '',
+          } : null,
+          source: 'jobber',
+          jobber_id: client.id,
+          createdAt: new Date(client.createdAt),
+          updatedAt: new Date(client.updatedAt),
+          syncedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      });
+
+      // Store jobs in Firestore
+      jobs.forEach((job: any) => {
+        const jobRef = admin.firestore().collection('jobs').doc(job.id);
+        batch.set(jobRef, {
+          id: job.id,
+          title: job.title,
+          description: job.description || '',
+          status: job.jobStatus,
+          startDate: job.startAt ? new Date(job.startAt) : null,
+          endDate: job.endAt ? new Date(job.endAt) : null,
+          totalAmount: job.totalAmount || 0,
+          client: {
+            id: job.client.id,
+            name: `${job.client.firstName} ${job.client.lastName}`.trim(),
+          },
+          lineItems: job.lineItems.nodes.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description || '',
+            quantity: item.quantity,
+            unitCost: item.unitCost,
+            total: item.total,
+          })),
+          source: 'jobber',
+          jobber_id: job.id,
+          createdAt: new Date(job.createdAt),
+          updatedAt: new Date(job.updatedAt),
+          syncedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      });
+
+      // Commit the batch
+      await batch.commit();
+
+      // Update sync status
+      await admin.firestore().collection('user_integrations').doc(userId).update({
+        'jobber.last_sync': admin.firestore.FieldValue.serverTimestamp(),
+        'jobber.clients_count': clients.length,
+        'jobber.jobs_count': jobs.length,
+      });
+
+      res.json({
+        success: true,
+        synced: {
+          clients: clients.length,
+          jobs: jobs.length,
+        },
+      });
+
+    } catch (error: any) {
+      console.error('Jobber sync error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Sync failed',
+      });
+    }
+  });
+});
+
+// Test Jobber connection
+export const jobberTest = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== 'GET') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        res.status(401).send('Unauthorized');
+        return;
+      }
+
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      const userId = decodedToken.uid;
+
+      const integrationDoc = await admin.firestore().collection('user_integrations').doc(userId).get();
+      const jobberToken = integrationDoc.data()?.jobber?.access_token;
+
+      if (!jobberToken) {
+        res.status(400).json({
+          success: false,
+          error: 'Jobber not connected',
+        });
+        return;
+      }
+
+      // Test API call
+      await axios.post('https://api.getjobber.com/api/graphql', {
+        query: `
+          query TestConnection {
+            clients(first: 1) {
+              nodes {
+                id
+              }
+            }
+          }
+        `,
+      }, {
+        headers: {
+          'Authorization': `Bearer ${jobberToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      res.json({
+        success: true,
+        connected: true,
+      });
+
+    } catch (error: any) {
+      console.error('Jobber test error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Connection test failed',
+      });
+    }
+  });
+});
+
 // Webhook for autonomous actions
 export const autonomousWebhook = functions.pubsub.schedule('every 60 minutes').onRun(async (context) => {
   try {
