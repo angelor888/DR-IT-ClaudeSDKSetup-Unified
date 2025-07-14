@@ -25,6 +25,7 @@ import {
   PlayArrow as StartIcon,
   Stop as StopIcon,
   Refresh as RefreshIcon,
+  QueryStats as QueryIcon,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
@@ -35,8 +36,10 @@ import {
 import GrokChatPanel from '../../components/ai/GrokChatPanel';
 import { getMCPHub } from '../../services/mcp/MCPHub';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 const AIAssistantPage: React.FC = () => {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const {
     insights,
@@ -104,6 +107,13 @@ const AIAssistantPage: React.FC = () => {
           AI Assistant
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Button
+            variant="outlined"
+            startIcon={<QueryIcon />}
+            onClick={() => navigate('/ai-assistant/query')}
+          >
+            Query Data
+          </Button>
           <Chip
             icon={<AIIcon />}
             label={`Grok: ${grokStatus}`}

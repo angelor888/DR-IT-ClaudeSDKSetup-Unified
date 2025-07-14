@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Grid,
@@ -9,6 +9,7 @@ import {
   Avatar,
   Chip,
   Button,
+  Collapse,
 } from '@mui/material';
 import {
   Email,
@@ -22,8 +23,48 @@ import {
   Build,
   HomeWork,
 } from '@mui/icons-material';
+import NaturalQueryBar from '../../components/ai/NaturalQueryBar';
+import QueryResults from '../../components/ai/QueryResults';
+import { queryService, QueryResponse } from '../../services/ai/QueryService';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [queryResult, setQueryResult] = useState<QueryResponse | null>(null);
+  const [isQueryLoading, setIsQueryLoading] = useState(false);
+  const [showQueryResult, setShowQueryResult] = useState(false);
+
+  const handleQuery = async (query: string) => {
+    setIsQueryLoading(true);
+    setShowQueryResult(true);
+    
+    try {
+      const response = await queryService.processQuery({
+        query,
+        context: {
+          dataSource: 'all',
+          limit: 50,
+        },
+      });
+      setQueryResult(response);
+    } catch (error: any) {
+      console.error('Query failed:', error);
+      setQueryResult({
+        query,
+        type: 'table',
+        data: null,
+        error: error.message || 'Failed to execute query',
+        metadata: {
+          totalCount: 0,
+          executionTime: 0,
+          dataSource: 'error',
+        },
+      } as any);
+    } finally {
+      setIsQueryLoading(false);
+    }
+  };
+
   const metrics = [
     {
       title: 'Active Projects',
@@ -68,6 +109,26 @@ const DashboardPage: React.FC = () => {
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
         AI-powered business management with Grok 4 and MCP integration
       </Typography>
+
+      {/* Natural Language Query Bar */}
+      <Box sx={{ mb: 4 }}>
+        <NaturalQueryBar
+          onQuery={handleQuery}
+          placeholder="Ask about your business data... e.g., 'Show me revenue this month'"
+        />
+      </Box>
+
+      {/* Query Results */}
+      <Collapse in={showQueryResult}>
+        <Box sx={{ mb: 4 }}>
+          <QueryResults
+            result={queryResult}
+            isLoading={isQueryLoading}
+            onRefresh={queryResult ? () => handleQuery(queryResult.query) : undefined}
+            onShare={() => navigate('/ai-assistant/query')}
+          />
+        </Box>
+      </Collapse>
 
       <Grid container spacing={3}>
         {metrics.map((metric, index) => (
