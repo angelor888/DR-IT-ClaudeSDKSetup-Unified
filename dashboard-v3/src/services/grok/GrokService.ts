@@ -76,12 +76,13 @@ class GrokService {
   constructor() {
     this.apiKey = import.meta.env.VITE_GROK_API_KEY || '';
     this.baseURL = import.meta.env.VITE_GROK_API_URL || 'https://api.x.ai/v1';
-    this.functionsURL = import.meta.env.VITE_FIREBASE_FUNCTIONS_URL || 
+    this.functionsURL = import.meta.env.VITE_FIREBASE_FUNCTIONS_BASE_URL || 
       (import.meta.env.DEV 
         ? 'http://localhost:5001/duetright-dashboard/us-central1'
         : 'https://us-central1-duetright-dashboard.cloudfunctions.net');
     this.model = 'grok-4';
-    this.useFirebaseFunctions = import.meta.env.VITE_USE_FIREBASE_FUNCTIONS !== 'false';
+    // ALWAYS use Firebase Functions in production to avoid CORS
+    this.useFirebaseFunctions = import.meta.env.PROD || import.meta.env.VITE_USE_FIREBASE_FUNCTIONS === 'true';
 
     // Direct API client (for development)
     this.client = axios.create({
@@ -113,34 +114,39 @@ class GrokService {
   // Test connection to Grok API
   async testConnection(): Promise<boolean> {
     try {
-      // Use Firebase Functions in production or when explicitly enabled
-      if (this.useFirebaseFunctions && auth.currentUser) {
-        const token = await this.getAuthToken();
-        if (!token) {
-          console.error('User not authenticated for Grok API test');
-          return false;
+      // In production, ALWAYS use Firebase Functions to avoid CORS
+      if (this.useFirebaseFunctions) {
+        // If user is authenticated, use proper auth flow
+        if (auth.currentUser) {
+          const token = await this.getAuthToken();
+          if (token) {
+            // Test through Firebase Functions proxy with auth
+            const response = await this.functionsClient.post('/grokChat', {
+              messages: [
+                { role: 'user', content: 'Test connection' }
+              ],
+              userId: auth.currentUser.uid,
+              options: {
+                maxTokens: 10,
+                temperature: 0.1,
+              },
+            }, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            });
+
+            return response.data.success === true;
+          }
         }
 
-        // Test through Firebase Functions proxy
-        const response = await this.functionsClient.post('/grokChat', {
-          messages: [
-            { role: 'user', content: 'Test connection' }
-          ],
-          userId: auth.currentUser.uid,
-          options: {
-            maxTokens: 10,
-            temperature: 0.1,
-          },
-        }, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        return response.data.success === true;
+        // For unauthenticated health checks in production, return false
+        // This prevents CORS errors during initial page load
+        console.log('Grok health check skipped - user not authenticated (avoiding CORS)');
+        return false;
       }
 
-      // Fallback to direct API call (for development)
+      // Fallback to direct API call (for development only)
       const response = await this.client.get('/models');
       return response.status === 200;
     } catch (error) {

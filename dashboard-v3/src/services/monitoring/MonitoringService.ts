@@ -1,6 +1,7 @@
 import { SystemMetrics, AuditLog } from '../../types/security';
 import { auditService } from '../ai/AuditService';
 import GrokService from '../grok/GrokService';
+import { auth } from '../../config/firebase';
 
 interface PerformanceMetric {
   timestamp: Date;
@@ -113,10 +114,17 @@ class MonitoringService {
   private async runHealthChecks() {
     const checks = [
       { service: 'firebase', check: this.checkFirebase },
-      { service: 'grok', check: this.checkGrok },
       { service: 'postgresql', check: this.checkPostgreSQL },
       { service: 'redis', check: this.checkRedis },
     ];
+
+    // Only check Grok if user is authenticated (avoids CORS errors)
+    if (auth.currentUser) {
+      checks.push({ service: 'grok', check: this.checkGrok });
+    } else {
+      // Mark Grok as pending/unknown when not authenticated
+      this.updateHealthCheck('grok', 'degraded', 0, 'User not authenticated - health check skipped');
+    }
 
     for (const { service, check } of checks) {
       const startTime = Date.now();
