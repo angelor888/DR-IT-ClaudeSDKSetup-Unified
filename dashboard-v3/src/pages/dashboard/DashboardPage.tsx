@@ -22,6 +22,7 @@ import {
   Build,
   HomeWork,
 } from '@mui/icons-material';
+import AIInsightsPanel from '../../components/ai/AIInsightsPanel';
 
 const DashboardPage: React.FC = () => {
   const metrics = [
@@ -378,6 +379,11 @@ const DashboardPage: React.FC = () => {
               </Button>
             </Box>
           </Paper>
+        </Grid>
+
+        {/* AI Insights Panel */}
+        <Grid xs={12}>
+          <AIInsightsPanel />
         </Grid>
       </Grid>
     </Box>

@@ -183,6 +183,15 @@ class HealthCheckService {
         responseTime: 160,
         capabilities: ['messages', 'threads', 'labels'],
       },
+      {
+        name: 'OpenAI',
+        endpoint: 'https://api.openai.com/v1',
+        status: import.meta.env.VITE_OPENAI_API_KEY ? 'connected' : 'disconnected',
+        lastChecked: new Date(),
+        responseTime: 200,
+        errorMessage: import.meta.env.VITE_OPENAI_API_KEY ? undefined : 'API key not configured',
+        capabilities: ['chat_completion', 'customer_analysis', 'job_estimation', 'email_generation'],
+      },
     ];
 
     const summary = {
