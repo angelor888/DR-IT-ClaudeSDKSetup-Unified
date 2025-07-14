@@ -3,8 +3,22 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user' | 'viewer';
+  role: 'admin' | 'manager' | 'user' | 'guest';
   avatar?: string;
+  permissions?: {
+    viewDashboard: boolean;
+    viewCustomers: boolean;
+    viewJobs: boolean;
+    viewCommunications: boolean;
+    useAI: boolean;
+    viewAnalytics: boolean;
+    createWorkflows: boolean;
+    viewSecurity: boolean;
+    manageUsers: boolean;
+    manageSettings: boolean;
+    viewAuditLogs: boolean;
+    manageIntegrations: boolean;
+  };
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;

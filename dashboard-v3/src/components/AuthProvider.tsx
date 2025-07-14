@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, db } from '../config/firebase';
-import { setUser, clearUser, setLoading } from '../store/slices/authSlice';
-import { doc, getDoc } from 'firebase/firestore';
+import { setUser, clearUser, setLoading, setError } from '../store/slices/authSlice';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { User } from '../types';
+import { isAuthorizedEmail, createUserData } from '../utils/userRoles';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -19,6 +20,20 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (firebaseUser) {
         try {
+          const userEmail = firebaseUser.email || '';
+          
+          // Check if user is authorized
+          if (!isAuthorizedEmail(userEmail)) {
+            console.warn(`Unauthorized access attempt: ${userEmail}`);
+            dispatch(setError(`Access denied. Only DuetRight team members can access this dashboard.`));
+            
+            // Sign out unauthorized user
+            await signOut(auth);
+            dispatch(clearUser());
+            dispatch(setLoading(false));
+            return;
+          }
+          
           // Get additional user data from Firestore
           const userDocRef = doc(db, 'users', firebaseUser.uid);
           const userDoc = await getDoc(userDocRef);
@@ -27,31 +42,36 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           if (userDoc.exists()) {
             userData = userDoc.data() as User;
+            
+            // Update last login
+            userData.lastLogin = new Date();
+            userData.updatedAt = new Date();
+            
+            // Update user document
+            await setDoc(userDocRef, userData, { merge: true });
           } else {
-            // Create a new user document if it doesn't exist
-            userData = {
-              id: firebaseUser.uid,
-              email: firebaseUser.email || '',
-              name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Unknown User',
-              role: 'user',
-              avatar: firebaseUser.photoURL || undefined,
-              lastLogin: new Date(),
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            };
+            // Create a new user document for authorized user
+            userData = createUserData(firebaseUser);
             
             // Save to Firestore
-            await import('firebase/firestore').then(({ setDoc }) => 
-              setDoc(userDocRef, userData)
-            );
+            await setDoc(userDocRef, userData);
           }
           
           // Get the ID token
           const token = await firebaseUser.getIdToken();
           
           dispatch(setUser({ user: userData, token }));
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error loading user data:', error);
+          
+          // If it's an authorization error, show specific message
+          if (error.message?.includes('Unauthorized email')) {
+            dispatch(setError(error.message));
+            await signOut(auth);
+          } else {
+            dispatch(setError('Failed to load user data. Please try again.'));
+          }
+          
           dispatch(clearUser());
         }
       } else {
