@@ -244,9 +244,9 @@ async function executeSlackCommand(method: string, params: any) {
 }
 
 async function executeJobberCommand(method: string, params: any) {
-  const jobberApiKey = functions.config().jobber?.api_key;
-  // TODO: Implement Jobber API integration
-  console.log('Jobber API key configured:', !!jobberApiKey);
+  const jobberClientId = functions.config().jobber?.client_id;
+  const jobberClientSecret = functions.config().jobber?.client_secret;
+  console.log('Jobber credentials configured:', !!jobberClientId && !!jobberClientSecret);
   
   switch (method) {
     case 'create_job':
@@ -475,6 +475,305 @@ export const sendSlackReport = functions.https.onRequest(async (req, res) => {
       res.status(500).json({
         success: false,
         error: error.message || 'Internal server error',
+      });
+    }
+  });
+});
+
+// Jobber OAuth Flow
+export const jobberOAuth = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== 'POST') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        res.status(401).send('Unauthorized');
+        return;
+      }
+
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      const userId = decodedToken.uid;
+
+      const { action, code, state } = req.body;
+      const jobberClientId = functions.config().jobber?.client_id;
+      const jobberClientSecret = functions.config().jobber?.client_secret;
+
+      if (!jobberClientId || !jobberClientSecret) {
+        res.status(500).json({
+          success: false,
+          error: 'Jobber credentials not configured',
+        });
+        return;
+      }
+
+      if (action === 'initiate') {
+        // Generate state for security
+        const oauthState = `${userId}_${Date.now()}`;
+        const redirectUri = `${req.get('origin')}/jobber-callback`;
+        
+        const authUrl = `https://api.getjobber.com/api/oauth/authorize?` +
+          `client_id=${jobberClientId}&` +
+          `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+          `response_type=code&` +
+          `state=${oauthState}&` +
+          `scope=clients:read jobs:read invoices:read quotes:read`;
+
+        // Store state in Firestore for validation
+        await admin.firestore().collection('oauth_states').doc(oauthState).set({
+          userId,
+          service: 'jobber',
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        res.json({
+          success: true,
+          authUrl,
+        });
+      } else if (action === 'callback') {
+        // Validate state
+        const stateDoc = await admin.firestore().collection('oauth_states').doc(state).get();
+        if (!stateDoc.exists || stateDoc.data()?.userId !== userId) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid state parameter',
+          });
+          return;
+        }
+
+        // Exchange code for access token
+        const tokenResponse = await axios.post('https://api.getjobber.com/api/oauth/token', {
+          client_id: jobberClientId,
+          client_secret: jobberClientSecret,
+          code,
+          grant_type: 'authorization_code',
+        });
+
+        const { access_token, refresh_token } = tokenResponse.data;
+
+        // Store tokens securely
+        await admin.firestore().collection('user_integrations').doc(userId).set({
+          jobber: {
+            access_token,
+            refresh_token,
+            connected_at: admin.firestore.FieldValue.serverTimestamp(),
+          },
+        }, { merge: true });
+
+        // Clean up state
+        await admin.firestore().collection('oauth_states').doc(state).delete();
+
+        res.json({
+          success: true,
+        });
+      }
+    } catch (error: any) {
+      console.error('Jobber OAuth error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'OAuth failed',
+      });
+    }
+  });
+});
+
+// Get Jobber connection status
+export const jobberStatus = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== 'GET') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        res.status(401).send('Unauthorized');
+        return;
+      }
+
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      const userId = decodedToken.uid;
+
+      const integrationDoc = await admin.firestore().collection('user_integrations').doc(userId).get();
+      const connected = !!(integrationDoc.exists && integrationDoc.data()?.jobber?.access_token);
+
+      res.json({
+        success: true,
+        connected,
+      });
+    } catch (error: any) {
+      console.error('Jobber status check error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Status check failed',
+      });
+    }
+  });
+});
+
+// Get Jobber clients
+export const jobberClients = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== 'GET') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        res.status(401).send('Unauthorized');
+        return;
+      }
+
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      const userId = decodedToken.uid;
+
+      const integrationDoc = await admin.firestore().collection('user_integrations').doc(userId).get();
+      const jobberToken = integrationDoc.data()?.jobber?.access_token;
+
+      if (!jobberToken) {
+        res.status(400).json({
+          success: false,
+          error: 'Jobber not connected',
+        });
+        return;
+      }
+
+      const jobberResponse = await axios.get('https://api.getjobber.com/api/graphql', {
+        headers: {
+          'Authorization': `Bearer ${jobberToken}`,
+          'Content-Type': 'application/json',
+        },
+        data: {
+          query: `
+            query GetClients {
+              clients {
+                nodes {
+                  id
+                  firstName
+                  lastName
+                  companyName
+                  email
+                  phoneNumber
+                  billingAddress {
+                    street
+                    city
+                    province
+                    postalCode
+                  }
+                  createdAt
+                  updatedAt
+                }
+              }
+            }
+          `,
+        },
+      });
+
+      res.json({
+        success: true,
+        clients: jobberResponse.data.data.clients.nodes,
+      });
+    } catch (error: any) {
+      console.error('Jobber clients fetch error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to fetch clients',
+      });
+    }
+  });
+});
+
+// Get Jobber jobs
+export const jobberJobs = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== 'GET') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        res.status(401).send('Unauthorized');
+        return;
+      }
+
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      const userId = decodedToken.uid;
+
+      const integrationDoc = await admin.firestore().collection('user_integrations').doc(userId).get();
+      const jobberToken = integrationDoc.data()?.jobber?.access_token;
+
+      if (!jobberToken) {
+        res.status(400).json({
+          success: false,
+          error: 'Jobber not connected',
+        });
+        return;
+      }
+
+      const clientId = req.query.clientId as string;
+      const clientFilter = clientId ? `client: {id: "${clientId}"}` : '';
+
+      const jobberResponse = await axios.post('https://api.getjobber.com/api/graphql', {
+        query: `
+          query GetJobs {
+            jobs(${clientFilter}) {
+              nodes {
+                id
+                title
+                description
+                jobStatus
+                startAt
+                endAt
+                totalAmount
+                createdAt
+                updatedAt
+                client {
+                  id
+                  firstName
+                  lastName
+                }
+                lineItems {
+                  nodes {
+                    id
+                    name
+                    description
+                    quantity
+                    unitCost
+                    total
+                  }
+                }
+              }
+            }
+          }
+        `,
+      }, {
+        headers: {
+          'Authorization': `Bearer ${jobberToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      res.json({
+        success: true,
+        jobs: jobberResponse.data.data.jobs.nodes,
+      });
+    } catch (error: any) {
+      console.error('Jobber jobs fetch error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to fetch jobs',
       });
     }
   });

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DuetRight Dashboard - Authentication Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .warn { color: orange; }
+        button { padding: 10px 20px; margin: 5px; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+        .status { font-weight: bold; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>DuetRight Dashboard - Authentication Debug Tool</h1>
+    
+    <div class="test-section">
+        <h2>1. Firebase Configuration Test</h2>
+        <div id="config-status" class="status">Testing...</div>
+        <pre id="config-details"></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Google Auth Provider Test</h2>
+        <button onclick="testGoogleAuth()">Test Google Sign-In</button>
+        <div id="google-auth-status" class="status"></div>
+        <pre id="google-auth-details"></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Authorized Email Test</h2>
+        <input type="email" id="email-input" placeholder="Enter email to test" />
+        <button onclick="testEmailAuthorization()">Test Email</button>
+        <div id="email-status" class="status"></div>
+        <pre id="email-details"></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Firebase Auth State</h2>
+        <button onclick="checkAuthState()">Check Current Auth State</button>
+        <div id="auth-state-status" class="status"></div>
+        <pre id="auth-state-details"></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Firestore Connection Test</h2>
+        <button onclick="testFirestore()">Test Firestore Connection</button>
+        <div id="firestore-status" class="status"></div>
+        <pre id="firestore-details"></pre>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCr-mhnRyhmaFr_1jEysQkcY13z0s1wRDk",
+            authDomain: "duetright-dashboard.firebaseapp.com",
+            projectId: "duetright-dashboard",
+            storageBucket: "duetright-dashboard.firebasestorage.app",
+            messagingSenderId: "774220089999",
+            appId: "1:774220089999:web:6eeafa80f5268120fabefa",
+            measurementId: "G-4KYQLQ9LVL"
+        };
+
+        // Authorized emails list
+        const AUTHORIZED_EMAILS = [
+            'angelo@duetright.com',
+            'info@duetright.com',
+            'stantheman@duetright.com',
+            'austin@duetright.com'
+        ];
+
+        let app, auth, db;
+
+        // Initialize Firebase
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+
+            document.getElementById('config-status').innerHTML = '<span class="pass">✓ Firebase initialized successfully</span>';
+            document.getElementById('config-details').textContent = JSON.stringify(firebaseConfig, null, 2);
+        } catch (error) {
+            document.getElementById('config-status').innerHTML = '<span class="fail">✗ Firebase initialization failed</span>';
+            document.getElementById('config-details').textContent = error.message;
+        }
+
+        // Test Google Authentication
+        window.testGoogleAuth = async function() {
+            const statusEl = document.getElementById('google-auth-status');
+            const detailsEl = document.getElementById('google-auth-details');
+            
+            statusEl.innerHTML = 'Testing Google Sign-In...';
+            
+            try {
+                const provider = new GoogleAuthProvider();
+                provider.addScope('email');
+                provider.addScope('profile');
+                
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                
+                statusEl.innerHTML = '<span class="pass">✓ Google Sign-In successful</span>';
+                detailsEl.textContent = JSON.stringify({
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    emailVerified: user.emailVerified,
+                    photoURL: user.photoURL
+                }, null, 2);
+                
+                // Test email authorization
+                const isAuthorized = AUTHORIZED_EMAILS.includes(user.email);
+                if (!isAuthorized) {
+                    statusEl.innerHTML += '<br><span class="fail">✗ Email not authorized: ' + user.email + '</span>';
+                } else {
+                    statusEl.innerHTML += '<br><span class="pass">✓ Email is authorized</span>';
+                }
+                
+            } catch (error) {
+                statusEl.innerHTML = '<span class="fail">✗ Google Sign-In failed</span>';
+                detailsEl.textContent = JSON.stringify({
+                    code: error.code,
+                    message: error.message,
+                    details: error.customData
+                }, null, 2);
+            }
+        };
+
+        // Test email authorization
+        window.testEmailAuthorization = function() {
+            const email = document.getElementById('email-input').value;
+            const statusEl = document.getElementById('email-status');
+            const detailsEl = document.getElementById('email-details');
+            
+            if (!email) {
+                statusEl.innerHTML = '<span class="warn">Please enter an email address</span>';
+                return;
+            }
+            
+            const isAuthorized = AUTHORIZED_EMAILS.includes(email);
+            
+            if (isAuthorized) {
+                statusEl.innerHTML = '<span class="pass">✓ Email is authorized</span>';
+            } else {
+                statusEl.innerHTML = '<span class="fail">✗ Email is NOT authorized</span>';
+            }
+            
+            detailsEl.textContent = JSON.stringify({
+                email: email,
+                isAuthorized: isAuthorized,
+                authorizedEmails: AUTHORIZED_EMAILS
+            }, null, 2);
+        };
+
+        // Check current auth state
+        window.checkAuthState = function() {
+            const statusEl = document.getElementById('auth-state-status');
+            const detailsEl = document.getElementById('auth-state-details');
+            
+            statusEl.innerHTML = 'Checking auth state...';
+            
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    statusEl.innerHTML = '<span class="pass">✓ User is signed in</span>';
+                    detailsEl.textContent = JSON.stringify({
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName,
+                        emailVerified: user.emailVerified,
+                        isAuthorized: AUTHORIZED_EMAILS.includes(user.email)
+                    }, null, 2);
+                } else {
+                    statusEl.innerHTML = '<span class="warn">No user signed in</span>';
+                    detailsEl.textContent = 'No authenticated user';
+                }
+            });
+        };
+
+        // Test Firestore connection
+        window.testFirestore = async function() {
+            const statusEl = document.getElementById('firestore-status');
+            const detailsEl = document.getElementById('firestore-details');
+            
+            statusEl.innerHTML = 'Testing Firestore connection...';
+            
+            try {
+                // Try to read from test collection
+                const testDocRef = doc(db, 'test', 'connection');
+                const testDoc = await getDoc(testDocRef);
+                
+                statusEl.innerHTML = '<span class="pass">✓ Firestore connection successful</span>';
+                detailsEl.textContent = JSON.stringify({
+                    connected: true,
+                    testDocExists: testDoc.exists(),
+                    testDocData: testDoc.exists() ? testDoc.data() : null
+                }, null, 2);
+                
+            } catch (error) {
+                statusEl.innerHTML = '<span class="fail">✗ Firestore connection failed</span>';
+                detailsEl.textContent = JSON.stringify({
+                    code: error.code,
+                    message: error.message
+                }, null, 2);
+            }
+        };
+
+        // Auto-check auth state on load
+        checkAuthState();
+    </script>
+</body>
+</html>

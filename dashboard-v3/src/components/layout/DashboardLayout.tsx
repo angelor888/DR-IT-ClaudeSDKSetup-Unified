@@ -32,6 +32,7 @@ import {
   SmartToy as AIIcon,
   Analytics as AnalyticsIcon,
   Security as SecurityIcon,
+  IntegrationInstructions as IntegrationsIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
@@ -52,6 +53,7 @@ const navigationItems = [
   { path: '/ai-assistant', label: 'AI Assistant', icon: AIIcon },
   { path: '/analytics', label: 'Analytics', icon: AnalyticsIcon },
   { path: '/security', label: 'Security', icon: SecurityIcon },
+  { path: '/integrations', label: 'Integrations', icon: IntegrationsIcon },
   { path: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
