@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import { auth } from '../../config/firebase';
 
 interface GrokMessage {
   role: 'system' | 'user' | 'assistant';
@@ -54,6 +55,7 @@ interface GrokChatResponse {
     completion_tokens: number;
     total_tokens: number;
   };
+  conversationId?: string; // Added for Firebase Functions response
 }
 
 interface MCPToolCall {
@@ -64,15 +66,24 @@ interface MCPToolCall {
 
 class GrokService {
   private client: AxiosInstance;
+  private functionsClient: AxiosInstance;
   private apiKey: string;
   private baseURL: string;
+  private functionsURL: string;
   private model: string;
+  private useFirebaseFunctions: boolean;
 
   constructor() {
     this.apiKey = import.meta.env.VITE_GROK_API_KEY || '';
     this.baseURL = import.meta.env.VITE_GROK_API_URL || 'https://api.x.ai/v1';
+    this.functionsURL = import.meta.env.VITE_FIREBASE_FUNCTIONS_URL || 
+      (import.meta.env.DEV 
+        ? 'http://localhost:5001/duetright-dashboard/us-central1'
+        : 'https://us-central1-duetright-dashboard.cloudfunctions.net');
     this.model = 'grok-4';
+    this.useFirebaseFunctions = import.meta.env.VITE_USE_FIREBASE_FUNCTIONS !== 'false';
 
+    // Direct API client (for development)
     this.client = axios.create({
       baseURL: this.baseURL,
       headers: {
@@ -81,6 +92,22 @@ class GrokService {
       },
       timeout: 60000, // 60 seconds for AI responses
     });
+
+    // Firebase Functions client (for production)
+    this.functionsClient = axios.create({
+      baseURL: this.functionsURL,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      timeout: 60000,
+    });
+  }
+
+  // Get current auth token
+  private async getAuthToken(): Promise<string | null> {
+    const user = auth.currentUser;
+    if (!user) return null;
+    return await user.getIdToken();
   }
 
   // Test connection to Grok API
@@ -101,17 +128,53 @@ class GrokService {
       maxTokens?: number;
       temperature?: number;
       stream?: boolean;
+      conversationId?: string;
     } = {}
   ): Promise<GrokChatResponse> {
-    const request: GrokChatRequest = {
-      model: this.model,
-      messages,
-      max_tokens: options.maxTokens || 4000,
-      temperature: options.temperature || 0.7,
-      stream: options.stream || false,
-    };
-
     try {
+      // Use Firebase Functions in production or when explicitly enabled
+      if (this.useFirebaseFunctions && auth.currentUser) {
+        const token = await this.getAuthToken();
+        if (!token) {
+          throw new Error('User not authenticated');
+        }
+
+        const response = await this.functionsClient.post('/grokChat', {
+          messages,
+          userId: auth.currentUser.uid,
+          conversationId: options.conversationId,
+          options: {
+            maxTokens: options.maxTokens || 4000,
+            temperature: options.temperature || 0.7,
+            stream: false, // Firebase Functions don't support streaming
+          },
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.data.success) {
+          // Add conversationId to the response
+          const result = response.data.data;
+          if (response.data.conversationId) {
+            result.conversationId = response.data.conversationId;
+          }
+          return result;
+        } else {
+          throw new Error(response.data.error || 'Chat completion failed');
+        }
+      }
+
+      // Fallback to direct API call (for development)
+      const request: GrokChatRequest = {
+        model: this.model,
+        messages,
+        max_tokens: options.maxTokens || 4000,
+        temperature: options.temperature || 0.7,
+        stream: options.stream || false,
+      };
+
       const response = await this.client.post('/chat/completions', request);
       return response.data;
     } catch (error) {

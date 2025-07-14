@@ -1,0 +1,450 @@
+import * as functions from 'firebase-functions';
+import * as admin from 'firebase-admin';
+import * as cors from 'cors';
+import axios from 'axios';
+
+// Initialize Firebase Admin
+admin.initializeApp();
+
+// Initialize CORS
+const corsHandler = cors({ origin: true });
+
+// Types
+interface GrokChatRequest {
+  messages: Array<{
+    role: 'system' | 'user' | 'assistant';
+    content: string;
+  }>;
+  userId: string;
+  conversationId?: string;
+  options?: {
+    maxTokens?: number;
+    temperature?: number;
+    stream?: boolean;
+  };
+}
+
+interface MCPExecuteRequest {
+  server: string;
+  method: string;
+  params: Record<string, any>;
+  userId: string;
+}
+
+// Grok Chat Endpoint
+export const grokChat = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== 'POST') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    try {
+      // Verify authentication
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        res.status(401).send('Unauthorized');
+        return;
+      }
+
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      const userId = decodedToken.uid;
+
+      const { messages, conversationId, options } = req.body as GrokChatRequest;
+
+      // Get Grok API key from environment
+      const grokApiKey = functions.config().grok?.api_key;
+      if (!grokApiKey) {
+        throw new Error('Grok API key not configured');
+      }
+
+      // Save conversation to Firestore
+      const conversationRef = conversationId 
+        ? admin.firestore().collection('conversations').doc(conversationId)
+        : admin.firestore().collection('conversations').doc();
+
+      await conversationRef.set({
+        userId,
+        messages,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+
+      // Call Grok API
+      const grokResponse = await axios.post(
+        'https://api.x.ai/v1/chat/completions',
+        {
+          model: 'grok-4',
+          messages,
+          max_tokens: options?.maxTokens || 4000,
+          temperature: options?.temperature || 0.7,
+          stream: false, // Streaming not supported in Firebase Functions
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${grokApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 60000, // 60 seconds
+        }
+      );
+
+      // Log usage for analytics
+      await admin.firestore().collection('ai_usage').add({
+        userId,
+        type: 'chat',
+        model: 'grok-4',
+        promptTokens: grokResponse.data.usage?.prompt_tokens || 0,
+        completionTokens: grokResponse.data.usage?.completion_tokens || 0,
+        totalTokens: grokResponse.data.usage?.total_tokens || 0,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      res.json({
+        success: true,
+        data: grokResponse.data,
+        conversationId: conversationRef.id,
+      });
+    } catch (error: any) {
+      console.error('Grok chat error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Internal server error',
+      });
+    }
+  });
+});
+
+// MCP Execute Endpoint
+export const mcpExecute = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== 'POST') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    try {
+      // Verify authentication
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        res.status(401).send('Unauthorized');
+        return;
+      }
+
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      const userId = decodedToken.uid;
+
+      // Check user permissions
+      const userDoc = await admin.firestore().collection('users').doc(userId).get();
+      const userData = userDoc.data();
+      
+      if (!userData?.roles?.includes('admin') && !userData?.roles?.includes('ai_user')) {
+        res.status(403).json({
+          success: false,
+          error: 'Insufficient permissions for AI operations',
+        });
+        return;
+      }
+
+      const { server, method, params } = req.body as MCPExecuteRequest;
+
+      // Validate server and method
+      const allowedServers = [
+        'slack', 'jobber', 'gmail', 'twilio', 'google-calendar',
+        'matterport', 'google-drive', 'airtable', 'sendgrid'
+      ];
+
+      if (!allowedServers.includes(server)) {
+        res.status(400).json({
+          success: false,
+          error: `Invalid server: ${server}`,
+        });
+        return;
+      }
+
+      // Log the command execution
+      const commandRef = await admin.firestore().collection('ai_commands').add({
+        userId,
+        server,
+        method,
+        params: params || {},
+        status: 'pending',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // Here you would integrate with actual MCP servers
+      // For now, we'll simulate the execution
+      let result: any;
+      
+      try {
+        // Route to appropriate service handler
+        switch (server) {
+          case 'slack':
+            result = await executeSlackCommand(method, params);
+            break;
+          case 'jobber':
+            result = await executeJobberCommand(method, params);
+            break;
+          case 'gmail':
+            result = await executeGmailCommand(method, params);
+            break;
+          case 'twilio':
+            result = await executeTwilioCommand(method, params);
+            break;
+          default:
+            result = { message: `Executed ${server}.${method}`, params };
+        }
+
+        // Update command status
+        await commandRef.update({
+          status: 'completed',
+          result,
+          completedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        res.json({
+          success: true,
+          commandId: commandRef.id,
+          result,
+        });
+      } catch (error: any) {
+        // Update command status
+        await commandRef.update({
+          status: 'failed',
+          error: error.message,
+          completedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        throw error;
+      }
+    } catch (error: any) {
+      console.error('MCP execute error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Internal server error',
+      });
+    }
+  });
+});
+
+// Service handlers (implement based on your actual integrations)
+async function executeSlackCommand(method: string, params: any) {
+  const slackToken = functions.config().slack?.bot_token;
+  
+  switch (method) {
+    case 'send_message':
+      // Implement Slack message sending
+      return { sent: true, channel: params.channel, message: params.message };
+    default:
+      throw new Error(`Unknown Slack method: ${method}`);
+  }
+}
+
+async function executeJobberCommand(method: string, params: any) {
+  const jobberApiKey = functions.config().jobber?.api_key;
+  
+  switch (method) {
+    case 'create_job':
+      // Implement Jobber job creation
+      return { created: true, jobId: 'job_' + Date.now(), ...params };
+    case 'create_client':
+      // Implement Jobber client creation
+      return { created: true, clientId: 'client_' + Date.now(), ...params };
+    default:
+      throw new Error(`Unknown Jobber method: ${method}`);
+  }
+}
+
+async function executeGmailCommand(method: string, params: any) {
+  switch (method) {
+    case 'send_email':
+      // Implement Gmail sending
+      return { sent: true, to: params.to, subject: params.subject };
+    default:
+      throw new Error(`Unknown Gmail method: ${method}`);
+  }
+}
+
+async function executeTwilioCommand(method: string, params: any) {
+  const twilioSid = functions.config().twilio?.account_sid;
+  const twilioToken = functions.config().twilio?.auth_token;
+  
+  switch (method) {
+    case 'send_sms':
+      // Implement Twilio SMS sending
+      return { sent: true, to: params.to, message: params.message };
+    default:
+      throw new Error(`Unknown Twilio method: ${method}`);
+  }
+}
+
+// Conversation History Endpoint
+export const getConversations = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== 'GET') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    try {
+      // Verify authentication
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        res.status(401).send('Unauthorized');
+        return;
+      }
+
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      const userId = decodedToken.uid;
+
+      // Get user's conversations
+      const conversationsSnapshot = await admin.firestore()
+        .collection('conversations')
+        .where('userId', '==', userId)
+        .orderBy('updatedAt', 'desc')
+        .limit(20)
+        .get();
+
+      const conversations = conversationsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      res.json({
+        success: true,
+        conversations,
+      });
+    } catch (error: any) {
+      console.error('Get conversations error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Internal server error',
+      });
+    }
+  });
+});
+
+// AI Usage Analytics Endpoint
+export const getAIUsage = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== 'GET') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    try {
+      // Verify authentication
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        res.status(401).send('Unauthorized');
+        return;
+      }
+
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      const userId = decodedToken.uid;
+
+      // Check admin permissions
+      const userDoc = await admin.firestore().collection('users').doc(userId).get();
+      const userData = userDoc.data();
+      
+      if (!userData?.roles?.includes('admin')) {
+        // Return only user's own usage
+        const userUsageSnapshot = await admin.firestore()
+          .collection('ai_usage')
+          .where('userId', '==', userId)
+          .orderBy('timestamp', 'desc')
+          .limit(100)
+          .get();
+
+        const usage = userUsageSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        res.json({
+          success: true,
+          usage,
+          isPersonal: true,
+        });
+        return;
+      }
+
+      // Admin can see all usage
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : new Date();
+
+      const usageSnapshot = await admin.firestore()
+        .collection('ai_usage')
+        .where('timestamp', '>=', startDate)
+        .where('timestamp', '<=', endDate)
+        .orderBy('timestamp', 'desc')
+        .get();
+
+      const usage = usageSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      // Calculate totals
+      const totals = usage.reduce((acc, item) => {
+        acc.totalTokens += item.totalTokens || 0;
+        acc.promptTokens += item.promptTokens || 0;
+        acc.completionTokens += item.completionTokens || 0;
+        acc.requests += 1;
+        return acc;
+      }, {
+        totalTokens: 0,
+        promptTokens: 0,
+        completionTokens: 0,
+        requests: 0,
+      });
+
+      res.json({
+        success: true,
+        usage,
+        totals,
+        period: {
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
+        },
+      });
+    } catch (error: any) {
+      console.error('Get AI usage error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Internal server error',
+      });
+    }
+  });
+});
+
+// Webhook for autonomous actions
+export const autonomousWebhook = functions.pubsub.schedule('every 60 minutes').onRun(async (context) => {
+  try {
+    console.log('Running autonomous check...');
+    
+    // Get all users with automation enabled
+    const usersSnapshot = await admin.firestore()
+      .collection('users')
+      .where('automationEnabled', '==', true)
+      .get();
+
+    for (const userDoc of usersSnapshot.docs) {
+      const userId = userDoc.id;
+      const userData = userDoc.data();
+
+      // Check for pending tasks, unread communications, etc.
+      // This is where you'd implement the autonomous business logic
+      
+      console.log(`Checking automation for user ${userId}`);
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Autonomous webhook error:', error);
+    return null;
+  }
+});

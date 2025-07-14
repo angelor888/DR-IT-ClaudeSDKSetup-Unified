@@ -1,6 +1,11 @@
 import MCPClient from './MCPClient';
 import GrokService from '../grok/GrokService';
-import { MCPHubConfig, MCPCommand, MCPServer } from './types';
+import { MCPHubConfig, MCPCommand as MCPCommandType, MCPServer } from './types';
+import axios from 'axios';
+import { auth } from '../../config/firebase';
+
+// Use the correct MCPCommand type from ./types
+type MCPCommand = MCPCommandType;
 
 class MCPHub {
   private mcpClient: MCPClient;
@@ -109,6 +114,57 @@ class MCPHub {
     params: Record<string, any>,
     initiatedBy: 'user' | 'ai' | 'automation' = 'user'
   ): Promise<MCPCommand> {
+    // Use Firebase Functions for production security
+    const useFirebaseFunctions = import.meta.env.VITE_USE_FIREBASE_FUNCTIONS !== 'false';
+    
+    if (useFirebaseFunctions && auth.currentUser) {
+      try {
+        const token = await auth.currentUser.getIdToken();
+        const functionsURL = import.meta.env.VITE_FIREBASE_FUNCTIONS_URL || 
+          (import.meta.env.DEV 
+            ? 'http://localhost:5001/duetright-dashboard/us-central1'
+            : 'https://us-central1-duetright-dashboard.cloudfunctions.net');
+
+        const response = await axios.post(
+          `${functionsURL}/mcpExecute`,
+          {
+            server,
+            method,
+            params,
+            userId: auth.currentUser.uid,
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (response.data.success) {
+          const command: MCPCommand = {
+            id: response.data.commandId,
+            server,
+            method,
+            params,
+            status: 'completed',
+            result: response.data.result,
+            initiatedBy,
+            createdAt: new Date(),
+            completedAt: new Date(),
+          };
+          this.emit('commandExecuted', command);
+          return command;
+        } else {
+          throw new Error(response.data.error || 'Command execution failed');
+        }
+      } catch (error) {
+        console.error('Firebase Functions MCP execution failed, falling back to direct:', error);
+        // Fall through to direct execution
+      }
+    }
+
+    // Direct execution (for development or fallback)
     const command = await this.mcpClient.executeCommand({
       server,
       method,

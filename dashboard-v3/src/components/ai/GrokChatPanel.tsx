@@ -38,6 +38,8 @@ import ChatInput from './ChatInput';
 import QuickActions from './QuickActions';
 import GrokService from '../../services/grok/GrokService';
 import { getMCPHub } from '../../services/mcp/MCPHub';
+import { conversationService } from '../../services/ai/ConversationService';
+import { auditService } from '../../services/ai/AuditService';
 
 interface Message {
   id: string;
@@ -71,6 +73,7 @@ const GrokChatPanel: React.FC<GrokChatPanelProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(mode === 'fullscreen');
   const [showQuickActions, setShowQuickActions] = useState(true);
   const [recentCommands, setRecentCommands] = useState<string[]>([]);
+  const [conversationId, setConversationId] = useState<string | undefined>();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const grokService = useRef(new GrokService());
@@ -127,6 +130,9 @@ const GrokChatPanel: React.FC<GrokChatPanelProps> = ({
     // Process with Grok
     dispatch(setProcessing(true));
     dispatch(clearError());
+
+    // Log chat action
+    const startTime = Date.now();
 
     try {
       // Check if this is a command that requires MCP action
@@ -199,7 +205,9 @@ const GrokChatPanel: React.FC<GrokChatPanelProps> = ({
           // Regular chat completion
           const response = await grokService.current.chatCompletion([
             { role: 'user', content },
-          ]);
+          ], {
+            conversationId,
+          });
 
           const assistantMessage: Message = {
             id: `msg-${Date.now()}`,
@@ -208,6 +216,14 @@ const GrokChatPanel: React.FC<GrokChatPanelProps> = ({
             timestamp: new Date(),
           };
           setMessages((prev) => [...prev, assistantMessage]);
+
+          // Log token usage
+          const duration = Date.now() - startTime;
+          await auditService.logChatMessage(
+            content,
+            assistantMessage.content.length,
+            response.usage?.total_tokens
+          );
         }
       } else {
         // Regular chat completion for non-command messages
@@ -217,7 +233,9 @@ const GrokChatPanel: React.FC<GrokChatPanelProps> = ({
             content: msg.content,
           })),
           { role: 'user', content },
-        ]);
+        ], {
+          conversationId,
+        });
 
         const assistantMessage: Message = {
           id: `msg-${Date.now()}`,
@@ -226,10 +244,34 @@ const GrokChatPanel: React.FC<GrokChatPanelProps> = ({
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, assistantMessage]);
+
+        // Update conversation ID if this is a new conversation
+        if (!conversationId && response.conversationId) {
+          setConversationId(response.conversationId);
+        }
+
+        // Log token usage
+        const duration = Date.now() - startTime;
+        await auditService.logChatMessage(
+          content,
+          assistantMessage.content.length,
+          response.usage?.total_tokens
+        );
+      }
+
+      // Save conversation locally
+      if (conversationId) {
+        conversationService.saveLocalConversation(conversationId, messages);
       }
     } catch (error: any) {
       console.error('Error processing message:', error);
       dispatch(setError(error.message || 'Failed to process message'));
+      
+      // Log error
+      await auditService.logError('chat_error', error.message || 'Unknown error', {
+        content,
+        duration: Date.now() - startTime,
+      });
       
       const errorMessage: Message = {
         id: `msg-${Date.now()}`,

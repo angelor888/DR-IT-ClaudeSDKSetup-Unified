@@ -163,7 +163,7 @@ const AIAssistantPage: React.FC = () => {
                 activeCommands.map((cmd) => (
                   <Box key={cmd.id} sx={{ mb: 1 }}>
                     <Chip
-                      label={`${cmd.server}.${cmd.command}`}
+                      label={`${cmd.server}.${(cmd as any).method || cmd.command}`}
                       color={getCommandStatusColor(cmd.status)}
                       size="small"
                       sx={{ width: '100%' }}
@@ -282,7 +282,7 @@ const AIAssistantPage: React.FC = () => {
                           {format(new Date(cmd.createdAt), 'MMM dd, HH:mm')}
                         </td>
                         <td style={{ padding: '8px' }}>{cmd.server}</td>
-                        <td style={{ padding: '8px' }}>{cmd.command}</td>
+                        <td style={{ padding: '8px' }}>{(cmd as any).method || cmd.command}</td>
                         <td style={{ padding: '8px' }}>
                           <Chip
                             label={cmd.status}
