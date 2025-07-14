@@ -122,8 +122,8 @@ class MonitoringService {
     if (auth.currentUser) {
       checks.push({ service: 'grok', check: this.checkGrok });
     } else {
-      // Mark Grok as pending/unknown when not authenticated
-      this.updateHealthCheck('grok', 'degraded', 0, 'User not authenticated - health check skipped');
+      // Mark Grok as degraded when not authenticated (prevents CORS errors)
+      this.updateHealthCheck('grok', 'degraded', 0, 'Authentication required - health check skipped to avoid CORS');
     }
 
     for (const { service, check } of checks) {
@@ -153,12 +153,16 @@ class MonitoringService {
   }
 
   private async checkGrok(): Promise<void> {
-    // Check Grok API
+    // Check Grok API - only called when user is authenticated
     try {
+      if (!auth.currentUser) {
+        throw new Error('User not authenticated - cannot check Grok API');
+      }
+      
       const response = await this.grokService.testConnection();
-      if (!response) throw new Error('Grok API not responding');
-    } catch (error) {
-      throw new Error('Grok API check failed');
+      if (!response) throw new Error('Grok API test connection failed');
+    } catch (error: any) {
+      throw new Error(`Grok API check failed: ${error.message || 'Unknown error'}`);
     }
   }
 

@@ -81,8 +81,8 @@ class GrokService {
         ? 'http://localhost:5001/duetright-dashboard/us-central1'
         : 'https://us-central1-duetright-dashboard.cloudfunctions.net');
     this.model = 'grok-4';
-    // ALWAYS use Firebase Functions in production to avoid CORS
-    this.useFirebaseFunctions = import.meta.env.PROD || import.meta.env.VITE_USE_FIREBASE_FUNCTIONS === 'true';
+    // ALWAYS use Firebase Functions to avoid CORS issues
+    this.useFirebaseFunctions = true;
 
     // Direct API client (for development)
     this.client = axios.create({
@@ -114,41 +114,35 @@ class GrokService {
   // Test connection to Grok API
   async testConnection(): Promise<boolean> {
     try {
-      // In production, ALWAYS use Firebase Functions to avoid CORS
-      if (this.useFirebaseFunctions) {
-        // If user is authenticated, use proper auth flow
-        if (auth.currentUser) {
-          const token = await this.getAuthToken();
-          if (token) {
-            // Test through Firebase Functions proxy with auth
-            const response = await this.functionsClient.post('/grokChat', {
-              messages: [
-                { role: 'user', content: 'Test connection' }
-              ],
-              userId: auth.currentUser.uid,
-              options: {
-                maxTokens: 10,
-                temperature: 0.1,
-              },
-            }, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-              },
-            });
+      // ALWAYS use Firebase Functions to avoid CORS issues
+      // If user is authenticated, use proper auth flow
+      if (auth.currentUser) {
+        const token = await this.getAuthToken();
+        if (token) {
+          // Test through Firebase Functions proxy with auth
+          const response = await this.functionsClient.post('/grokChat', {
+            messages: [
+              { role: 'user', content: 'Test connection' }
+            ],
+            userId: auth.currentUser.uid,
+            options: {
+              maxTokens: 10,
+              temperature: 0.1,
+            },
+          }, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
 
-            return response.data.success === true;
-          }
+          return response.data.success === true;
         }
-
-        // For unauthenticated health checks in production, return false
-        // This prevents CORS errors during initial page load
-        console.log('Grok health check skipped - user not authenticated (avoiding CORS)');
-        return false;
       }
 
-      // Fallback to direct API call (for development only)
-      const response = await this.client.get('/models');
-      return response.status === 200;
+      // For unauthenticated health checks, return false
+      // This prevents CORS errors during initial page load
+      console.log('Grok health check skipped - user not authenticated (avoiding CORS)');
+      return false;
     } catch (error) {
       console.error('Grok API connection test failed:', error);
       return false;
@@ -166,8 +160,8 @@ class GrokService {
     } = {}
   ): Promise<GrokChatResponse> {
     try {
-      // Use Firebase Functions in production or when explicitly enabled
-      if (this.useFirebaseFunctions && auth.currentUser) {
+      // ALWAYS use Firebase Functions to avoid CORS
+      if (auth.currentUser) {
         const token = await this.getAuthToken();
         if (!token) {
           throw new Error('User not authenticated');
@@ -200,17 +194,8 @@ class GrokService {
         }
       }
 
-      // Fallback to direct API call (for development)
-      const request: GrokChatRequest = {
-        model: this.model,
-        messages,
-        max_tokens: options.maxTokens || 4000,
-        temperature: options.temperature || 0.7,
-        stream: options.stream || false,
-      };
-
-      const response = await this.client.post('/chat/completions', request);
-      return response.data;
+      // If user not authenticated, throw error instead of using direct API call
+      throw new Error('User must be authenticated to use Grok service');
     } catch (error) {
       console.error('Grok chat completion failed:', error);
       throw error;
