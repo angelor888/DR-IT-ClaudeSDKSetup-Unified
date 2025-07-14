@@ -22,3 +22,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files
+.env
+.env.*
+
+# Debug and test files
+debug-*.html
+test-*.html
+debug-*.js
+test-*.js
+test-*.cjs
+get-jobber-token.cjs
+
+# Firebase
+.firebase/
+firebase-debug.log
+service-account.json

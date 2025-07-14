@@ -31,3 +31,21 @@ build/
 # Reports with sensitive data
 sky-ai-channel-addition-report.json
 .env.backup.*
+
+# Debug and test files
+**/debug-*.html
+**/test-*.html
+debug-*.js
+test-*.js
+test-*.cjs
+
+# Firebase cache
+**/.firebase/
+
+# Service account files
+**/service-account.json
+**/*-service-account.json
+
+# Credentials and secrets
+credentials/
+secrets/
