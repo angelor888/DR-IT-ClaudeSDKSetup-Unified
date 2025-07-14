@@ -36,6 +36,7 @@ import { RootState } from '../../store';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../config/firebase';
 import { clearUser } from '../../store/slices/authSlice';
+import DuetRightLogo from '../DuetRightLogo';
 
 const drawerWidth = 280;
 
@@ -98,10 +99,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           borderColor: 'divider',
         }}
       >
-        <Typography variant="h5" fontWeight="bold" color="primary">
-          DuetRight
-        </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+        <DuetRightLogo 
+          size={60} 
+          showText={true}
+          sx={{ 
+            color: 'text.primary'
+          }} 
+        />
+        <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
           v3
         </Typography>
       </Box>

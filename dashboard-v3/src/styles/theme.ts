@@ -129,14 +129,56 @@ export const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#90caf9',
+      main: '#FFBB2F', // DuetRight Primary Yellow
+      light: '#FFFDFA', // DuetRight Lightest
+      dark: '#FF8A3D', // DuetRight Secondary Orange
+      contrastText: '#2C2B2E', // DuetRight Darkest
     },
     secondary: {
-      main: '#f48fb1',
+      main: '#037887', // DuetRight Accent Teal
+      light: '#4db6ac',
+      dark: '#00695c',
+      contrastText: '#ffffff',
     },
     background: {
-      default: '#121212',
-      paper: '#1e1e1e',
+      default: '#2C2B2E', // DuetRight Darkest
+      paper: '#3A3939',
+    },
+    text: {
+      primary: '#FFFDFA', // DuetRight Lightest
+      secondary: '#B8B8B8',
+    },
+    success: {
+      main: '#4caf50',
+      light: '#81c784',
+      dark: '#388e3c',
+    },
+    warning: {
+      main: '#ff9800',
+      light: '#ffb74d',
+      dark: '#f57c00',
+    },
+    error: {
+      main: '#f44336',
+      light: '#e57373',
+      dark: '#d32f2f',
+    },
+    info: {
+      main: '#2196f3',
+      light: '#64b5f6',
+      dark: '#1976d2',
+    },
+    grey: {
+      50: '#fafafa',
+      100: '#f5f5f5',
+      200: '#eeeeee',
+      300: '#e0e0e0',
+      400: '#bdbdbd',
+      500: '#9e9e9e',
+      600: '#757575',
+      700: '#616161',
+      800: '#424242',
+      900: '#212121',
     },
   },
 });

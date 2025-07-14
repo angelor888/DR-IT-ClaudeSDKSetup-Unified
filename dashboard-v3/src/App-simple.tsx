@@ -1,7 +1,8 @@
-import { Box, Typography, Button, Card, CardContent } from '@mui/material';
+import { Box, Typography, Button, Card, CardContent, Chip } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { lightTheme } from './styles/theme';
+import DuetRightLogo from './components/DuetRightLogo';
 
 function AppSimple() {
   return (
@@ -13,12 +14,22 @@ function AppSimple() {
         color: '#2C2B2E'
       }}>
         <Box sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h1" gutterBottom fontWeight="bold" sx={{ 
-            fontSize: { xs: '2.5rem', md: '4rem' },
-            textShadow: '0 2px 4px rgba(44, 43, 46, 0.1)'
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: 3,
+            mb: 2
           }}>
-            DuetRight
-          </Typography>
+            <DuetRightLogo size={80} />
+            <Typography variant="h1" gutterBottom fontWeight="bold" sx={{ 
+              fontSize: { xs: '2.5rem', md: '4rem' },
+              textShadow: '0 2px 4px rgba(44, 43, 46, 0.1)',
+              mb: 0
+            }}>
+              DuetRight
+            </Typography>
+          </Box>
           
           <Typography variant="h4" gutterBottom sx={{ opacity: 0.9, mb: 2 }}>
             AI-Powered Business Management Platform

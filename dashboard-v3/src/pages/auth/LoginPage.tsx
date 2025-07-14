@@ -18,8 +18,10 @@ import {
 } from '@mui/icons-material';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '../../config/firebase';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
+import { setUser } from '../../store/slices/authSlice';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -29,6 +31,8 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
 
   const authError = useSelector((state: RootState) => state.auth.error);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +60,30 @@ const LoginPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDemoLogin = () => {
+    setIsLoading(true);
+    setError('');
+    
+    // Create demo user for development
+    const demoUser = {
+      id: 'demo-user-123',
+      email: 'demo@duetright.com',
+      name: 'Demo User',
+      role: 'admin' as const,
+      avatar: undefined,
+      lastLogin: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    
+    // Simulate login delay
+    setTimeout(() => {
+      dispatch(setUser({ user: demoUser, token: 'demo-token-123' }));
+      navigate('/dashboard');
+      setIsLoading(false);
+    }, 1000);
   };
 
   return (
@@ -104,7 +132,7 @@ const LoginPage: React.FC = () => {
           onClick={handleGoogleLogin}
           disabled={isLoading}
           sx={{
-            mb: 3,
+            mb: 2,
             borderColor: 'divider',
             '&:hover': {
               borderColor: 'primary.main',
@@ -113,6 +141,24 @@ const LoginPage: React.FC = () => {
           }}
         >
           Continue with Google
+        </Button>
+
+        <Button
+          fullWidth
+          variant="contained"
+          size="large"
+          onClick={handleDemoLogin}
+          disabled={isLoading}
+          sx={{
+            mb: 3,
+            backgroundColor: '#FFBB2F',
+            color: '#2C2B2E',
+            '&:hover': {
+              backgroundColor: '#FF8A3D',
+            },
+          }}
+        >
+          🏗️ Demo Login (Development)
         </Button>
 
         <Divider sx={{ my: 2 }}>
