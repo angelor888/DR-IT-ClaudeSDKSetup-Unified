@@ -11,8 +11,6 @@ import {
   Button,
 } from '@mui/material';
 import {
-  People,
-  Work,
   Email,
   Psychology,
   Construction,
