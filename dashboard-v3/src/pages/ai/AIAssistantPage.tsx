@@ -26,6 +26,7 @@ import {
   Stop as StopIcon,
   Refresh as RefreshIcon,
   QueryStats as QueryIcon,
+  AccountTree as WorkflowIcon,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
@@ -113,6 +114,13 @@ const AIAssistantPage: React.FC = () => {
             onClick={() => navigate('/ai-assistant/query')}
           >
             Query Data
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<WorkflowIcon />}
+            onClick={() => navigate('/ai-assistant/workflows')}
+          >
+            Workflows
           </Button>
           <Chip
             icon={<AIIcon />}

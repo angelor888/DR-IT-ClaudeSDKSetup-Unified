@@ -12,6 +12,7 @@ import CommunicationsPage from '../pages/communications/CommunicationsPage';
 import SettingsPage from '../pages/settings/SettingsPage';
 import AIAssistantPage from '../pages/ai/AIAssistantPage';
 import NaturalQueryPage from '../pages/ai/NaturalQueryPage';
+import WorkflowsPage from '../pages/ai-assistant/WorkflowsPage';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -59,6 +60,7 @@ const AppRouter: React.FC = () => {
                 <Route path="/communications" element={<CommunicationsPage />} />
                 <Route path="/ai-assistant" element={<AIAssistantPage />} />
                 <Route path="/ai-assistant/query" element={<NaturalQueryPage />} />
+                <Route path="/ai-assistant/workflows/*" element={<WorkflowsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
