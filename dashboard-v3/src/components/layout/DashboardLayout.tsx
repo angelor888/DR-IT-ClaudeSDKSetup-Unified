@@ -30,6 +30,7 @@ import {
   AccountCircle,
   Notifications as NotificationsIcon,
   SmartToy as AIIcon,
+  Analytics as AnalyticsIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
@@ -48,6 +49,7 @@ const navigationItems = [
   { path: '/jobs', label: 'Jobs', icon: WorkIcon },
   { path: '/communications', label: 'Communications', icon: ChatIcon },
   { path: '/ai-assistant', label: 'AI Assistant', icon: AIIcon },
+  { path: '/analytics', label: 'Analytics', icon: AnalyticsIcon },
   { path: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 

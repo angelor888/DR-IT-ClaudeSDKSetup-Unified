@@ -122,6 +122,13 @@ const AIAssistantPage: React.FC = () => {
           >
             Workflows
           </Button>
+          <Button
+            variant="outlined"
+            startIcon={<InsightIcon />}
+            onClick={() => navigate('/analytics')}
+          >
+            Analytics
+          </Button>
           <Chip
             icon={<AIIcon />}
             label={`Grok: ${grokStatus}`}
