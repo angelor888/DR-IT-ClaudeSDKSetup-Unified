@@ -2,13 +2,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Helper function to check if user is authorized DuetRight team member
+    // ONLY these 4 specific emails are allowed access
     function isAuthorizedUser() {
       return request.auth != null && 
              request.auth.token.email != null &&
              (request.auth.token.email == 'angelo@duetright.com' ||
+              request.auth.token.email == 'info@duetright.com' ||
               request.auth.token.email == 'stantheman@duetright.com' ||
-              request.auth.token.email == 'austin@duetright.com' ||
-              request.auth.token.email == 'info@duetright.com');
+              request.auth.token.email == 'austin@duetright.com');
     }
     
     // Allow authorized users to read and write their own data

@@ -1,20 +1,20 @@
 // User role management utilities
 export type UserRole = 'admin' | 'manager' | 'user' | 'guest';
 
-// Authorized DuetRight team members
+// Authorized DuetRight team members (EXACT LIST - NO OTHER EMAILS ALLOWED)
 export const AUTHORIZED_EMAILS = [
   'angelo@duetright.com',
-  'stantheman@duetright.com', 
-  'austin@duetright.com',
   'info@duetright.com',
+  'stantheman@duetright.com',
+  'austin@duetright.com',
 ] as const;
 
 // Admin users (full access to all features)
 export const ADMIN_EMAILS = [
   'angelo@duetright.com',
+  'info@duetright.com', 
   'stantheman@duetright.com',
   'austin@duetright.com',
-  'info@duetright.com',
 ] as const;
 
 /**
