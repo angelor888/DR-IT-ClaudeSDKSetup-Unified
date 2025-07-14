@@ -427,6 +427,59 @@ export const getAIUsage = functions.https.onRequest(async (req, res) => {
   });
 });
 
+// Slack reporting endpoint
+export const sendSlackReport = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== 'POST') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    try {
+      const { channel, text, username } = req.body;
+      
+      const slackToken = functions.config().slack?.bot_token;
+      if (!slackToken) {
+        console.log('Slack token not configured, logging message instead:', text);
+        res.json({
+          success: true,
+          message: 'Report logged (Slack not configured)',
+          data: { channel, text }
+        });
+        return;
+      }
+
+      // Send to Slack
+      const slackResponse = await axios.post(
+        'https://slack.com/api/chat.postMessage',
+        {
+          channel: channel || '#it-report',
+          text,
+          username: username || 'DuetRight Dashboard',
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${slackToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      res.json({
+        success: true,
+        message: 'Report sent to Slack',
+        slackResponse: slackResponse.data,
+      });
+    } catch (error: any) {
+      console.error('Slack report error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Internal server error',
+      });
+    }
+  });
+});
+
 // Webhook for autonomous actions
 export const autonomousWebhook = functions.pubsub.schedule('every 60 minutes').onRun(async (context) => {
   try {
