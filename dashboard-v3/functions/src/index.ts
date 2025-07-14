@@ -815,7 +815,18 @@ export const jobberSync = functions.https.onRequest(async (req, res) => {
       }
 
       // Fetch clients from Jobber
-      console.log('Fetching clients from Jobber API...');
+      console.log(`Fetching clients from Jobber API (v3 deployed at ${new Date().toISOString()})...`);
+      
+      const clientsRequestConfig = {
+        headers: {
+          'Authorization': `Bearer ${jobberToken.trim()}`,
+          'Content-Type': 'application/json',
+          'X-JOBBER-GRAPHQL-VERSION': '2023-11-15',
+        },
+      };
+      
+      console.log('Request headers:', JSON.stringify(clientsRequestConfig.headers, null, 2));
+      
       const clientsResponse = await axios.post('https://api.getjobber.com/api/graphql', {
         query: `
           query GetClients {
@@ -839,17 +850,19 @@ export const jobberSync = functions.https.onRequest(async (req, res) => {
             }
           }
         `,
-      }, {
-        headers: {
-          'Authorization': `Bearer ${jobberToken}`,
-          'Content-Type': 'application/json',
-          'X-JOBBER-GRAPHQL-VERSION': '2023-11-15',
-        },
-      });
+      }, clientsRequestConfig);
       
       console.log(`Successfully fetched ${clientsResponse.data.data.clients.nodes.length} clients`);
 
       // Fetch jobs from Jobber
+      const jobsRequestConfig = {
+        headers: {
+          'Authorization': `Bearer ${jobberToken.trim()}`,
+          'Content-Type': 'application/json',
+          'X-JOBBER-GRAPHQL-VERSION': '2023-11-15',
+        },
+      };
+      
       const jobsResponse = await axios.post('https://api.getjobber.com/api/graphql', {
         query: `
           query GetJobs {
@@ -883,13 +896,7 @@ export const jobberSync = functions.https.onRequest(async (req, res) => {
             }
           }
         `,
-      }, {
-        headers: {
-          'Authorization': `Bearer ${jobberToken}`,
-          'Content-Type': 'application/json',
-          'X-JOBBER-GRAPHQL-VERSION': '2023-11-15',
-        },
-      });
+      }, jobsRequestConfig);
 
       const clients = clientsResponse.data.data.clients.nodes;
       const jobs = jobsResponse.data.data.jobs.nodes;

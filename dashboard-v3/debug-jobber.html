@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jobber Debug Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 5px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #1565c0; }
+        .output { background: #f5f5f5; padding: 15px; margin-top: 10px; border-radius: 4px; white-space: pre-wrap; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .loading { opacity: 0.6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Jobber Integration Debug Tool</h1>
+        
+        <div>
+            <h3>Connection Status</h3>
+            <button onclick="checkStatus()">Check Jobber Connection</button>
+            <button onclick="testConnection()">Test API Connection</button>
+            <button onclick="debugConnection()">Debug Connection Details</button>
+        </div>
+        
+        <div>
+            <h3>Data Operations</h3>
+            <button onclick="syncData()">Sync Jobber Data</button>
+            <button onclick="getClients()">Get Clients Only</button>
+            <button onclick="getJobs()">Get Jobs Only</button>
+        </div>
+        
+        <div>
+            <h3>Authentication</h3>
+            <button onclick="checkAuth()">Check Firebase Auth</button>
+            <button onclick="getToken()">Get Auth Token</button>
+        </div>
+        
+        <div id="output" class="output">Ready for testing...</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCr-mhnRyhmaFr_1jEysQkcY13z0s1wRDk",
+            authDomain: "duetright-dashboard.firebaseapp.com",
+            projectId: "duetright-dashboard",
+            storageBucket: "duetright-dashboard.firebasestorage.app",
+            messagingSenderId: "774220089999",
+            appId: "1:774220089999:web:6eeafa80f5268120fabefa",
+            measurementId: "G-4KYQLQ9LVL"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const functionsURL = 'https://us-central1-duetright-dashboard.cloudfunctions.net';
+
+        let currentUser = null;
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                log(`✅ Authenticated as: ${user.email}`, 'success');
+            } else {
+                log(`❌ Not authenticated - please login to the dashboard first`, 'error');
+            }
+        });
+
+        function log(message, type = '') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type ? ` class="${type}"` : '';
+            output.innerHTML = `[${timestamp}] ${message}\n` + output.innerHTML;
+            if (type) {
+                output.className = `output ${type}`;
+                setTimeout(() => { output.className = 'output'; }, 3000);
+            }
+        }
+
+        async function makeRequest(endpoint, method = 'GET', body = null) {
+            if (!currentUser) {
+                throw new Error('Not authenticated');
+            }
+
+            const token = await currentUser.getIdToken();
+            const options = {
+                method,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            };
+
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            const response = await fetch(`${functionsURL}/${endpoint}`, options);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${data.error || 'Unknown error'}`);
+            }
+
+            return data;
+        }
+
+        window.checkAuth = () => {
+            if (currentUser) {
+                log(`✅ Authenticated as: ${currentUser.email}\nUID: ${currentUser.uid}`, 'success');
+            } else {
+                log(`❌ Not authenticated\nPlease login to the dashboard first`, 'error');
+            }
+        };
+
+        window.getToken = async () => {
+            try {
+                if (!currentUser) {
+                    throw new Error('Not authenticated');
+                }
+                const token = await currentUser.getIdToken();
+                log(`✅ Auth token obtained\nToken preview: ${token.substring(0, 50)}...`, 'success');
+            } catch (error) {
+                log(`❌ Failed to get token: ${error.message}`, 'error');
+            }
+        };
+
+        window.checkStatus = async () => {
+            try {
+                log('🔍 Checking Jobber connection status...', 'loading');
+                const data = await makeRequest('jobberStatus');
+                log(`✅ Connection Status: ${data.connected ? 'Connected' : 'Not Connected'}`, data.connected ? 'success' : 'error');
+            } catch (error) {
+                log(`❌ Status check failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testConnection = async () => {
+            try {
+                log('🧪 Testing Jobber API connection...', 'loading');
+                const data = await makeRequest('jobberTest');
+                log(`✅ API Test: ${data.connected ? 'Success' : 'Failed'}`, data.connected ? 'success' : 'error');
+            } catch (error) {
+                log(`❌ API test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.syncData = async () => {
+            try {
+                log('🔄 Starting Jobber data sync...', 'loading');
+                const data = await makeRequest('jobberSync', 'POST', {});
+                log(`✅ Sync completed!\nClients: ${data.synced.clients}\nJobs: ${data.synced.jobs}`, 'success');
+            } catch (error) {
+                log(`❌ Sync failed: ${error.message}`, 'error');
+                console.error('Sync error details:', error);
+            }
+        };
+
+        window.debugConnection = async () => {
+            try {
+                log('🔍 Running deep connection debug...', 'loading');
+                const data = await makeRequest('jobberDebug');
+                log(`Debug results:\n${JSON.stringify(data, null, 2)}`, data.success ? 'success' : 'error');
+            } catch (error) {
+                log(`❌ Debug failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.getClients = async () => {
+            try {
+                log('👥 Fetching Jobber clients...', 'loading');
+                const data = await makeRequest('jobberClients');
+                log(`✅ Fetched ${data.clients.length} clients\nFirst client: ${JSON.stringify(data.clients[0], null, 2)}`, 'success');
+            } catch (error) {
+                log(`❌ Failed to fetch clients: ${error.message}`, 'error');
+            }
+        };
+
+        window.getJobs = async () => {
+            try {
+                log('💼 Fetching Jobber jobs...', 'loading');
+                const data = await makeRequest('jobberJobs');
+                log(`✅ Fetched ${data.jobs.length} jobs\nFirst job: ${JSON.stringify(data.jobs[0], null, 2)}`, 'success');
+            } catch (error) {
+                log(`❌ Failed to fetch jobs: ${error.message}`, 'error');
+            }
+        };
+    </script>
+</body>
+</html>

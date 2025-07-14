@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Jobber API Version Header</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .output { background: #f5f5f5; padding: 15px; margin-top: 10px; white-space: pre-wrap; font-family: monospace; }
+        .error { color: #dc3545; }
+        .success { color: #28a745; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Jobber API Version Header</h1>
+        
+        <p>This page tests if the API version header is the issue.</p>
+        
+        <div>
+            <button onclick="testDirectAPI()">Test Direct API Call</button>
+            <button onclick="testWithDifferentVersions()">Test Different API Versions</button>
+            <button onclick="clearOutput()">Clear Output</button>
+        </div>
+        
+        <div id="output" class="output">Ready for testing...</div>
+    </div>
+
+    <script>
+        // You'll need to set this token manually - get it from the debug tool
+        const JOBBER_TOKEN = prompt('Enter Jobber access token (get from Firebase console or debug tool):');
+        
+        function log(message, type = '') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toISOString();
+            output.innerHTML += `\n[${timestamp}] <span class="${type}">${message}</span>`;
+        }
+        
+        function clearOutput() {
+            document.getElementById('output').innerHTML = 'Output cleared. Ready for testing...';
+        }
+        
+        async function testDirectAPI() {
+            if (!JOBBER_TOKEN) {
+                log('No token provided!', 'error');
+                return;
+            }
+            
+            log('Testing direct Jobber API call...', 'info');
+            
+            try {
+                // Test with the header
+                log('\n1. Testing WITH X-JOBBER-GRAPHQL-VERSION header:', 'info');
+                const response1 = await fetch('https://api.getjobber.com/api/graphql', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${JOBBER_TOKEN}`,
+                        'Content-Type': 'application/json',
+                        'X-JOBBER-GRAPHQL-VERSION': '2023-11-15'
+                    },
+                    body: JSON.stringify({
+                        query: '{ account { id name } }'
+                    })
+                });
+                
+                const data1 = await response1.json();
+                if (response1.ok) {
+                    log(`✅ Success with header: ${JSON.stringify(data1, null, 2)}`, 'success');
+                } else {
+                    log(`❌ Failed with header: ${response1.status} ${JSON.stringify(data1, null, 2)}`, 'error');
+                }
+                
+                // Test without the header
+                log('\n2. Testing WITHOUT X-JOBBER-GRAPHQL-VERSION header:', 'info');
+                const response2 = await fetch('https://api.getjobber.com/api/graphql', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${JOBBER_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: '{ account { id name } }'
+                    })
+                });
+                
+                const data2 = await response2.json();
+                if (response2.ok) {
+                    log(`✅ Success without header: ${JSON.stringify(data2, null, 2)}`, 'success');
+                } else {
+                    log(`❌ Failed without header: ${response2.status} ${JSON.stringify(data2, null, 2)}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`Exception: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testWithDifferentVersions() {
+            if (!JOBBER_TOKEN) {
+                log('No token provided!', 'error');
+                return;
+            }
+            
+            const versions = [
+                '2023-11-15',
+                '2024-01-15',
+                '2023-05-15',
+                '2023-03-15',
+                '2022-11-15'
+            ];
+            
+            log('Testing different API versions...', 'info');
+            
+            for (const version of versions) {
+                try {
+                    log(`\nTesting version: ${version}`, 'info');
+                    const response = await fetch('https://api.getjobber.com/api/graphql', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${JOBBER_TOKEN}`,
+                            'Content-Type': 'application/json',
+                            'X-JOBBER-GRAPHQL-VERSION': version
+                        },
+                        body: JSON.stringify({
+                            query: '{ account { id } }'
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    if (response.ok) {
+                        log(`✅ Version ${version} works!`, 'success');
+                    } else {
+                        log(`❌ Version ${version} failed: ${response.status} ${data.message || JSON.stringify(data)}`, 'error');
+                    }
+                } catch (error) {
+                    log(`❌ Version ${version} exception: ${error.message}`, 'error');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Jobber Endpoint</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { padding: 10px 20px; margin: 5px; }
+        .output { background: #f5f5f5; padding: 15px; margin-top: 10px; white-space: pre-wrap; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Test Jobber Sync Endpoint Directly</h1>
+    
+    <div>
+        <p>This will make a direct call to the Firebase Function to test if headers are being sent correctly.</p>
+        <button onclick="testSync()">Test Sync Endpoint</button>
+        <button onclick="testDebug()">Test Debug Endpoint</button>
+    </div>
+    
+    <div id="output" class="output">Ready...</div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCr-mhnRyhmaFr_1jEysQkcY13z0s1wRDk",
+            authDomain: "duetright-dashboard.firebaseapp.com",
+            projectId: "duetright-dashboard",
+            storageBucket: "duetright-dashboard.firebasestorage.app",
+            messagingSenderId: "774220089999",
+            appId: "1:774220089999:web:6eeafa80f5268120fabefa"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        async function getToken() {
+            const user = auth.currentUser;
+            if (!user) {
+                throw new Error('Not authenticated');
+            }
+            return await user.getIdToken();
+        }
+
+        function log(message, type = '') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toISOString();
+            output.innerHTML += `\n[${timestamp}] <span class="${type}">${message}</span>`;
+        }
+
+        window.testSync = async () => {
+            try {
+                log('Getting auth token...', 'info');
+                const token = await getToken();
+                log('Token obtained, calling jobberSync...', 'info');
+
+                const response = await fetch('https://us-central1-duetright-dashboard.cloudfunctions.net/jobberSync', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`SUCCESS: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log(`ERROR ${response.status}: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log(`EXCEPTION: ${error.message}`, 'error');
+            }
+        };
+
+        window.testDebug = async () => {
+            try {
+                log('Getting auth token...', 'info');
+                const token = await getToken();
+                log('Token obtained, calling jobberDebug...', 'info');
+
+                const response = await fetch('https://us-central1-duetright-dashboard.cloudfunctions.net/jobberDebug', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`DEBUG INFO: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log(`ERROR ${response.status}: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log(`EXCEPTION: ${error.message}`, 'error');
+            }
+        };
+
+        // Auto-authenticate if you're already logged in
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                log(`Authenticated as: ${user.email}`, 'success');
+            } else {
+                log('Not authenticated. Please login to the dashboard first.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
