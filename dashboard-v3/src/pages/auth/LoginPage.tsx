@@ -86,6 +86,9 @@ const LoginPage: React.FC = () => {
     }, 1000);
   };
 
+  // Check if we're in development mode
+  const isDevelopment = import.meta.env.DEV;
+
   return (
     <Box
       sx={{
@@ -143,29 +146,33 @@ const LoginPage: React.FC = () => {
           Continue with Google
         </Button>
 
-        <Button
-          fullWidth
-          variant="contained"
-          size="large"
-          onClick={handleDemoLogin}
-          disabled={isLoading}
-          sx={{
-            mb: 3,
-            backgroundColor: '#FFBB2F',
-            color: '#2C2B2E',
-            '&:hover': {
-              backgroundColor: '#FF8A3D',
-            },
-          }}
-        >
-          🏗️ Demo Login (Development)
-        </Button>
+        {isDevelopment && (
+          <>
+            <Button
+              fullWidth
+              variant="contained"
+              size="large"
+              onClick={handleDemoLogin}
+              disabled={isLoading}
+              sx={{
+                mb: 3,
+                backgroundColor: '#FFBB2F',
+                color: '#2C2B2E',
+                '&:hover': {
+                  backgroundColor: '#FF8A3D',
+                },
+              }}
+            >
+              🏗️ Demo Login (Development)
+            </Button>
 
-        <Divider sx={{ my: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            or
-          </Typography>
-        </Divider>
+            <Divider sx={{ my: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                or
+              </Typography>
+            </Divider>
+          </>
+        )}
 
         <Box component="form" onSubmit={handleEmailLogin}>
           <TextField
