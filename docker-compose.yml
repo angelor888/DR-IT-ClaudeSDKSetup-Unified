@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: duetright-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: duetright_db
+      POSTGRES_USER: duetright_user
+      POSTGRES_PASSWORD: duetright_secure_2025
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - duetright-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U duetright_user -d duetright_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: duetright-redis
+    restart: unless-stopped
+    command: redis-server --requirepass duetright_redis_2025
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - duetright-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # pgAdmin (Database Management Interface)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: duetright-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@duetright.com
+      PGADMIN_DEFAULT_PASSWORD: admin_duetright_2025
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - duetright-network
+    depends_on:
+      - postgres
+
+  # Redis Commander (Redis Management Interface)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: duetright-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:duetright_redis_2025
+    ports:
+      - "8081:8081"
+    networks:
+      - duetright-network
+    depends_on:
+      - redis
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  duetright-network:
+    driver: bridge
+    name: duetright-network

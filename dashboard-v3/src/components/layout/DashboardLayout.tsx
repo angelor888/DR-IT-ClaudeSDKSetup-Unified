@@ -29,6 +29,7 @@ import {
   Logout as LogoutIcon,
   AccountCircle,
   Notifications as NotificationsIcon,
+  SmartToy as AIIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
@@ -37,6 +38,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../../config/firebase';
 import { clearUser } from '../../store/slices/authSlice';
 import DuetRightLogo from '../DuetRightLogo';
+import FloatingAIButton from '../ai/FloatingAIButton';
 
 const drawerWidth = 280;
 
@@ -45,6 +47,7 @@ const navigationItems = [
   { path: '/customers', label: 'Customers', icon: PeopleIcon },
   { path: '/jobs', label: 'Jobs', icon: WorkIcon },
   { path: '/communications', label: 'Communications', icon: ChatIcon },
+  { path: '/ai-assistant', label: 'AI Assistant', icon: AIIcon },
   { path: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
@@ -303,6 +306,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           Logout
         </MenuItem>
       </Menu>
+
+      {/* Floating AI Button - visible on all pages except AI Assistant page */}
+      {location.pathname !== '/ai-assistant' && <FloatingAIButton />}
     </Box>
   );
 };

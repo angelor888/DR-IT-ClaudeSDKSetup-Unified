@@ -10,6 +10,7 @@ import CustomersPage from '../pages/customers/CustomersPage';
 import JobsPage from '../pages/jobs/JobsPage';
 import CommunicationsPage from '../pages/communications/CommunicationsPage';
 import SettingsPage from '../pages/settings/SettingsPage';
+import AIAssistantPage from '../pages/ai/AIAssistantPage';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -55,6 +56,7 @@ const AppRouter: React.FC = () => {
                 <Route path="/customers" element={<CustomersPage />} />
                 <Route path="/jobs" element={<JobsPage />} />
                 <Route path="/communications" element={<CommunicationsPage />} />
+                <Route path="/ai-assistant" element={<AIAssistantPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
