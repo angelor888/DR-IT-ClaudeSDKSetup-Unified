@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -19,6 +19,8 @@ import {
   IconButton,
   Chip,
   Alert,
+  CircularProgress,
+  Tooltip,
 } from '@mui/material';
 import {
   Settings as SettingsIcon,
@@ -28,7 +30,12 @@ import {
   Save as SaveIcon,
   Refresh as RefreshIcon,
   Add as AddIcon,
+  CheckCircle as CheckCircleIcon,
+  Error as ErrorIcon,
+  Warning as WarningIcon,
+  AccessTime as AccessTimeIcon,
 } from '@mui/icons-material';
+import { healthCheckService, ServiceHealth, HealthCheckResult } from '../../services/healthCheck';
 
 const SettingsPage: React.FC = () => {
   const [settings, setSettings] = useState({
@@ -57,6 +64,9 @@ const SettingsPage: React.FC = () => {
     },
   });
 
+  const [healthData, setHealthData] = useState<HealthCheckResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleSettingChange = (category: string, setting: string, value: any) => {
     setSettings(prev => ({
       ...prev,
@@ -67,14 +77,53 @@ const SettingsPage: React.FC = () => {
     }));
   };
 
-  const mcpServers = [
-    { name: 'Grok 4 AI', status: 'connected', endpoint: 'https://api.grok.ai' },
-    { name: 'Jobber CRM', status: 'disconnected', endpoint: 'https://api.getjobber.com' },
-    { name: 'QuickBooks', status: 'connected', endpoint: 'https://api.quickbooks.com' },
-    { name: 'Gmail', status: 'connected', endpoint: 'https://api.gmail.com' },
-    { name: 'Slack', status: 'connected', endpoint: 'https://api.slack.com' },
-    { name: 'Twilio SMS', status: 'disconnected', endpoint: 'https://api.twilio.com' },
-  ];
+  const loadHealthData = async () => {
+    setIsLoading(true);
+    try {
+      // Use mock data for now since backend API is not available
+      const data = await healthCheckService.getMockHealthData();
+      setHealthData(data);
+    } catch (error) {
+      console.error('Failed to load health data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadHealthData();
+    // Refresh health data every 30 seconds
+    const interval = setInterval(loadHealthData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getStatusIcon = (status: ServiceHealth['status']) => {
+    switch (status) {
+      case 'connected':
+        return <CheckCircleIcon sx={{ color: '#4CAF50', fontSize: 20 }} />;
+      case 'error':
+        return <ErrorIcon sx={{ color: '#F44336', fontSize: 20 }} />;
+      case 'disconnected':
+        return <WarningIcon sx={{ color: '#FF9800', fontSize: 20 }} />;
+      case 'checking':
+        return <CircularProgress size={16} />;
+      default:
+        return <WarningIcon sx={{ color: '#FF9800', fontSize: 20 }} />;
+    }
+  };
+
+  const getStatusColor = (status: ServiceHealth['status']) => {
+    switch (status) {
+      case 'connected':
+        return 'success';
+      case 'error':
+        return 'error';
+      case 'disconnected':
+        return 'warning';
+      default:
+        return 'default';
+    }
+  };
 
   return (
     <Box>
@@ -256,46 +305,122 @@ const SettingsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        {/* MCP Server Status */}
+        {/* Service Health Dashboard */}
         <Grid xs={12} md={6}>
           <Card>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <SecurityIcon sx={{ mr: 1, color: 'primary.main' }} />
-                <Typography variant="h6" fontWeight="bold">
-                  MCP Server Connections
-                </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'between', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <SecurityIcon sx={{ mr: 1, color: 'primary.main' }} />
+                  <Typography variant="h6" fontWeight="bold">
+                    Service Health Status
+                  </Typography>
+                </Box>
+                <IconButton 
+                  size="small" 
+                  onClick={loadHealthData}
+                  disabled={isLoading}
+                >
+                  <RefreshIcon />
+                </IconButton>
               </Box>
 
-              <List>
-                {mcpServers.map((server, index) => (
-                  <ListItem key={index}>
-                    <ListItemText 
-                      primary={server.name}
-                      secondary={server.endpoint}
-                    />
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Chip 
-                        label={server.status}
-                        color={server.status === 'connected' ? 'success' : 'warning'}
-                        size="small"
-                      />
-                      <IconButton size="small">
-                        <RefreshIcon />
-                      </IconButton>
-                    </Box>
-                  </ListItem>
-                ))}
-              </List>
+              {/* Health Summary */}
+              {healthData && (
+                <Alert 
+                  severity={healthData.summary.errors > 0 ? 'error' : healthData.summary.disconnected > 0 ? 'warning' : 'success'}
+                  sx={{ mb: 2 }}
+                >
+                  {healthData.summary.connected}/{healthData.summary.total} services operational
+                  {healthData.summary.errors > 0 && ` • ${healthData.summary.errors} errors`}
+                  {healthData.summary.disconnected > 0 && ` • ${healthData.summary.disconnected} disconnected`}
+                </Alert>
+              )}
 
-              <Button
-                variant="outlined"
-                startIcon={<AddIcon />}
-                fullWidth
-                sx={{ mt: 2 }}
-              >
-                Add MCP Server
-              </Button>
+              {isLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <List>
+                  {healthData?.services.map((service, index) => (
+                    <ListItem key={index}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+                        {getStatusIcon(service.status)}
+                      </Box>
+                      <ListItemText 
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body1" fontWeight="medium">
+                              {service.name}
+                            </Typography>
+                            {service.capabilities && service.capabilities.length > 0 && (
+                              <Tooltip title={`Capabilities: ${service.capabilities.join(', ')}`}>
+                                <Chip 
+                                  label={`${service.capabilities.length} features`}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              </Tooltip>
+                            )}
+                          </Box>
+                        }
+                        secondary={
+                          <Box>
+                            <Typography variant="body2" color="text.secondary">
+                              {service.endpoint}
+                            </Typography>
+                            {service.responseTime && (
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <AccessTimeIcon sx={{ fontSize: 12 }} />
+                                {service.responseTime}ms
+                              </Typography>
+                            )}
+                            {service.errorMessage && (
+                              <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
+                                {service.errorMessage}
+                              </Typography>
+                            )}
+                          </Box>
+                        }
+                      />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Chip 
+                          label={service.status}
+                          color={getStatusColor(service.status) as any}
+                          size="small"
+                          variant={service.status === 'connected' ? 'filled' : 'outlined'}
+                        />
+                      </Box>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+
+              <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  size="small"
+                >
+                  Add Service
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<RefreshIcon />}
+                  size="small"
+                  onClick={loadHealthData}
+                  disabled={isLoading}
+                >
+                  Refresh All
+                </Button>
+              </Box>
+
+              {healthData && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'center' }}>
+                  Last updated: {healthData.timestamp.toLocaleTimeString()}
+                </Typography>
+              )}
             </CardContent>
           </Card>
         </Grid>
