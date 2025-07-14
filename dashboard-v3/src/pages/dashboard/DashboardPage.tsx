@@ -333,6 +333,54 @@ const DashboardPage: React.FC = () => {
             </Button>
           </Paper>
         </Grid>
+
+        <Grid xs={12}>
+          <Paper sx={{ p: 3, height: 300 }}>
+            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Email color="primary" />
+              Recent Activity Feed
+            </Typography>
+            
+            <Box sx={{ mt: 2 }}>
+              {[
+                { time: '10 minutes ago', action: 'Concrete pour completed at Ballard ADU', type: 'success', user: 'David Chen' },
+                { time: '2 hours ago', action: 'Weather alert: Rain expected tomorrow', type: 'warning', user: 'System' },
+                { time: '3 hours ago', action: 'Alpha Team clocked in at Green Lake site', type: 'info', user: 'Mike Johnson' },
+                { time: '5 hours ago', action: 'Material delivery scheduled for Capitol Hill project', type: 'info', user: 'Sarah Martinez' },
+                { time: '1 day ago', action: 'Queen Anne project inspection passed', type: 'success', user: 'Lisa Rodriguez' },
+                { time: '2 days ago', action: 'New customer inquiry: Fremont deck renovation', type: 'info', user: 'System' },
+              ].map((activity, index) => (
+                <Box key={index} sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  py: 1.5,
+                  borderBottom: index < 5 ? '1px solid' : 'none',
+                  borderColor: 'divider'
+                }}>
+                  <Chip 
+                    label={activity.type === 'success' ? '✅' : activity.type === 'warning' ? '⚠️' : 'ℹ️'} 
+                    size="small" 
+                    sx={{ mr: 2, minWidth: '40px' }}
+                  />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body2" fontWeight="medium">
+                      {activity.action}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {activity.time} • {activity.user}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+
+            <Box sx={{ mt: 2, textAlign: 'center' }}>
+              <Button variant="outlined" size="small">
+                View All Activity
+              </Button>
+            </Box>
+          </Paper>
+        </Grid>
       </Grid>
     </Box>
   );
