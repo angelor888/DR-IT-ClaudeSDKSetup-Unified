@@ -113,6 +113,34 @@ class GrokService {
   // Test connection to Grok API
   async testConnection(): Promise<boolean> {
     try {
+      // Use Firebase Functions in production or when explicitly enabled
+      if (this.useFirebaseFunctions && auth.currentUser) {
+        const token = await this.getAuthToken();
+        if (!token) {
+          console.error('User not authenticated for Grok API test');
+          return false;
+        }
+
+        // Test through Firebase Functions proxy
+        const response = await this.functionsClient.post('/grokChat', {
+          messages: [
+            { role: 'user', content: 'Test connection' }
+          ],
+          userId: auth.currentUser.uid,
+          options: {
+            maxTokens: 10,
+            temperature: 0.1,
+          },
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        return response.data.success === true;
+      }
+
+      // Fallback to direct API call (for development)
       const response = await this.client.get('/models');
       return response.status === 200;
     } catch (error) {
