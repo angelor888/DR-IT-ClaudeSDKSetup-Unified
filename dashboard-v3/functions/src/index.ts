@@ -7,7 +7,7 @@ import axios from 'axios';
 admin.initializeApp();
 
 // Initialize CORS
-const corsHandler = cors({ origin: true });
+const corsHandler = cors.default({ origin: true });
 
 // Types
 interface GrokChatRequest {
@@ -231,6 +231,8 @@ export const mcpExecute = functions.https.onRequest(async (req, res) => {
 // Service handlers (implement based on your actual integrations)
 async function executeSlackCommand(method: string, params: any) {
   const slackToken = functions.config().slack?.bot_token;
+  // TODO: Implement Slack API integration
+  console.log('Slack token configured:', !!slackToken);
   
   switch (method) {
     case 'send_message':
@@ -243,6 +245,8 @@ async function executeSlackCommand(method: string, params: any) {
 
 async function executeJobberCommand(method: string, params: any) {
   const jobberApiKey = functions.config().jobber?.api_key;
+  // TODO: Implement Jobber API integration
+  console.log('Jobber API key configured:', !!jobberApiKey);
   
   switch (method) {
     case 'create_job':
@@ -269,6 +273,8 @@ async function executeGmailCommand(method: string, params: any) {
 async function executeTwilioCommand(method: string, params: any) {
   const twilioSid = functions.config().twilio?.account_sid;
   const twilioToken = functions.config().twilio?.auth_token;
+  // TODO: Implement Twilio API integration
+  console.log('Twilio credentials configured:', !!twilioSid && !!twilioToken);
   
   switch (method) {
     case 'send_sms':
@@ -389,7 +395,7 @@ export const getAIUsage = functions.https.onRequest(async (req, res) => {
       }));
 
       // Calculate totals
-      const totals = usage.reduce((acc, item) => {
+      const totals = usage.reduce((acc, item: any) => {
         acc.totalTokens += item.totalTokens || 0;
         acc.promptTokens += item.promptTokens || 0;
         acc.completionTokens += item.completionTokens || 0;
@@ -439,7 +445,7 @@ export const autonomousWebhook = functions.pubsub.schedule('every 60 minutes').o
       // Check for pending tasks, unread communications, etc.
       // This is where you'd implement the autonomous business logic
       
-      console.log(`Checking automation for user ${userId}`);
+      console.log(`Checking automation for user ${userId}`, userData?.email);
     }
 
     return null;
